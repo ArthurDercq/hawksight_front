@@ -65,7 +65,18 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 { font-size: 2.5rem; }
 h2 { font-size: 2rem; }
-h3 { font-size: 1.5rem; }
+h3 {
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.title-icon {
+    width: 2rem;
+    height: 2rem;
+    opacity: 0.9;
+}
 
 /* === NAVIGATION === */
 .navbar {
@@ -96,6 +107,11 @@ h3 { font-size: 1.5rem; }
     font-weight: 700;
     color: var(--color-mist);
     letter-spacing: -0.02em;
+    transition: transform 0.2s ease;
+}
+
+.logo:hover {
+    transform: scale(1.05);
 }
 
 .logo-icon {
@@ -360,7 +376,7 @@ h3 { font-size: 1.5rem; }
 }
 
 .activity-title {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: var(--color-mist);
     margin-bottom: 0.25rem;
@@ -368,7 +384,7 @@ h3 { font-size: 1.5rem; }
 
 .activity-date {
     color: rgba(242, 242, 242, 0.6);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .activity-info {
@@ -387,7 +403,7 @@ h3 { font-size: 1.5rem; }
 
 .activity-stat-value {
     font-family: var(--font-mono);
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--color-amber);
     margin-bottom: 0.25rem;
@@ -841,4 +857,101 @@ h3 { font-size: 1.5rem; }
     color: var(--color-mist);
     font-family: var(--font-body);
     font-size: 0.9rem;
+}
+
+/* === PAGE ACTIVITÉS === */
+.activities-section {
+    padding: var(--spacing-lg);
+}
+
+.activities-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.activity-card {
+    background: rgba(58, 63, 71, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(58, 63, 71, 0.5);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+    border-color: var(--color-amber);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.activity-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-md);
+}
+
+.activity-card-title {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-mist);
+    margin-bottom: 0.25rem;
+}
+
+.activity-card-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(242, 242, 242, 0.6);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+}
+
+.activity-card-badge {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+}
+
+.activity-card-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.activity-card-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.activity-card-stat-value {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.activity-card-stat-label {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    color: rgba(242, 242, 242, 0.4);
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+}
+
+.page-info {
+    font-family: var(--font-body);
+    color: var(--color-mist);
+    padding: 0.5rem 1rem;
 }

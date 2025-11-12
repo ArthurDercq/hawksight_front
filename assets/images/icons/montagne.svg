@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" aria-hidden="true">
+  <!-- simple rounded-square hint (optional shape removed to keep transparent) -->
+  <!-- mountain outline -->
+  <path d="M32 188 L96 92 L132 140 L176 72 L224 188 Z" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- small peak highlight -->
+  <path d="M96 92 L122 140" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+</svg>

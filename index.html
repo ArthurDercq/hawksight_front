@@ -24,7 +24,7 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-content">
-            <div class="logo">
+            <div class="logo" onclick="showPage('dashboardPage')" style="cursor: pointer;">
                 <div class="logo-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="hsTitle hsDesc">
                         <title id="hsTitle">HawkSight</title>
@@ -86,50 +86,68 @@
             </div>
             <div id="updateStatus"></div>
 
-            <div class="last-activity-header">
-                <h2>Dernière activité</h2>
-                <div class="sport-filter">
-                    <label for="sportFilter">Sport :</label>
-                    <select id="sportFilter" onchange="loadLastActivityWithFilter()">
-                        <option value="" selected>Toutes</option>
-                        <option value="Run">Run</option>
-                        <option value="Bike">Bike</option>
-                        <option value="Trail">Trail</option>
-                        <option value="WeightTraining">WeightTraining</option>
-                        <option value="Hike">Hike</option>
-                        <option value="Swim">Swim</option>
-                    </select>
-                </div>
-            </div>
             <!-- Dernière activité -->
             <div class="dashboard-grid">
                 <div class="card">
+                    <div class="chart-header">
+                        <h3>
+                            <img src="assets/images/icons/cible.svg" alt="Cible" class="title-icon">
+                            Dernière activité
+                        </h3>
+                        <div class="sport-filter">
+                            <select id="sportFilter" onchange="loadLastActivityWithFilter()">
+                                <option value="" selected>Tous les sports</option>
+                                <option value="Run">Run</option>
+                                <option value="Bike">Bike</option>
+                                <option value="Trail">Trail</option>
+                                <option value="WeightTraining">WeightTraining</option>
+                                <option value="Hike">Hike</option>
+                                <option value="Swim">Swim</option>
+                            </select>
+                        </div>
+                    </div>
                     <div id="lastActivityInfo">
                         <!-- Info de l'activité sera chargée ici -->
                     </div>
                 </div>
 
-                <div class="card">
-                    <h3>Trace de l'activité</h3>
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <h3>
+                        <img src="assets/images/icons/montagne.svg" alt="Montagne" class="title-icon">
+                        Trace et profil
+                    </h3>
                     <div id="lastActivityMapInteractive"
-                      style="height: 300px; border-radius: 12px; overflow: hidden; margin-top: 1rem;">
+                      style="flex: 1; min-height: 250px; border-radius: 12px; overflow: hidden; margin-top: 1rem;">
                     </div>
                     <div id="lastActivityMapStatic"
-                        style="height: 300px; border-radius: 12px; overflow: hidden; margin-top: 1rem; display: none;">
+                        style="flex: 1; min-height: 250px; border-radius: 12px; overflow: hidden; margin-top: 1rem; display: none;">
                     </div>
                     <div id="activityMap"
-                        style="height: 300px; border-radius: 12px; overflow: hidden; margin-top: 1rem; display: none;">
+                        style="flex: 1; min-height: 250px; border-radius: 12px; overflow: hidden; margin-top: 1rem; display: none;">
+                    </div>
+
+                    <div id="elevationContainer" style="flex: 1; min-height: 200px; margin-top: 2rem;">
+                        <canvas id="elevationChart" width="600" height="200"></canvas>
                     </div>
                 </div>
             </div>
 
             <!-- Objectifs de la semaine sur toute la largeur -->
             <div class="card" style="margin-top: 2rem;">
-                <h3>Objectifs de la semaine</h3>
-                <div id="currentWeekDisplay" style="font-size: 0.8rem; color: #555; margin-bottom: 1rem;"></div>
+                <div class="chart-header">
+                    <h3>
+                        <img src="assets/images/icons/coeur.svg" alt="Coeur" class="title-icon">
+                        Objectifs de la semaine
+                    </h3>
+                    <div class="week-controls">
+                        <button onclick="changeGoalsWeek(-1)">←</button>
+                        <span id="currentWeekDisplay">Semaine en cours</span>
+                        <button id="nextWeekBtn" onclick="changeGoalsWeek(1)" disabled>→</button>
+                    </div>
+                </div>
                 <div class="goals-grid">
                     <div class="goal-item">
-                        <label>Objectif Run & Trail (km):</label>
+                        <label>Run & Trail (km)</label>
                         <input type="number" id="goalRunTrail" onchange="saveGoals()" placeholder="0">
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressRunTrail"></div>
@@ -138,7 +156,7 @@
                     </div>
 
                     <div class="goal-item">
-                        <label>Objectif Vélo (km):</label>
+                        <label>Vélo (km)</label>
                         <input type="number" id="goalBike" onchange="saveGoals()" placeholder="0">
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressBike"></div>
@@ -147,21 +165,13 @@
                     </div>
 
                     <div class="goal-item">
-                        <label>Objectif Natation (km):</label>
+                        <label>Objectif Natation (km)</label>
                         <input type="number" id="goalSwim" onchange="saveGoals()" placeholder="0">
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressSwim"></div>
                         </div>
                         <span id="progressSwimText">0/0 km</span>
                     </div>
-                </div>
-            </div>
-
-            <!-- Profil d'élévation sur toute la largeur -->
-            <div class="card" style="margin-top: 2rem;">
-                <h3>Profil d'élévation</h3>
-                <div id="elevationContainer" style="margin-top: 1rem;">
-                    <canvas id="elevationChart" width="600" height="200"></canvas>
                 </div>
             </div>
 
@@ -288,6 +298,21 @@
                 <div class="card">
                     <h3>Nombre d'activités par sport</h3>
                     <div id="activityCountChartContainer" style="width: 100%; margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Activités -->
+        <div id="activitiesPage" class="page">
+            <div class="activities-section">
+                <h2>Mes activités</h2>
+                <div id="activitiesList" class="activities-grid">
+                    <!-- Les activités seront chargées ici -->
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-secondary" id="prevPageBtn" onclick="changePage(-1)">← Précédent</button>
+                    <span id="pageInfo" class="page-info">Page 1</span>
+                    <button class="btn btn-secondary" id="nextPageBtn" onclick="changePage(1)">Suivant →</button>
                 </div>
             </div>
         </div>
