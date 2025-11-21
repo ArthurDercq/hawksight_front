@@ -132,6 +132,29 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Streak -->
+                <div class="card streak-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h5 style="color: var(--color-mist); font-family: 'Poppins', sans-serif; margin: 0; font-size: 1rem;">
+                            Série en cours
+                        </h5>
+                        <span style="font-size: 1.5rem;"></span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: rgba(242, 242, 242, 0.6); font-family: 'Inter', sans-serif; font-size: 0.85rem;">Semaines</span>
+                            <span id="streakWeeks" style="color: #E8832A; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600;">- sem.</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: rgba(242, 242, 242, 0.6); font-family: 'Inter', sans-serif; font-size: 0.85rem;">Activités</span>
+                            <span id="streakActivities" style="color: #6DAA75; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">-</span>
+                        </div>
+                        <div style="color: rgba(242, 242, 242, 0.4); font-family: 'Inter', sans-serif; font-size: 0.75rem; margin-top: 0.25rem; font-style: italic;">
+                            ≥1 acti + ≥5km Run/Trail par semaine
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Dernière activité et Trace/Profil côte à côte -->
@@ -456,6 +479,123 @@
                 <div class="calendar-container">
                     <div id="calendarGrid" class="calendar-grid">
                         <!-- Le calendrier sera généré ici par JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Détails Activité -->
+        <div id="activityDetailPage" class="page">
+            <div class="activity-detail-container">
+                <!-- Header avec bouton retour -->
+                <div class="activity-detail-header">
+                    <button class="btn btn-secondary" onclick="backToActivities()">
+                        ← Retour aux activités
+                    </button>
+                    <div class="activity-detail-title">
+                        <h1 id="detailActivityName">Chargement...</h1>
+                        <div class="activity-detail-meta">
+                            <span id="detailActivityDate"></span>
+                            <span id="detailActivityType" class="activity-badge"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats principales -->
+                <div class="activity-detail-stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📍</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Distance</div>
+                            <div class="stat-value" id="detailDistance">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Durée</div>
+                            <div class="stat-value" id="detailDuration">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Allure moyenne</div>
+                            <div class="stat-value" id="detailPace">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⛰️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Dénivelé +</div>
+                            <div class="stat-value" id="detailElevation">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❤️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Cardio moy.</div>
+                            <div class="stat-value" id="detailHeartrate">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👟</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Cadence moy.</div>
+                            <div class="stat-value" id="detailCadence">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carte et profil d'élévation -->
+                <div class="activity-detail-map-section">
+                    <div class="card">
+                        <h3>Tracé de l'activité</h3>
+                        <div id="detailMap" style="height: 400px; border-radius: 12px; overflow: hidden; margin-top: 1rem;"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Profil d'élévation</h3>
+                        <canvas id="detailElevationChart" style="margin-top: 1rem;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Graphiques des streams -->
+                <div class="activity-detail-charts-grid">
+                    <div class="card">
+                        <h3>Fréquence cardiaque</h3>
+                        <canvas id="detailHeartrateChart"></canvas>
+                        <div id="heartrateStats" class="chart-stats"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Allure</h3>
+                        <canvas id="detailPaceChart"></canvas>
+                        <div id="paceStats" class="chart-stats"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Cadence</h3>
+                        <canvas id="detailCadenceChart"></canvas>
+                        <div id="cadenceStats" class="chart-stats"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Pente</h3>
+                        <canvas id="detailGradeChart"></canvas>
+                        <div id="gradeStats" class="chart-stats"></div>
+                    </div>
+
+                    <div class="card" id="detailPowerCard" style="display: none;">
+                        <h3>Puissance</h3>
+                        <canvas id="detailPowerChart"></canvas>
+                        <div id="powerStats" class="chart-stats"></div>
+                    </div>
+
+                    <div class="card" id="detailTempCard" style="display: none;">
+                        <h3>Température</h3>
+                        <canvas id="detailTempChart"></canvas>
+                        <div id="tempStats" class="chart-stats"></div>
                     </div>
                 </div>
             </div>

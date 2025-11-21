@@ -266,13 +266,13 @@ h3 {
     font-size: 1.3rem;
 }
 
-/* Summary cards grid - largeur totale = 1 card normale */
+/* Summary cards grid - 3 cartes côte à côte */
 .summary-cards-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
-    max-width: calc(50% - var(--spacing-lg) / 2);
+    max-width: 100%;
 }
 
 /* Weekly summary card with gradient */
@@ -287,6 +287,14 @@ h3 {
 .monthly-summary-card {
     background: linear-gradient(135deg, rgba(61, 178, 224, 0.2) 0%, rgba(109, 170, 117, 0.2) 100%);
     border: 1px solid rgba(61, 178, 224, 0.5);
+    backdrop-filter: blur(10px);
+    cursor: default;
+}
+
+/* Streak card with fire gradient */
+.streak-card {
+    background: linear-gradient(135deg, rgba(232, 131, 42, 0.2) 0%, rgba(255, 99, 71, 0.2) 50%, rgba(255, 140, 0, 0.2) 100%);
+    border: 1px solid rgba(232, 131, 42, 0.5);
     backdrop-filter: blur(10px);
     cursor: default;
 }
@@ -1193,4 +1201,147 @@ h3 {
     font-family: var(--font-body);
     color: var(--color-mist);
     padding: 0.5rem 1rem;
+}
+
+/* ============================================
+   ACTIVITY DETAIL PAGE
+   ============================================ */
+
+.activity-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.activity-detail-header {
+    margin-bottom: 2rem;
+}
+
+.activity-detail-title {
+    margin-top: 1.5rem;
+}
+
+.activity-detail-title h1 {
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    color: var(--color-mist);
+    margin: 0 0 0.5rem 0;
+}
+
+.activity-detail-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-family: var(--font-body);
+    color: rgba(242, 242, 242, 0.7);
+    font-size: 0.95rem;
+}
+
+.activity-badge {
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.activity-detail-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--color-steel);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    color: rgba(242, 242, 242, 0.6);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--color-amber);
+}
+
+.activity-detail-map-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .activity-detail-map-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+.activity-detail-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .activity-detail-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(242, 242, 242, 0.1);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: rgba(242, 242, 242, 0.7);
+}
+
+.chart-stats span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.chart-stats strong {
+    color: var(--color-mist);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+}
+
+/* Hover effect for activity cards */
+.activity-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }

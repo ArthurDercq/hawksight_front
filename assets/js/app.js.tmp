@@ -216,7 +216,6 @@ async function loadAnalytics() {
     loadGoals();
     await updateGoalsProgress();
     await updateMonthlySummary();
-    await loadStreak();
 }
 
 async function loadKPIs() {
@@ -456,12 +455,12 @@ function displayLastActivity(activity) {
     });
 
     container.innerHTML = `
-        <div class="activity-header" style="cursor: pointer;" onclick="showActivityDetail(${activity.id})" title="Cliquez pour voir les détails">
+        <div class="activity-header">
             <div class="activity-title">${activity.name || 'Activité'}</div>
             <div class="activity-date">${date}</div>
         </div>
 
-        <div class="activity-info" style="cursor: pointer;" onclick="showActivityDetail(${activity.id})" title="Cliquez pour voir les détails">
+        <div class="activity-info">
             <div class="activity-stat">
                 <div class="activity-stat-value" style="color: ${COLORS.amber};">${activity.distance_km.toFixed(2)} km</div>
                 <div class="activity-stat-label">Distance</div>
@@ -490,11 +489,11 @@ function displayLastActivity(activity) {
     const coords = activity.polyline_coords || [];
     if (coords.length === 0) return;
 
-    initializeInteractiveMap(coords, activity.id);
-    initializeStaticMap(coords, activity.id);
+    initializeInteractiveMap(coords);
+    initializeStaticMap(coords);
 }
 
-function initializeInteractiveMap(coords, activityId) {
+function initializeInteractiveMap(coords) {
     if (!mapInteractive) {
         mapInteractive = L.map('lastActivityMapInteractive', {
             zoomControl: true,
@@ -517,15 +516,9 @@ function initializeInteractiveMap(coords, activityId) {
     }).addTo(mapInteractive);
 
     mapInteractive.fitBounds(polylineInteractive.getBounds(), { padding: [20, 20] });
-
-    // Rendre la carte cliquable
-    const mapContainer = document.getElementById('lastActivityMapInteractive');
-    mapContainer.style.cursor = 'pointer';
-    mapContainer.onclick = () => showActivityDetail(activityId);
-    mapContainer.title = 'Cliquez pour voir les détails';
 }
 
-function initializeStaticMap(coords, activityId) {
+function initializeStaticMap(coords) {
     if (!mapStatic) {
         mapStatic = L.map('lastActivityMapStatic', {
             zoomControl: false,
@@ -551,12 +544,6 @@ function initializeStaticMap(coords, activityId) {
     }).addTo(mapStatic);
 
     mapStatic.fitBounds(polylineStatic.getBounds(), { padding: [20, 20] });
-
-    // Rendre la carte cliquable
-    const mapContainer = document.getElementById('lastActivityMapStatic');
-    mapContainer.style.cursor = 'pointer';
-    mapContainer.onclick = () => showActivityDetail(activityId);
-    mapContainer.title = 'Cliquez pour voir les détails';
 }
 
 
@@ -882,34 +869,23 @@ function displayDailyHours(data) {
 
     // Si pas de datasets, afficher un graphique vide
     let datasets = [];
-    let maxMinutes = 480; // Valeur par défaut: 8 heures = 480 minutes
-
     if (data.datasets && data.datasets.length > 0) {
-        // Préparer les datasets pour chaque sport en gardant les minutes
+        // Préparer les datasets pour chaque sport avec conversion en heures
         datasets = data.datasets.map(dataset => {
             console.log(`Dataset ${dataset.label}:`, dataset.data);
+            const hoursData = dataset.data.map(minutes => {
+                const hours = minutes / 60;
+                return hours;
+            });
+            console.log(`Dataset ${dataset.label} en heures:`, hoursData);
             return {
                 label: dataset.label,
-                data: dataset.data,  // Garder les minutes
+                data: hoursData,
                 backgroundColor: sportColors[dataset.label] || '#667eea',
                 borderColor: sportColors[dataset.label] || '#667eea',
                 borderWidth: 1
             };
         });
-
-        // Calculer le maximum dynamique : plus longue activité + 20 min
-        // Pour un graphique empilé, on doit sommer les valeurs par jour
-        const dailyTotals = labels.map((_, dayIndex) => {
-            return datasets.reduce((sum, dataset) => {
-                return sum + (dataset.data[dayIndex] || 0);
-            }, 0);
-        });
-
-        const maxDailyMinutes = Math.max(...dailyTotals);
-        const targetMax = maxDailyMinutes + 20;
-
-        // Arrondir à la vingtaine supérieure (multiple de 20)
-        maxMinutes = Math.ceil(targetMax / 20) * 20;
     }
 
     charts.dailyHours = new Chart(ctx, {
@@ -931,13 +907,13 @@ function displayDailyHours(data) {
                     title: { display: false },
                     grid: { display: false },
                     beginAtZero: true,
-                    max: maxMinutes,  // Maximum dynamique basé sur la plus longue activité
+                    max: 8,
                     ticks: {
-                        stepSize: 20,  // Graduation toutes les 20 minutes
+                        stepSize: 2,
                         callback: function(value) {
-                            // Afficher les minutes, ne pas afficher 0
+                            // Afficher uniquement les heures paires (2h, 4h, 6h, 8h), pas le 0h
                             if (value === 0) return '';
-                            return value + ' min';
+                            return Math.round(value) + 'h';
                         }
                     }
                 }
@@ -1544,13 +1520,9 @@ let goalsWeekOffset = 0;
 function loadGoals() {
     const goals = JSON.parse(localStorage.getItem('weekly_goals') || '{}');
 
-    const goalRunTrailEl = document.getElementById('goalRunTrail');
-    const goalBikeEl = document.getElementById('goalBike');
-    const goalSwimEl = document.getElementById('goalSwim');
-
-    if (goalRunTrailEl) goalRunTrailEl.value = goals.runTrail || '';
-    if (goalBikeEl) goalBikeEl.value = goals.bike || '';
-    if (goalSwimEl) goalSwimEl.value = goals.swim || '';
+    document.getElementById('goalRunTrail').value = goals.runTrail || '';
+    document.getElementById('goalBike').value = goals.bike || '';
+    document.getElementById('goalSwim').value = goals.swim || '';
 
     // Afficher la semaine courante et mettre à jour la progression
     displayCurrentWeek();
@@ -1945,37 +1917,6 @@ async function updateMonthlySummary() {
 }
 
 // -----------------------------
-// Streak (Série d'activités)
-// -----------------------------
-async function loadStreak() {
-    const headers = getAuthHeaders();
-    if (!headers) return;
-
-    try {
-        const response = await fetch(`${API_BASE}/kpi/streak`, { headers });
-        if (!response.ok) {
-            console.error('Erreur chargement streak');
-            return;
-        }
-
-        const data = await response.json();
-
-        const weeksEl = document.getElementById('streakWeeks');
-        const activitiesEl = document.getElementById('streakActivities');
-
-        if (weeksEl) {
-            weeksEl.textContent = `${data.streak_weeks} sem.`;
-        }
-        if (activitiesEl) {
-            activitiesEl.textContent = data.total_activities;
-        }
-
-    } catch (error) {
-        console.error('Erreur chargement streak:', error);
-    }
-}
-
-// -----------------------------
 // Calendrier
 // -----------------------------
 let currentCalendarDate = new Date();
@@ -2064,8 +2005,6 @@ async function generateCalendar(date) {
         // Variables pour calculer les stats de la semaine
         let weekTotalDistance = 0;
         let weekTotalTime = 0;
-        let weekRunTrailDistance = 0;  // Pour l'allure (Run & Trail uniquement)
-        let weekRunTrailTime = 0;
 
         // Générer 7 jours pour cette semaine
         for (let i = 0; i < 7; i++) {
@@ -2091,24 +2030,17 @@ async function generateCalendar(date) {
             const activitiesDiv = document.createElement('div');
             activitiesDiv.className = 'calendar-day-activities';
 
-            // Trouver les activités pour ce jour (utiliser date locale au lieu de UTC)
-            const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+            // Trouver les activités pour ce jour
+            const dateKey = currentDate.toISOString().split('T')[0];
             const dayActivities = activities.filter(activity => {
-                const activityDate = new Date(activity.start_date);
-                const activityDateKey = `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}`;
-                return activityDateKey === dateKey;
+                const activityDate = new Date(activity.start_date).toISOString().split('T')[0];
+                return activityDate === dateKey;
             });
 
             // Calculer les totaux de la semaine
             dayActivities.forEach(activity => {
                 weekTotalDistance += activity.distance || 0;
                 weekTotalTime += activity.moving_time || 0;
-
-                // Pour l'allure, uniquement Run & Trail
-                if (activity.sport_type === 'Run' || activity.sport_type === 'Trail') {
-                    weekRunTrailDistance += activity.distance || 0;
-                    weekRunTrailTime += activity.moving_time || 0;
-                }
             });
 
             // Créer des tags pour chaque sport unique du jour
@@ -2137,8 +2069,8 @@ async function generateCalendar(date) {
         const timeFormatted = weekTotalTime > 0 ? `${hours}h${minutes > 0 ? minutes.toString().padStart(2, '0') : ''}` : '-';
         const distanceFormatted = weekTotalDistance > 0 ? `${weekTotalDistance.toFixed(1)} km` : '-';
 
-        // Calculer l'allure moyenne pondérée UNIQUEMENT pour Run & Trail (moving_time est en minutes, distance en km)
-        const weekAveragePace = weekRunTrailDistance > 0 ? weekRunTrailTime / weekRunTrailDistance : 0;
+        // Calculer l'allure moyenne pondérée (moving_time est en minutes, distance en km)
+        const weekAveragePace = weekTotalDistance > 0 ? weekTotalTime / weekTotalDistance : 0;
         const paceMinutes = Math.floor(weekAveragePace);
         const paceSeconds = Math.round((weekAveragePace - paceMinutes) * 60);
         const paceFormatted = weekAveragePace > 0 ? `${paceMinutes}:${paceSeconds.toString().padStart(2, '0')} min/km` : '-';
@@ -2358,448 +2290,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updateNavigation();
 });
-
-// ============================================
-// ACTIVITY DETAIL PAGE
-// ============================================
-
-let detailMap = null;
-let detailCharts = {};
-
-async function showActivityDetail(activityId) {
-    showPage('activityDetailPage');
-
-    const headers = getAuthHeaders();
-    if (!headers) {
-        console.error('Pas d authentification');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE}/activities/activity_detail/${activityId}`, { headers });
-        if (!response.ok) {
-            throw new Error('Erreur lors du chargement des details');
-        }
-
-        const data = await response.json();
-        if (data.error) {
-            console.error(data.error);
-            return;
-        }
-
-        displayActivityDetail(data.activity, data.streams);
-    } catch (error) {
-        console.error('Erreur chargement details activite:', error);
-    }
-}
-
-function displayActivityDetail(activity, streams) {
-    document.getElementById('detailActivityName').textContent = activity.name || 'Activite sans titre';
-
-    const date = new Date(activity.start_date);
-    const formattedDate = `${date.getDate()} ${date.toLocaleDateString('fr-FR', { month: 'long' })} ${date.getFullYear()} a ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-    document.getElementById('detailActivityDate').textContent = formattedDate;
-
-    const typeEl = document.getElementById('detailActivityType');
-    typeEl.textContent = activity.sport_type;
-    const sportColors = {
-        'Run': '#E8832A',
-        'Trail': '#E8832A',
-        'Bike': '#3DB2E0',
-        'Swim': '#6DAA75',
-        'Hike': '#6DAA75',
-        'WeightTraining': '#3A3F47'
-    };
-    typeEl.style.backgroundColor = `${sportColors[activity.sport_type] || '#E8832A'}22`;
-    typeEl.style.color = sportColors[activity.sport_type] || '#E8832A';
-
-    document.getElementById('detailDistance').textContent = `${(activity.distance || 0).toFixed(2)} km`;
-    document.getElementById('detailDuration').textContent = activity.moving_time_hms || '--';
-    document.getElementById('detailPace').textContent = activity.speed_minutes_per_km_hms ? `${activity.speed_minutes_per_km_hms} /km` : '--';
-    document.getElementById('detailElevation').textContent = activity.total_elevation_gain ? `${Math.round(activity.total_elevation_gain)} m` : '--';
-    document.getElementById('detailHeartrate').textContent = activity.average_heartrate ? `${Math.round(activity.average_heartrate)} bpm` : '--';
-    document.getElementById('detailCadence').textContent = activity.average_cadence ? `${Math.round(activity.average_cadence)} spm` : '--';
-
-    if (streams && streams.length > 0) {
-        displayDetailMap(streams);
-        displayDetailElevationChart(streams);
-        displayDetailHeartrateChart(streams);
-        displayDetailPaceChart(streams);
-        displayDetailCadenceChart(streams);
-        displayDetailGradeChart(streams);
-
-        const hasPower = streams.some(s => s.power !== null && s.power !== undefined);
-        const hasTemp = streams.some(s => s.temp !== null && s.temp !== undefined);
-
-        if (hasPower) {
-            document.getElementById('detailPowerCard').style.display = 'block';
-            displayDetailPowerChart(streams);
-        }
-
-        if (hasTemp) {
-            document.getElementById('detailTempCard').style.display = 'block';
-            displayDetailTempChart(streams);
-        }
-    }
-}
-
-function displayDetailMap(streams) {
-    const mapContainer = document.getElementById('detailMap');
-
-    if (detailMap) {
-        detailMap.remove();
-    }
-
-    const coords = streams.filter(s => s.lat && s.lon).map(s => [s.lat, s.lon]);
-
-    if (coords.length === 0) {
-        mapContainer.innerHTML = '<p style="text-align: center; color: var(--color-steel);">Pas de donnees GPS disponibles</p>';
-        return;
-    }
-
-    detailMap = L.map('detailMap').fitBounds(coords);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(detailMap);
-
-    L.polyline(coords, {
-        color: COLORS.amber,
-        weight: 3,
-        opacity: 0.8
-    }).addTo(detailMap);
-
-    L.circleMarker(coords[0], {
-        radius: 8,
-        fillColor: COLORS.moss,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.9
-    }).addTo(detailMap).bindPopup('Depart');
-
-    L.circleMarker(coords[coords.length - 1], {
-        radius: 8,
-        fillColor: COLORS.glacier,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.9
-    }).addTo(detailMap).bindPopup('Arrivee');
-}
-
-function displayDetailElevationChart(streams) {
-    const ctx = document.getElementById('detailElevationChart');
-    if (!ctx) return;
-
-    if (detailCharts.elevation) {
-        detailCharts.elevation.destroy();
-    }
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const altitudes = streams.map(s => s.altitude || 0);
-
-    detailCharts.elevation = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                label: 'Altitude (m)',
-                data: altitudes,
-                borderColor: COLORS.glacier,
-                backgroundColor: `${COLORS.glacier}33`,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 3,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Distance (km)' },
-                    ticks: { maxTicksLimit: 10 }
-                },
-                y: {
-                    title: { display: true, text: 'Altitude (m)' }
-                }
-            }
-        }
-    });
-}
-
-function displayDetailHeartrateChart(streams) {
-    const ctx = document.getElementById('detailHeartrateChart');
-    if (!ctx) return;
-
-    if (detailCharts.heartrate) {
-        detailCharts.heartrate.destroy();
-    }
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const heartrates = streams.map(s => s.heartrate || null);
-
-    const hasData = heartrates.some(hr => hr !== null);
-    if (!hasData) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de frequence cardiaque</p>';
-        return;
-    }
-
-    const validHR = heartrates.filter(hr => hr !== null);
-    const avgHR = (validHR.reduce((a, b) => a + b, 0) / validHR.length).toFixed(0);
-    const maxHR = Math.max(...validHR);
-    const minHR = Math.min(...validHR);
-
-    document.getElementById('heartrateStats').innerHTML = `
-        <span>Moy: <strong>${avgHR} bpm</strong></span>
-        <span>Min: <strong>${minHR} bpm</strong></span>
-        <span>Max: <strong>${maxHR} bpm</strong></span>
-    `;
-
-    detailCharts.heartrate = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                label: 'Frequence cardiaque (bpm)',
-                data: heartrates,
-                borderColor: '#ff4757',
-                backgroundColor: '#ff475722',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Distance (km)' },
-                    ticks: { maxTicksLimit: 10 }
-                },
-                y: { title: { display: true, text: 'BPM' } }
-            }
-        }
-    });
-}
-
-function displayDetailPaceChart(streams) {
-    const ctx = document.getElementById('detailPaceChart');
-    if (!ctx) return;
-
-    if (detailCharts.pace) {
-        detailCharts.pace.destroy();
-    }
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const paces = streams.map(s => {
-        if (!s.velocity_smooth || s.velocity_smooth === 0) return null;
-        const kmh = s.velocity_smooth * 3.6;
-        return 60 / kmh;
-    });
-
-    const hasData = paces.some(p => p !== null);
-    if (!hasData) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees d allure</p>';
-        return;
-    }
-
-    const validPaces = paces.filter(p => p !== null && p < 20);
-    const avgPace = validPaces.reduce((a, b) => a + b, 0) / validPaces.length;
-
-    const formatPace = (pace) => {
-        const min = Math.floor(pace);
-        const sec = Math.round((pace - min) * 60);
-        return `${min}:${sec.toString().padStart(2, '0')}`;
-    };
-
-    document.getElementById('paceStats').innerHTML = `
-        <span>Moy: <strong>${formatPace(avgPace)} /km</strong></span>
-    `;
-
-    detailCharts.pace = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                label: 'Allure (min/km)',
-                data: paces,
-                borderColor: COLORS.amber,
-                backgroundColor: `${COLORS.amber}33`,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Distance (km)' },
-                    ticks: { maxTicksLimit: 10 }
-                },
-                y: {
-                    title: { display: true, text: 'Allure (min/km)' },
-                    reverse: true
-                }
-            }
-        }
-    });
-}
-
-function displayDetailCadenceChart(streams) {
-    const ctx = document.getElementById('detailCadenceChart');
-    if (!ctx) return;
-
-    if (detailCharts.cadence) detailCharts.cadence.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const cadences = streams.map(s => s.cadence || null);
-
-    if (!cadences.some(c => c !== null)) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de cadence</p>';
-        return;
-    }
-
-    detailCharts.cadence = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: cadences,
-                borderColor: COLORS.moss,
-                backgroundColor: `${COLORS.moss}33`,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function displayDetailGradeChart(streams) {
-    const ctx = document.getElementById('detailGradeChart');
-    if (!ctx) return;
-
-    if (detailCharts.grade) detailCharts.grade.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const grades = streams.map(s => s.grade_smooth || null);
-
-    if (!grades.some(g => g !== null)) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de pente</p>';
-        return;
-    }
-
-    detailCharts.grade = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: grades,
-                borderColor: COLORS.glacier,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function displayDetailPowerChart(streams) {
-    const ctx = document.getElementById('detailPowerChart');
-    if (!ctx) return;
-
-    if (detailCharts.power) detailCharts.power.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const power = streams.map(s => s.power || null);
-
-    detailCharts.power = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: power,
-                borderColor: '#ffa502',
-                backgroundColor: '#ffa50233',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function displayDetailTempChart(streams) {
-    const ctx = document.getElementById('detailTempChart');
-    if (!ctx) return;
-
-    if (detailCharts.temp) detailCharts.temp.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const temps = streams.map(s => s.temp || null);
-
-    detailCharts.temp = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: temps,
-                borderColor: '#ff6348',
-                backgroundColor: '#ff634833',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function backToActivities() {
-    Object.values(detailCharts).forEach(chart => {
-        if (chart) chart.destroy();
-    });
-    detailCharts = {};
-
-    if (detailMap) {
-        detailMap.remove();
-        detailMap = null;
-    }
-
-    showPage('activitiesPage');
-}
