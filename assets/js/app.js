@@ -214,9 +214,10 @@ async function loadAnalytics() {
     await loadRepartition();
     await loadWeeklyPace();
     loadGoals();
-    await updateGoalsProgress();
     await updateMonthlySummary();
+    await updateWeeklySummaryData();
     await loadStreak();
+    await loadRecords();
 }
 
 async function loadKPIs() {
@@ -510,7 +511,7 @@ function initializeInteractiveMap(coords, activityId) {
     }
 
     polylineInteractive = L.polyline(coords, {
-        color: COLORS.amber,
+        color: '#2563EB',
         weight: 4,
         opacity: 0.9,
         lineJoin: 'round'
@@ -838,9 +839,8 @@ async function loadDailyHours() {
             displayDailyHours(data);
             updateWeekLabel(data);
 
-            // Mettre à jour les cartes "Cette Semaine" et "Ce Mois" si on est sur la semaine courante
+            // Mettre à jour la carte "Ce Mois" si on est sur la semaine courante
             if (currentWeekOffset === 0) {
-                await updateGoalsProgress();
                 await updateMonthlySummary();
             }
         } else {
@@ -1552,9 +1552,8 @@ function loadGoals() {
     if (goalBikeEl) goalBikeEl.value = goals.bike || '';
     if (goalSwimEl) goalSwimEl.value = goals.swim || '';
 
-    // Afficher la semaine courante et mettre à jour la progression
+    // Afficher la semaine courante
     displayCurrentWeek();
-    updateGoalsProgress();
 }
 
 function changeGoalsWeek(direction) {
@@ -1567,7 +1566,6 @@ function changeGoalsWeek(direction) {
 
     goalsWeekOffset = newOffset;
     displayCurrentWeek();
-    updateGoalsProgress();
 
     // Mettre à jour l'état du bouton "suivant"
     const nextWeekBtn = document.getElementById('nextWeekBtn');
@@ -1614,159 +1612,6 @@ function saveGoals() {
     };
 
     localStorage.setItem('weekly_goals', JSON.stringify(goals));
-    updateGoalsProgress();
-}
-
-async function updateGoalsProgress() {
-    const headers = getAuthHeaders();
-    if (!headers) return;
-
-    try {
-        // Calculer les dates de la semaine courante + offset (lundi à dimanche)
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-
-        const monday = new Date(today);
-        monday.setDate(today.getDate() + diffToMonday + (goalsWeekOffset * 7));
-        monday.setHours(0, 0, 0, 0); // Début du lundi à 00:00:00
-
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-        sunday.setHours(23, 59, 59, 999); // Fin du dimanche à 23:59:59
-
-        console.log('Période des objectifs:', {
-            monday: monday.toISOString(),
-            sunday: sunday.toISOString()
-        });
-
-        // Formater les dates pour l'API (YYYY-MM-DD)
-        const formatDateForAPI = (date) => {
-            const year = date.getFullYear();
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-
-        const startDate = formatDateForAPI(monday);
-        const endDate = formatDateForAPI(sunday);
-
-        // Récupérer TOUTES les activités de la semaine (sans filtrer par sport)
-        const response = await fetch(`${API_BASE}/activities/filter_activities?start_date=${startDate}&end_date=${endDate}`, { headers });
-
-        if (!response.ok) {
-            console.warn('Erreur API:', response.status, response.statusText);
-            return;
-        }
-
-        const allActivitiesData = await response.json();
-
-        // Normaliser les données (gérer différents formats de réponse API)
-        const normalizeData = (data) => {
-            if (Array.isArray(data)) return data;
-            if (data?.activities && Array.isArray(data.activities)) return data.activities;
-            return [];
-        };
-
-        const allActivities = normalizeData(allActivitiesData);
-
-        // Filtrer par type de sport
-        const runActivities = allActivities.filter(a => a.sport_type === 'Run');
-        const trailActivities = allActivities.filter(a => a.sport_type === 'Trail');
-        const bikeActivities = allActivities.filter(a => a.sport_type === 'Bike');
-        const swimActivities = allActivities.filter(a => a.sport_type === 'Swim');
-
-        console.log('Activités de la semaine:', {
-            total: allActivities.length,
-            run: runActivities.length,
-            trail: trailActivities.length,
-            bike: bikeActivities.length,
-            swim: swimActivities.length
-        });
-
-        const goals = JSON.parse(localStorage.getItem('weekly_goals') || '{}');
-
-        console.log('Activités filtrées:', {
-            run: runActivities.length,
-            trail: trailActivities.length,
-            bike: bikeActivities.length,
-            swim: swimActivities.length
-        });
-
-        // Log un exemple d'activité pour voir la structure
-        if (runActivities.length > 0) {
-            console.log('Exemple activité Run:', runActivities[0]);
-        } else if (trailActivities.length > 0) {
-            console.log('Exemple activité Trail:', trailActivities[0]);
-        }
-
-        // Calculer les distances totales pour chaque sport
-        // Essayer différents noms de colonnes possibles
-        const getDistance = (activity) => {
-            return activity.distance_km || activity.distance || 0;
-        };
-
-        const runTrailKm = [...runActivities, ...trailActivities].reduce((total, activity) => total + getDistance(activity), 0);
-        const bikeKm = bikeActivities.reduce((total, activity) => total + getDistance(activity), 0);
-        const swimKm = swimActivities.reduce((total, activity) => total + getDistance(activity), 0);
-
-        console.log('Distances calculées:', { runTrailKm, bikeKm, swimKm });
-        console.log('Objectifs:', goals);
-
-        updateProgressBar('RunTrail', runTrailKm, goals.runTrail || 0);
-        updateProgressBar('Bike', bikeKm, goals.bike || 0);
-        updateProgressBar('Swim', swimKm, goals.swim || 0);
-
-        // Récupérer les données de la semaine précédente pour comparaison
-        const prevMonday = new Date(monday);
-        prevMonday.setDate(monday.getDate() - 7);
-        const prevSunday = new Date(sunday);
-        prevSunday.setDate(sunday.getDate() - 7);
-
-        const prevStartDate = formatDateForAPI(prevMonday);
-        const prevEndDate = formatDateForAPI(prevSunday);
-
-        const prevResponse = await fetch(`${API_BASE}/activities/filter_activities?start_date=${prevStartDate}&end_date=${prevEndDate}`, { headers });
-        let prevActivities = [];
-        if (prevResponse.ok) {
-            const prevData = await prevResponse.json();
-            prevActivities = normalizeData(prevData);
-        }
-
-        // Mettre à jour la card "Cette Semaine" avec TOUTES les activités
-        updateWeeklySummary(allActivities, prevActivities, goals);
-
-    } catch (error) {
-        console.error('Erreur mise à jour progression:', error);
-    }
-}
-
-function updateProgressBar(sport, current, goal) {
-    const progressFill = document.getElementById(`progress${sport}`);
-    const progressText = document.getElementById(`progress${sport}Text`);
-
-    console.log(`updateProgressBar(${sport}):`, { current, goal, progressFill: !!progressFill, progressText: !!progressText });
-
-    if (!progressFill || !progressText) {
-        console.warn(`Éléments non trouvés pour ${sport}`);
-        return;
-    }
-
-    const percentage = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
-
-    progressFill.style.width = `${percentage}%`;
-    progressText.textContent = `${current.toFixed(1)}/${goal} km`;
-
-    // Changer la couleur selon la progression
-    if (percentage >= 100) {
-        progressFill.style.background = '#2ECC71'; // Vert
-    } else if (percentage >= 75) {
-        progressFill.style.background = 'linear-gradient(90deg, #667eea, #764ba2)'; // Gradient normal
-    } else if (percentage >= 50) {
-        progressFill.style.background = '#F39C12'; // Orange
-    } else {
-        progressFill.style.background = '#E74C3C'; // Rouge
-    }
 }
 
 function updateWeeklySummary(allActivities, prevActivities, goals) {
@@ -1823,6 +1668,71 @@ function updateWeeklySummary(allActivities, prevActivities, goals) {
     if (sessionsEl) sessionsEl.textContent = totalSessions;
     if (progressBar) progressBar.style.width = `${percentage}%`;
     if (progressText) progressText.textContent = `${Math.round(percentage)}% de l'objectif hebdomadaire`;
+}
+
+async function updateWeeklySummaryData() {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    try {
+        // Calculer les dates de la semaine courante (lundi à dimanche)
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+        const monday = new Date(today);
+        monday.setDate(today.getDate() + diffToMonday + (goalsWeekOffset * 7));
+        monday.setHours(0, 0, 0, 0);
+
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        sunday.setHours(23, 59, 59, 999);
+
+        const formatDateForAPI = (date) => {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const startDate = formatDateForAPI(monday);
+        const endDate = formatDateForAPI(sunday);
+
+        // Récupérer toutes les activités de la semaine
+        const response = await fetch(`${API_BASE}/activities/filter_activities?start_date=${startDate}&end_date=${endDate}`, { headers });
+        if (!response.ok) return;
+
+        const allActivitiesData = await response.json();
+        const normalizeData = (data) => {
+            if (Array.isArray(data)) return data;
+            if (data?.activities && Array.isArray(data.activities)) return data.activities;
+            return [];
+        };
+
+        const allActivities = normalizeData(allActivitiesData);
+
+        // Récupérer les activités de la semaine précédente
+        const prevMonday = new Date(monday);
+        prevMonday.setDate(monday.getDate() - 7);
+        const prevSunday = new Date(sunday);
+        prevSunday.setDate(sunday.getDate() - 7);
+
+        const prevStartDate = formatDateForAPI(prevMonday);
+        const prevEndDate = formatDateForAPI(prevSunday);
+
+        const prevResponse = await fetch(`${API_BASE}/activities/filter_activities?start_date=${prevStartDate}&end_date=${prevEndDate}`, { headers });
+        let prevActivities = [];
+        if (prevResponse.ok) {
+            const prevData = await prevResponse.json();
+            prevActivities = normalizeData(prevData);
+        }
+
+        const goals = JSON.parse(localStorage.getItem('weekly_goals') || '{}');
+        updateWeeklySummary(allActivities, prevActivities, goals);
+
+    } catch (error) {
+        console.error('Erreur mise à jour card Cette Semaine:', error);
+    }
 }
 
 async function updateMonthlySummary() {
@@ -1973,6 +1883,83 @@ async function loadStreak() {
     } catch (error) {
         console.error('Erreur chargement streak:', error);
     }
+}
+
+async function loadRecords() {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/kpi/records`, { headers });
+        if (!response.ok) {
+            console.error('Erreur chargement records');
+            return;
+        }
+
+        const data = await response.json();
+        displayRecords(data.records);
+
+    } catch (error) {
+        console.error('Erreur chargement records:', error);
+    }
+}
+
+function displayRecords(records) {
+    // Récupérer tous les record-item dans l'ordre
+    const recordItems = document.querySelectorAll('.record-item');
+
+    recordItems.forEach((item) => {
+        const distanceText = item.querySelector('.record-distance').textContent.trim();
+
+        // Trouver la clé correspondante
+        let recordKey = null;
+        if (distanceText === '5 km') recordKey = '5k';
+        else if (distanceText === '10 km') recordKey = '10k';
+        else if (distanceText === 'Semi') recordKey = 'semi';
+        else if (distanceText === '30 km') recordKey = '30k';
+        else if (distanceText === 'Marathon') recordKey = 'marathon';
+
+        if (!recordKey) return;
+
+        const record = records[recordKey];
+        const timeEl = item.querySelector('.record-time');
+        const paceEl = item.querySelector('.record-pace');
+
+        if (record && record.time) {
+            // Mettre à jour les données
+            timeEl.textContent = record.time;
+            paceEl.textContent = `${record.pace} min/km`;
+
+            // Rendre l'item cliquable vers Strava
+            item.style.cursor = 'pointer';
+            item.style.transition = 'all 0.3s ease';
+
+            item.onclick = () => {
+                window.open(record.activity_url, '_blank', 'noopener,noreferrer');
+            };
+
+            item.onmouseenter = () => {
+                item.style.backgroundColor = 'rgba(232, 131, 42, 0.1)';
+                item.style.transform = 'translateX(5px)';
+            };
+
+            item.onmouseleave = () => {
+                item.style.backgroundColor = 'transparent';
+                item.style.transform = 'translateX(0)';
+            };
+
+            // Ajouter un tooltip avec les infos
+            item.title = `${record.activity_name}\nDate: ${record.date}\nSegment: ${record.start_km}km → ${record.end_km}km\nCliquez pour voir sur Strava`;
+
+        } else {
+            // Pas de record disponible
+            timeEl.textContent = '--:--';
+            paceEl.textContent = '-- min/km';
+            item.style.cursor = 'default';
+            item.onclick = null;
+            item.title = 'Aucun record pour cette distance';
+        }
+    });
 }
 
 // -----------------------------
@@ -2252,69 +2239,87 @@ function displayActivities() {
         const sportColor = sportColors[activity.sport_type] || sportColors['Run'];
 
         return `
-            <div class="activity-card" style="--color: ${sportColor.color}; cursor: pointer;" onclick="showActivityDetail(${activity.id})">
-                <div class="activity-card-header">
-                    <div>
-                        <h5 class="activity-card-title">${activity.name || 'Activité sans titre'}</h5>
-                        <div class="activity-card-date">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M8 2v4"></path>
-                                <path d="M16 2v4"></path>
-                                <rect width="18" height="18" x="3" y="4" rx="2"></rect>
-                                <path d="M3 10h18"></path>
-                            </svg>
-                            <span>${formattedDate}</span>
+            <div class="activity-card" style="--color: ${sportColor.color};">
+                <div onclick="showActivityDetail(${activity.id})" style="cursor: pointer;">
+                    <div class="activity-card-header">
+                        <div>
+                            <h5 class="activity-card-title">${activity.name || 'Activité sans titre'}</h5>
+                            <div class="activity-card-date">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M8 2v4"></path>
+                                    <path d="M16 2v4"></path>
+                                    <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+                                    <path d="M3 10h18"></path>
+                                </svg>
+                                <span>${formattedDate}</span>
+                            </div>
+                        </div>
+                        <div class="activity-card-badge" style="background-color: ${sportColor.bg}; color: ${sportColor.color};">
+                            ${activity.sport_type}
                         </div>
                     </div>
-                    <div class="activity-card-badge" style="background-color: ${sportColor.bg}; color: ${sportColor.color};">
-                        ${activity.sport_type}
+                    <div class="activity-card-stats">
+                        <div class="activity-card-stat">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.amber}" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <div>
+                                <p class="activity-card-stat-value" style="color: ${COLORS.amber};">${(activity.distance || 0).toFixed(1)} km</p>
+                                <p class="activity-card-stat-label">Distance</p>
+                            </div>
+                        </div>
+                        <div class="activity-card-stat">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.glacier}" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v6l4 2"></path>
+                            </svg>
+                            <div>
+                                <p class="activity-card-stat-value" style="color: ${COLORS.glacier};">${activity.moving_time_hms || '-'}</p>
+                                <p class="activity-card-stat-label">Durée</p>
+                            </div>
+                        </div>
+                        ${activity.sport_type !== 'WeightTraining' && activity.speed_minutes_per_km_hms ? `
+                        <div class="activity-card-stat">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.amber}" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="m12 14 4-4"></path>
+                                <path d="M3.34 19a10 10 0 1 1 17.32 0"></path>
+                            </svg>
+                            <div>
+                                <p class="activity-card-stat-value" style="color: ${COLORS.amber};">${activity.speed_minutes_per_km_hms} /km</p>
+                                <p class="activity-card-stat-label">Allure</p>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${activity.total_elevation_gain ? `
+                        <div class="activity-card-stat">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.glacier}" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <div>
+                                <p class="activity-card-stat-value" style="color: ${COLORS.glacier};">${Math.round(activity.total_elevation_gain)} m</p>
+                                <p class="activity-card-stat-label">D+</p>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
-                <div class="activity-card-stats">
-                    <div class="activity-card-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.amber}" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
+                <div class="activity-card-actions">
+                    <button class="btn-icon btn-edit" onclick="event.stopPropagation(); openActivityModal(${activity.id})">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
-                        <div>
-                            <p class="activity-card-stat-value" style="color: ${COLORS.amber};">${(activity.distance || 0).toFixed(1)} km</p>
-                            <p class="activity-card-stat-label">Distance</p>
-                        </div>
-                    </div>
-                    <div class="activity-card-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.glacier}" stroke-width="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M12 6v6l4 2"></path>
+                        Modifier
+                    </button>
+                    <button class="btn-icon btn-delete" onclick="event.stopPropagation(); deleteActivity(${activity.id}, '${activity.name?.replace(/'/g, "\\'")}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
-                        <div>
-                            <p class="activity-card-stat-value" style="color: ${COLORS.glacier};">${activity.moving_time_hms || '-'}</p>
-                            <p class="activity-card-stat-label">Durée</p>
-                        </div>
-                    </div>
-                    ${activity.sport_type !== 'WeightTraining' && activity.speed_minutes_per_km_hms ? `
-                    <div class="activity-card-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.amber}" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="m12 14 4-4"></path>
-                            <path d="M3.34 19a10 10 0 1 1 17.32 0"></path>
-                        </svg>
-                        <div>
-                            <p class="activity-card-stat-value" style="color: ${COLORS.amber};">${activity.speed_minutes_per_km_hms} /km</p>
-                            <p class="activity-card-stat-label">Allure</p>
-                        </div>
-                    </div>
-                    ` : ''}
-                    ${activity.total_elevation_gain ? `
-                    <div class="activity-card-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="${COLORS.glacier}" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <div>
-                            <p class="activity-card-stat-value" style="color: ${COLORS.glacier};">${Math.round(activity.total_elevation_gain)} m</p>
-                            <p class="activity-card-stat-label">D+</p>
-                        </div>
-                    </div>
-                    ` : ''}
+                        Supprimer
+                    </button>
                 </div>
             </div>
         `;
@@ -2358,448 +2363,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updateNavigation();
 });
-
-// ============================================
-// ACTIVITY DETAIL PAGE
-// ============================================
-
-let detailMap = null;
-let detailCharts = {};
-
-async function showActivityDetail(activityId) {
-    showPage('activityDetailPage');
-
-    const headers = getAuthHeaders();
-    if (!headers) {
-        console.error('Pas d authentification');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE}/activities/activity_detail/${activityId}`, { headers });
-        if (!response.ok) {
-            throw new Error('Erreur lors du chargement des details');
-        }
-
-        const data = await response.json();
-        if (data.error) {
-            console.error(data.error);
-            return;
-        }
-
-        displayActivityDetail(data.activity, data.streams);
-    } catch (error) {
-        console.error('Erreur chargement details activite:', error);
-    }
-}
-
-function displayActivityDetail(activity, streams) {
-    document.getElementById('detailActivityName').textContent = activity.name || 'Activite sans titre';
-
-    const date = new Date(activity.start_date);
-    const formattedDate = `${date.getDate()} ${date.toLocaleDateString('fr-FR', { month: 'long' })} ${date.getFullYear()} a ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-    document.getElementById('detailActivityDate').textContent = formattedDate;
-
-    const typeEl = document.getElementById('detailActivityType');
-    typeEl.textContent = activity.sport_type;
-    const sportColors = {
-        'Run': '#E8832A',
-        'Trail': '#E8832A',
-        'Bike': '#3DB2E0',
-        'Swim': '#6DAA75',
-        'Hike': '#6DAA75',
-        'WeightTraining': '#3A3F47'
-    };
-    typeEl.style.backgroundColor = `${sportColors[activity.sport_type] || '#E8832A'}22`;
-    typeEl.style.color = sportColors[activity.sport_type] || '#E8832A';
-
-    document.getElementById('detailDistance').textContent = `${(activity.distance || 0).toFixed(2)} km`;
-    document.getElementById('detailDuration').textContent = activity.moving_time_hms || '--';
-    document.getElementById('detailPace').textContent = activity.speed_minutes_per_km_hms ? `${activity.speed_minutes_per_km_hms} /km` : '--';
-    document.getElementById('detailElevation').textContent = activity.total_elevation_gain ? `${Math.round(activity.total_elevation_gain)} m` : '--';
-    document.getElementById('detailHeartrate').textContent = activity.average_heartrate ? `${Math.round(activity.average_heartrate)} bpm` : '--';
-    document.getElementById('detailCadence').textContent = activity.average_cadence ? `${Math.round(activity.average_cadence)} spm` : '--';
-
-    if (streams && streams.length > 0) {
-        displayDetailMap(streams);
-        displayDetailElevationChart(streams);
-        displayDetailHeartrateChart(streams);
-        displayDetailPaceChart(streams);
-        displayDetailCadenceChart(streams);
-        displayDetailGradeChart(streams);
-
-        const hasPower = streams.some(s => s.power !== null && s.power !== undefined);
-        const hasTemp = streams.some(s => s.temp !== null && s.temp !== undefined);
-
-        if (hasPower) {
-            document.getElementById('detailPowerCard').style.display = 'block';
-            displayDetailPowerChart(streams);
-        }
-
-        if (hasTemp) {
-            document.getElementById('detailTempCard').style.display = 'block';
-            displayDetailTempChart(streams);
-        }
-    }
-}
-
-function displayDetailMap(streams) {
-    const mapContainer = document.getElementById('detailMap');
-
-    if (detailMap) {
-        detailMap.remove();
-    }
-
-    const coords = streams.filter(s => s.lat && s.lon).map(s => [s.lat, s.lon]);
-
-    if (coords.length === 0) {
-        mapContainer.innerHTML = '<p style="text-align: center; color: var(--color-steel);">Pas de donnees GPS disponibles</p>';
-        return;
-    }
-
-    detailMap = L.map('detailMap').fitBounds(coords);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(detailMap);
-
-    L.polyline(coords, {
-        color: COLORS.amber,
-        weight: 3,
-        opacity: 0.8
-    }).addTo(detailMap);
-
-    L.circleMarker(coords[0], {
-        radius: 8,
-        fillColor: COLORS.moss,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.9
-    }).addTo(detailMap).bindPopup('Depart');
-
-    L.circleMarker(coords[coords.length - 1], {
-        radius: 8,
-        fillColor: COLORS.glacier,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.9
-    }).addTo(detailMap).bindPopup('Arrivee');
-}
-
-function displayDetailElevationChart(streams) {
-    const ctx = document.getElementById('detailElevationChart');
-    if (!ctx) return;
-
-    if (detailCharts.elevation) {
-        detailCharts.elevation.destroy();
-    }
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const altitudes = streams.map(s => s.altitude || 0);
-
-    detailCharts.elevation = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                label: 'Altitude (m)',
-                data: altitudes,
-                borderColor: COLORS.glacier,
-                backgroundColor: `${COLORS.glacier}33`,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 3,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Distance (km)' },
-                    ticks: { maxTicksLimit: 10 }
-                },
-                y: {
-                    title: { display: true, text: 'Altitude (m)' }
-                }
-            }
-        }
-    });
-}
-
-function displayDetailHeartrateChart(streams) {
-    const ctx = document.getElementById('detailHeartrateChart');
-    if (!ctx) return;
-
-    if (detailCharts.heartrate) {
-        detailCharts.heartrate.destroy();
-    }
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const heartrates = streams.map(s => s.heartrate || null);
-
-    const hasData = heartrates.some(hr => hr !== null);
-    if (!hasData) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de frequence cardiaque</p>';
-        return;
-    }
-
-    const validHR = heartrates.filter(hr => hr !== null);
-    const avgHR = (validHR.reduce((a, b) => a + b, 0) / validHR.length).toFixed(0);
-    const maxHR = Math.max(...validHR);
-    const minHR = Math.min(...validHR);
-
-    document.getElementById('heartrateStats').innerHTML = `
-        <span>Moy: <strong>${avgHR} bpm</strong></span>
-        <span>Min: <strong>${minHR} bpm</strong></span>
-        <span>Max: <strong>${maxHR} bpm</strong></span>
-    `;
-
-    detailCharts.heartrate = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                label: 'Frequence cardiaque (bpm)',
-                data: heartrates,
-                borderColor: '#ff4757',
-                backgroundColor: '#ff475722',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Distance (km)' },
-                    ticks: { maxTicksLimit: 10 }
-                },
-                y: { title: { display: true, text: 'BPM' } }
-            }
-        }
-    });
-}
-
-function displayDetailPaceChart(streams) {
-    const ctx = document.getElementById('detailPaceChart');
-    if (!ctx) return;
-
-    if (detailCharts.pace) {
-        detailCharts.pace.destroy();
-    }
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const paces = streams.map(s => {
-        if (!s.velocity_smooth || s.velocity_smooth === 0) return null;
-        const kmh = s.velocity_smooth * 3.6;
-        return 60 / kmh;
-    });
-
-    const hasData = paces.some(p => p !== null);
-    if (!hasData) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees d allure</p>';
-        return;
-    }
-
-    const validPaces = paces.filter(p => p !== null && p < 20);
-    const avgPace = validPaces.reduce((a, b) => a + b, 0) / validPaces.length;
-
-    const formatPace = (pace) => {
-        const min = Math.floor(pace);
-        const sec = Math.round((pace - min) * 60);
-        return `${min}:${sec.toString().padStart(2, '0')}`;
-    };
-
-    document.getElementById('paceStats').innerHTML = `
-        <span>Moy: <strong>${formatPace(avgPace)} /km</strong></span>
-    `;
-
-    detailCharts.pace = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                label: 'Allure (min/km)',
-                data: paces,
-                borderColor: COLORS.amber,
-                backgroundColor: `${COLORS.amber}33`,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Distance (km)' },
-                    ticks: { maxTicksLimit: 10 }
-                },
-                y: {
-                    title: { display: true, text: 'Allure (min/km)' },
-                    reverse: true
-                }
-            }
-        }
-    });
-}
-
-function displayDetailCadenceChart(streams) {
-    const ctx = document.getElementById('detailCadenceChart');
-    if (!ctx) return;
-
-    if (detailCharts.cadence) detailCharts.cadence.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const cadences = streams.map(s => s.cadence || null);
-
-    if (!cadences.some(c => c !== null)) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de cadence</p>';
-        return;
-    }
-
-    detailCharts.cadence = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: cadences,
-                borderColor: COLORS.moss,
-                backgroundColor: `${COLORS.moss}33`,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function displayDetailGradeChart(streams) {
-    const ctx = document.getElementById('detailGradeChart');
-    if (!ctx) return;
-
-    if (detailCharts.grade) detailCharts.grade.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const grades = streams.map(s => s.grade_smooth || null);
-
-    if (!grades.some(g => g !== null)) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de pente</p>';
-        return;
-    }
-
-    detailCharts.grade = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: grades,
-                borderColor: COLORS.glacier,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function displayDetailPowerChart(streams) {
-    const ctx = document.getElementById('detailPowerChart');
-    if (!ctx) return;
-
-    if (detailCharts.power) detailCharts.power.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const power = streams.map(s => s.power || null);
-
-    detailCharts.power = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: power,
-                borderColor: '#ffa502',
-                backgroundColor: '#ffa50233',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function displayDetailTempChart(streams) {
-    const ctx = document.getElementById('detailTempChart');
-    if (!ctx) return;
-
-    if (detailCharts.temp) detailCharts.temp.destroy();
-
-    const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
-    const temps = streams.map(s => s.temp || null);
-
-    detailCharts.temp = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: distances,
-            datasets: [{
-                data: temps,
-                borderColor: '#ff6348',
-                backgroundColor: '#ff634833',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            aspectRatio: 2.5,
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function backToActivities() {
-    Object.values(detailCharts).forEach(chart => {
-        if (chart) chart.destroy();
-    });
-    detailCharts = {};
-
-    if (detailMap) {
-        detailMap.remove();
-        detailMap = null;
-    }
-
-    showPage('activitiesPage');
-}

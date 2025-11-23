@@ -5,19 +5,50 @@
 let detailMap = null;
 let detailCharts = {};
 
+// Fonction utilitaire pour générer des ticks d'abscisse en kilomètres ronds
+function generateRoundKmTicks(maxDistance) {
+    const distance = parseFloat(maxDistance);
+    let step;
+
+    // Déterminer le pas en fonction de la distance totale
+    if (distance <= 5) {
+        step = 0.5; // Tous les 500m pour courtes distances
+    } else if (distance <= 10) {
+        step = 1;   // Tous les 1 km
+    } else if (distance <= 25) {
+        step = 2;   // Tous les 2 km
+    } else if (distance <= 50) {
+        step = 5;   // Tous les 5 km
+    } else {
+        step = 10;  // Tous les 10 km pour très longues distances
+    }
+
+    const ticks = [];
+    for (let km = 0; km <= distance; km += step) {
+        ticks.push(km.toFixed(step < 1 ? 1 : 0));
+    }
+    // Ajouter la distance finale si elle n'est pas déjà incluse
+    if (!ticks.includes(distance.toFixed(step < 1 ? 1 : 0))) {
+        ticks.push(distance.toFixed(2));
+    }
+
+    return ticks;
+}
+
+// Fonction pour afficher la page de détails d'une activité
 async function showActivityDetail(activityId) {
     showPage('activityDetailPage');
 
     const headers = getAuthHeaders();
     if (!headers) {
-        console.error('Pas d authentification');
+        console.error('Pas d'authentification');
         return;
     }
 
     try {
         const response = await fetch(`${API_BASE}/activities/activity_detail/${activityId}`, { headers });
         if (!response.ok) {
-            throw new Error('Erreur lors du chargement des details');
+            throw new Error('Erreur lors du chargement des détails');
         }
 
         const data = await response.json();
@@ -27,19 +58,18 @@ async function showActivityDetail(activityId) {
         }
 
         displayActivityDetail(data.activity, data.streams);
-
-        // Charger l'analyse avancée HR-Speed correlation
-        await loadHrSpeedCorrelation(activityId);
     } catch (error) {
-        console.error('Erreur chargement details activite:', error);
+        console.error('Erreur chargement détails activité:', error);
     }
 }
 
+// Afficher les détails de l'activité
 function displayActivityDetail(activity, streams) {
-    document.getElementById('detailActivityName').textContent = activity.name || 'Activite sans titre';
+    // Titre et métadonnées
+    document.getElementById('detailActivityName').textContent = activity.name || 'Activité sans titre';
 
     const date = new Date(activity.start_date);
-    const formattedDate = `${date.getDate()} ${date.toLocaleDateString('fr-FR', { month: 'long' })} ${date.getFullYear()} a ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+    const formattedDate = `${date.getDate()} ${date.toLocaleDateString('fr-FR', { month: 'long' })} ${date.getFullYear()} à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
     document.getElementById('detailActivityDate').textContent = formattedDate;
 
     const typeEl = document.getElementById('detailActivityType');
@@ -55,6 +85,7 @@ function displayActivityDetail(activity, streams) {
     typeEl.style.backgroundColor = `${sportColors[activity.sport_type] || '#E8832A'}22`;
     typeEl.style.color = sportColors[activity.sport_type] || '#E8832A';
 
+    // Stats principales
     document.getElementById('detailDistance').textContent = `${(activity.distance || 0).toFixed(2)} km`;
     document.getElementById('detailDuration').textContent = activity.moving_time_hms || '--';
     document.getElementById('detailPace').textContent = activity.speed_minutes_per_km_hms ? `${activity.speed_minutes_per_km_hms} /km` : '--';
@@ -62,13 +93,15 @@ function displayActivityDetail(activity, streams) {
     document.getElementById('detailHeartrate').textContent = activity.average_heartrate ? `${Math.round(activity.average_heartrate)} bpm` : '--';
     document.getElementById('detailCadence').textContent = activity.average_cadence ? `${Math.round(activity.average_cadence)} spm` : '--';
 
+    // Afficher les graphiques avec les streams
     if (streams && streams.length > 0) {
         displayDetailMap(streams);
         displayDetailElevationChart(streams);
         displayDetailHeartrateChart(streams);
-        displayDetailPaceChart(activity, streams);
+        displayDetailPaceChart(streams, activity);
+        displayDetailGradeChart(streams);
 
-        // Cadence uniquement pour le vélo
+        // Afficher cadence seulement pour le vélo
         if (activity.sport_type === 'Bike') {
             document.getElementById('detailCadenceCard').style.display = 'block';
             displayDetailCadenceChart(streams);
@@ -76,8 +109,7 @@ function displayActivityDetail(activity, streams) {
             document.getElementById('detailCadenceCard').style.display = 'none';
         }
 
-        displayDetailGradeChart(streams);
-
+        // Afficher power et temp seulement s'il y a des données
         const hasPower = streams.some(s => s.power !== null && s.power !== undefined);
         const hasTemp = streams.some(s => s.temp !== null && s.temp !== undefined);
 
@@ -97,39 +129,47 @@ function displayActivityDetail(activity, streams) {
     }
 }
 
+// Carte interactive
 function displayDetailMap(streams) {
     const mapContainer = document.getElementById('detailMap');
 
+    // Nettoyer la carte existante
     if (detailMap) {
         detailMap.remove();
     }
 
-    const coords = streams.filter(s => s.lat && s.lon).map(s => [s.lat, s.lon]);
+    // Filtrer les coordonnées valides
+    const coords = streams
+        .filter(s => s.lat && s.lon)
+        .map(s => [s.lat, s.lon]);
 
     if (coords.length === 0) {
-        mapContainer.innerHTML = '<p style="text-align: center; color: var(--color-steel);">Pas de donnees GPS disponibles</p>';
+        mapContainer.innerHTML = '<p style="text-align: center; color: var(--color-steel);">Pas de données GPS disponibles</p>';
         return;
     }
 
+    // Créer la carte
     detailMap = L.map('detailMap').fitBounds(coords);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(detailMap);
 
+    // Tracer la trace
     L.polyline(coords, {
         color: '#2563EB',
         weight: 3,
         opacity: 0.8
     }).addTo(detailMap);
 
+    // Markers de départ et arrivée
     L.circleMarker(coords[0], {
         radius: 8,
         fillColor: COLORS.moss,
         color: '#fff',
         weight: 2,
         fillOpacity: 0.9
-    }).addTo(detailMap).bindPopup('Depart');
+    }).addTo(detailMap).bindPopup('Départ');
 
     L.circleMarker(coords[coords.length - 1], {
         radius: 8,
@@ -137,19 +177,23 @@ function displayDetailMap(streams) {
         color: '#fff',
         weight: 2,
         fillOpacity: 0.9
-    }).addTo(detailMap).bindPopup('Arrivee');
+    }).addTo(detailMap).bindPopup('Arrivée');
 }
 
+// Profil d'élévation
 function displayDetailElevationChart(streams) {
     const ctx = document.getElementById('detailElevationChart');
     if (!ctx) return;
 
+    // Détruire le graphique existant
     if (detailCharts.elevation) {
         detailCharts.elevation.destroy();
     }
 
     const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
     const altitudes = streams.map(s => s.altitude || 0);
+    const maxDistance = distances[distances.length - 1];
+    const roundTicks = generateRoundKmTicks(maxDistance);
 
     detailCharts.elevation = new Chart(ctx, {
         type: 'line',
@@ -170,12 +214,23 @@ function displayDetailElevationChart(streams) {
             maintainAspectRatio: true,
             aspectRatio: 3,
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `${items[0].label} km`,
+                        label: (item) => `${item.parsed.y.toFixed(0)} m`
+                    }
+                }
             },
             scales: {
                 x: {
                     title: { display: true, text: 'Distance (km)' },
-                    ticks: { maxTicksLimit: 10 }
+                    ticks: {
+                        callback: function(value, index) {
+                            const label = this.getLabelForValue(value);
+                            return roundTicks.includes(label) ? label : '';
+                        }
+                    }
                 },
                 y: {
                     title: { display: true, text: 'Altitude (m)' }
@@ -185,6 +240,7 @@ function displayDetailElevationChart(streams) {
     });
 }
 
+// Fréquence cardiaque
 function displayDetailHeartrateChart(streams) {
     const ctx = document.getElementById('detailHeartrateChart');
     if (!ctx) return;
@@ -196,12 +252,14 @@ function displayDetailHeartrateChart(streams) {
     const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
     const heartrates = streams.map(s => s.heartrate || null);
 
+    // Vérifier s'il y a des données
     const hasData = heartrates.some(hr => hr !== null);
     if (!hasData) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de frequence cardiaque</p>';
+        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de données de fréquence cardiaque</p>';
         return;
     }
 
+    // Calculer les stats
     const validHR = heartrates.filter(hr => hr !== null);
     const avgHR = (validHR.reduce((a, b) => a + b, 0) / validHR.length).toFixed(0);
     const maxHR = Math.max(...validHR);
@@ -218,7 +276,7 @@ function displayDetailHeartrateChart(streams) {
         data: {
             labels: distances,
             datasets: [{
-                label: 'Frequence cardiaque (bpm)',
+                label: 'Fréquence cardiaque (bpm)',
                 data: heartrates,
                 borderColor: '#ff4757',
                 backgroundColor: '#ff475722',
@@ -232,19 +290,30 @@ function displayDetailHeartrateChart(streams) {
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `${items[0].label} km`,
+                        label: (item) => item.parsed.y ? `${item.parsed.y.toFixed(0)} bpm` : 'N/A'
+                    }
+                }
+            },
             scales: {
                 x: {
                     title: { display: true, text: 'Distance (km)' },
                     ticks: { maxTicksLimit: 10 }
                 },
-                y: { title: { display: true, text: 'BPM' } }
+                y: {
+                    title: { display: true, text: 'BPM' }
+                }
             }
         }
     });
 }
 
-function displayDetailPaceChart(activity, streams) {
+// Allure
+function displayDetailPaceChart(streams, activity) {
     const ctx = document.getElementById('detailPaceChart');
     if (!ctx) return;
 
@@ -253,22 +322,70 @@ function displayDetailPaceChart(activity, streams) {
     }
 
     const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
+
+    // Calculer l'allure à partir de velocity_smooth (m/s)
     const paces = streams.map(s => {
         if (!s.velocity_smooth || s.velocity_smooth === 0) return null;
+        // Convertir m/s en min/km
         const kmh = s.velocity_smooth * 3.6;
-        return 60 / kmh;
+        return 60 / kmh; // min/km
     });
 
     const hasData = paces.some(p => p !== null);
     if (!hasData) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees d allure</p>';
+        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de données d\'allure</p>';
         return;
     }
 
-    // Utiliser l'allure moyenne depuis les KPIs de l'activité
+    // Filtrer les outliers de manière plus agressive
+    // 1. Filtrer les valeurs extrêmes (< 2 min/km ou > 15 min/km)
+    let validPaces = paces.filter(p => p !== null && p >= 2 && p <= 15);
+
+    // 2. Calculer la moyenne et l'écart-type pour détecter les outliers
+    const mean = validPaces.reduce((a, b) => a + b, 0) / validPaces.length;
+    const std = Math.sqrt(validPaces.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / validPaces.length);
+
+    // 3. Garder seulement les valeurs dans 3 écart-types (99.7% des données normales)
+    validPaces = validPaces.filter(p => Math.abs(p - mean) <= 3 * std);
+
+    // Utiliser la moyenne de l'activité depuis les KPIs (qui vient du backend)
+    // Convertir depuis le format HH:MM:SS
+    let avgPaceFromKPI = mean; // Valeur par défaut
+    if (activity.speed_minutes_per_km_hms) {
+        const parts = activity.speed_minutes_per_km_hms.split(':');
+        if (parts.length === 2) {
+            avgPaceFromKPI = parseInt(parts[0]) + parseInt(parts[1]) / 60;
+        } else if (parts.length === 3) {
+            avgPaceFromKPI = parseInt(parts[0]) * 60 + parseInt(parts[1]) + parseInt(parts[2]) / 60;
+        }
+    }
+
+    const minPace = Math.min(...validPaces);
+    const maxPace = Math.max(...validPaces);
+
+    const formatPace = (pace) => {
+        const min = Math.floor(pace);
+        const sec = Math.round((pace - min) * 60);
+        return `${min}:${sec.toString().padStart(2, '0')}`;
+    };
+
     document.getElementById('paceStats').innerHTML = `
-        <span>Moy: <strong>${activity.speed_minutes_per_km_hms || '--'} /km</strong></span>
+        <span>Moy: <strong>${formatPace(avgPaceFromKPI)} /km</strong></span>
+        <span>Min: <strong>${formatPace(minPace)} /km</strong></span>
+        <span>Max: <strong>${formatPace(maxPace)} /km</strong></span>
     `;
+
+    // Filtrer les données du graphique pour enlever les outliers
+    const filteredPaces = paces.map(p => {
+        if (p === null) return null;
+        if (p < 2 || p > 15) return null;
+        if (Math.abs(p - mean) > 3 * std) return null;
+        return p;
+    });
+
+    // Calculer les limites dynamiques de l'axe Y
+    const yMin = Math.floor(minPace - 0.5);
+    const yMax = Math.ceil(maxPace + 0.5);
 
     detailCharts.pace = new Chart(ctx, {
         type: 'line',
@@ -276,7 +393,7 @@ function displayDetailPaceChart(activity, streams) {
             labels: distances,
             datasets: [{
                 label: 'Allure (min/km)',
-                data: paces,
+                data: filteredPaces,
                 borderColor: COLORS.amber,
                 backgroundColor: `${COLORS.amber}33`,
                 fill: true,
@@ -287,8 +404,17 @@ function displayDetailPaceChart(activity, streams) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `${items[0].label} km`,
+                        label: (item) => item.parsed.y ? formatPace(item.parsed.y) + ' /km' : 'N/A'
+                    }
+                }
+            },
             scales: {
                 x: {
                     title: { display: true, text: 'Distance (km)' },
@@ -296,32 +422,54 @@ function displayDetailPaceChart(activity, streams) {
                 },
                 y: {
                     title: { display: true, text: 'Allure (min/km)' },
-                    reverse: true
+                    reverse: false, // 0 en bas, valeurs élevées en haut
+                    min: yMin,
+                    max: yMax,
+                    ticks: {
+                        callback: (value) => formatPace(value)
+                    }
                 }
             }
         }
     });
 }
 
+// Cadence
 function displayDetailCadenceChart(streams) {
     const ctx = document.getElementById('detailCadenceChart');
     if (!ctx) return;
 
-    if (detailCharts.cadence) detailCharts.cadence.destroy();
+    if (detailCharts.cadence) {
+        detailCharts.cadence.destroy();
+    }
 
     const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
     const cadences = streams.map(s => s.cadence || null);
 
-    if (!cadences.some(c => c !== null)) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de cadence</p>';
+    const hasData = cadences.some(c => c !== null);
+    if (!hasData) {
+        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de données de cadence</p>';
         return;
     }
+
+    // Stats
+    const validCadence = cadences.filter(c => c !== null);
+    const avgCadence = (validCadence.reduce((a, b) => a + b, 0) / validCadence.length).toFixed(0);
+    const maxCadence = Math.max(...validCadence);
+    const minCadence = Math.min(...validCadence);
+
+    document.getElementById('cadenceStats').innerHTML = `
+        <span>Moy: <strong>${avgCadence} spm</strong></span>
+        <span>Min: <strong>${minCadence} spm</strong></span>
+        <span>Max: <strong>${maxCadence} spm</strong></span>
+    `;
 
     detailCharts.cadence = new Chart(ctx, {
         type: 'line',
         data: {
             labels: distances,
             datasets: [{
+                label: 'Cadence (spm)',
                 data: cadences,
                 borderColor: COLORS.moss,
                 backgroundColor: `${COLORS.moss}33`,
@@ -333,8 +481,17 @@ function displayDetailCadenceChart(streams) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `${items[0].label} km`,
+                        label: (item) => item.parsed.y ? `${item.parsed.y.toFixed(0)} spm` : 'N/A'
+                    }
+                }
+            },
             scales: {
                 x: {
                     title: { display: true, text: 'Distance (km)' },
@@ -348,27 +505,54 @@ function displayDetailCadenceChart(streams) {
     });
 }
 
+// Pente
 function displayDetailGradeChart(streams) {
     const ctx = document.getElementById('detailGradeChart');
     if (!ctx) return;
 
-    if (detailCharts.grade) detailCharts.grade.destroy();
+    if (detailCharts.grade) {
+        detailCharts.grade.destroy();
+    }
 
     const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
     const grades = streams.map(s => s.grade_smooth || null);
 
-    if (!grades.some(g => g !== null)) {
-        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de donnees de pente</p>';
+    const hasData = grades.some(g => g !== null);
+    if (!hasData) {
+        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--color-steel); padding: 2rem;">Pas de données de pente</p>';
         return;
     }
+
+    // Stats
+    const validGrades = grades.filter(g => g !== null);
+    const avgGrade = (validGrades.reduce((a, b) => a + b, 0) / validGrades.length).toFixed(1);
+    const maxGrade = Math.max(...validGrades).toFixed(1);
+    const minGrade = Math.min(...validGrades).toFixed(1);
+
+    document.getElementById('gradeStats').innerHTML = `
+        <span>Moy: <strong>${avgGrade}%</strong></span>
+        <span>Min: <strong>${minGrade}%</strong></span>
+        <span>Max: <strong>${maxGrade}%</strong></span>
+    `;
 
     detailCharts.grade = new Chart(ctx, {
         type: 'line',
         data: {
             labels: distances,
             datasets: [{
+                label: 'Pente (%)',
                 data: grades,
                 borderColor: COLORS.glacier,
+                backgroundColor: (context) => {
+                    const value = context.parsed.y;
+                    return value >= 0 ? `${COLORS.glacier}33` : '#ff475733';
+                },
+                segment: {
+                    borderColor: (context) => {
+                        const value = context.p1.parsed.y;
+                        return value >= 0 ? COLORS.glacier : '#ff4757';
+                    }
+                },
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
@@ -377,8 +561,17 @@ function displayDetailGradeChart(streams) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `${items[0].label} km`,
+                        label: (item) => item.parsed.y !== null ? `${item.parsed.y.toFixed(1)}%` : 'N/A'
+                    }
+                }
+            },
             scales: {
                 x: {
                     title: { display: true, text: 'Distance (km)' },
@@ -392,20 +585,36 @@ function displayDetailGradeChart(streams) {
     });
 }
 
+// Puissance
 function displayDetailPowerChart(streams) {
     const ctx = document.getElementById('detailPowerChart');
     if (!ctx) return;
 
-    if (detailCharts.power) detailCharts.power.destroy();
+    if (detailCharts.power) {
+        detailCharts.power.destroy();
+    }
 
     const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
     const power = streams.map(s => s.power || null);
+
+    // Stats
+    const validPower = power.filter(p => p !== null);
+    if (validPower.length > 0) {
+        const avgPower = (validPower.reduce((a, b) => a + b, 0) / validPower.length).toFixed(0);
+        const maxPower = Math.max(...validPower);
+
+        document.getElementById('powerStats').innerHTML = `
+            <span>Moy: <strong>${avgPower} W</strong></span>
+            <span>Max: <strong>${maxPower} W</strong></span>
+        `;
+    }
 
     detailCharts.power = new Chart(ctx, {
         type: 'line',
         data: {
             labels: distances,
             datasets: [{
+                label: 'Puissance (W)',
                 data: power,
                 borderColor: '#ffa502',
                 backgroundColor: '#ffa50233',
@@ -417,8 +626,17 @@ function displayDetailPowerChart(streams) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `${items[0].label} km`,
+                        label: (item) => item.parsed.y ? `${item.parsed.y.toFixed(0)} W` : 'N/A'
+                    }
+                }
+            },
             scales: {
                 x: {
                     title: { display: true, text: 'Distance (km)' },
@@ -432,20 +650,38 @@ function displayDetailPowerChart(streams) {
     });
 }
 
+// Température
 function displayDetailTempChart(streams) {
     const ctx = document.getElementById('detailTempChart');
     if (!ctx) return;
 
-    if (detailCharts.temp) detailCharts.temp.destroy();
+    if (detailCharts.temp) {
+        detailCharts.temp.destroy();
+    }
 
     const distances = streams.map(s => (s.distance_m / 1000).toFixed(2));
     const temps = streams.map(s => s.temp || null);
+
+    // Stats
+    const validTemp = temps.filter(t => t !== null);
+    if (validTemp.length > 0) {
+        const avgTemp = (validTemp.reduce((a, b) => a + b, 0) / validTemp.length).toFixed(1);
+        const maxTemp = Math.max(...validTemp);
+        const minTemp = Math.min(...validTemp);
+
+        document.getElementById('tempStats').innerHTML = `
+            <span>Moy: <strong>${avgTemp}°C</strong></span>
+            <span>Min: <strong>${minTemp}°C</strong></span>
+            <span>Max: <strong>${maxTemp}°C</strong></span>
+        `;
+    }
 
     detailCharts.temp = new Chart(ctx, {
         type: 'line',
         data: {
             labels: distances,
             datasets: [{
+                label: 'Température (°C)',
                 data: temps,
                 borderColor: '#ff6348',
                 backgroundColor: '#ff634833',
@@ -457,222 +693,39 @@ function displayDetailTempChart(streams) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             aspectRatio: 2.5,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `${items[0].label} km`,
+                        label: (item) => item.parsed.y !== null ? `${item.parsed.y.toFixed(1)}°C` : 'N/A'
+                    }
+                }
+            },
             scales: {
                 x: {
                     title: { display: true, text: 'Distance (km)' },
                     ticks: { maxTicksLimit: 10 }
                 },
                 y: {
-                    title: { display: true, text: 'Temperature (°C)' }
+                    title: { display: true, text: 'Température (°C)' }
                 }
             }
         }
     });
 }
 
-async function loadHrSpeedCorrelation(activityId) {
-    const headers = getAuthHeaders();
-    if (!headers) {
-        console.log('HR-Speed: pas de headers disponibles');
-        return;
-    }
-
-    try {
-        console.log(`HR-Speed: chargement analyse pour activité ${activityId}...`);
-        const response = await fetch(`${API_BASE}/analysis/rolling_hr_speed_correlation/${activityId}?window_seconds=180`, { headers });
-        if (!response.ok) {
-            console.log(`HR-Speed: réponse non OK (${response.status})`);
-            return;
-        }
-
-        const data = await response.json();
-        if (data.error) {
-            console.log('HR-Speed: erreur dans les données:', data.error);
-            return;
-        }
-
-        if (!data.hr || !data.speed || data.hr.length === 0) {
-            console.log('HR-Speed: pas de données HR ou vitesse');
-            return;
-        }
-
-        console.log(`HR-Speed: affichage de ${data.hr.length} points de données`);
-        document.getElementById('detailHrSpeedCorrelationCard').style.display = 'block';
-        displayHrSpeedCorrelationChart(data);
-    } catch (error) {
-        console.log('HR-Speed: erreur chargement:', error);
-    }
-}
-
-function displayHrSpeedCorrelationChart(data) {
-    const ctx = document.getElementById('detailHrSpeedCorrelationChart');
-    if (!ctx) return;
-
-    if (detailCharts.hrSpeedCorrelation) {
-        detailCharts.hrSpeedCorrelation.destroy();
-    }
-
-    const timeInMinutes = data.time.map(t => (t / 60).toFixed(1));
-
-    const validCorrelations = data.correlation_pearson.filter(c => c !== null && !isNaN(c));
-    const avgCorr = validCorrelations.length > 0
-        ? (validCorrelations.reduce((a, b) => a + b, 0) / validCorrelations.length).toFixed(3)
-        : 'N/A';
-    const minCorr = validCorrelations.length > 0
-        ? Math.min(...validCorrelations).toFixed(3)
-        : 'N/A';
-    const maxCorr = validCorrelations.length > 0
-        ? Math.max(...validCorrelations).toFixed(3)
-        : 'N/A';
-
-    document.getElementById('hrSpeedCorrelationStats').innerHTML = `
-        <span>Corrélation moyenne: <strong>${avgCorr}</strong></span>
-        <span>Min: <strong>${minCorr}</strong></span>
-        <span>Max: <strong>${maxCorr}</strong></span>
-        <span>Moments critiques: <strong>${data.total_breakpoints}</strong></span>
-    `;
-
-    detailCharts.hrSpeedCorrelation = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: timeInMinutes,
-            datasets: [
-                {
-                    label: 'Corrélation HR-Vitesse',
-                    data: data.correlation_pearson,
-                    borderColor: COLORS.glacier,
-                    backgroundColor: `${COLORS.glacier}33`,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    yAxisID: 'y-correlation'
-                },
-                {
-                    label: 'HR normalisée',
-                    data: data.hr_normalized,
-                    borderColor: COLORS.amber,
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    yAxisID: 'y-normalized',
-                    hidden: true
-                },
-                {
-                    label: 'Vitesse normalisée',
-                    data: data.speed_normalized,
-                    borderColor: COLORS.moss,
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    yAxisID: 'y-normalized',
-                    hidden: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2.5,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: '#E8E9EB',
-                        font: { size: 11 }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const index = context.dataIndex;
-                            if (data.breakpoints.includes(data.time[index])) {
-                                return '⚠️ Moment critique détecté';
-                            }
-                            return '';
-                        }
-                    }
-                },
-                annotation: {
-                    annotations: data.breakpoints.map(bp => ({
-                        type: 'line',
-                        xMin: (bp / 60).toFixed(1),
-                        xMax: (bp / 60).toFixed(1),
-                        borderColor: 'rgba(255, 99, 71, 0.5)',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        label: {
-                            display: false
-                        }
-                    }))
-                }
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Temps (minutes)',
-                        color: '#E8E9EB'
-                    },
-                    ticks: {
-                        maxTicksLimit: 15,
-                        color: '#E8E9EB'
-                    },
-                    grid: {
-                        color: '#3A3F4733'
-                    }
-                },
-                'y-correlation': {
-                    type: 'linear',
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Corrélation Pearson',
-                        color: '#E8E9EB'
-                    },
-                    min: -1,
-                    max: 1,
-                    ticks: {
-                        color: '#E8E9EB'
-                    },
-                    grid: {
-                        color: '#3A3F4733'
-                    }
-                },
-                'y-normalized': {
-                    type: 'linear',
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Valeurs normalisées (z-score)',
-                        color: '#E8E9EB'
-                    },
-                    ticks: {
-                        color: '#E8E9EB'
-                    },
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
-
+// Retour à la liste des activités
 function backToActivities() {
+    // Nettoyer les graphiques
     Object.values(detailCharts).forEach(chart => {
         if (chart) chart.destroy();
     });
     detailCharts = {};
 
+    // Nettoyer la carte
     if (detailMap) {
         detailMap.remove();
         detailMap = null;

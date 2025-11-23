@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HawkSight</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/icons/logo.svg">
+    <link rel="alternate icon" type="image/png" href="assets/images/HawkSight_transparent_Couleur.png">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -455,7 +459,16 @@
         <!-- Page Activités -->
         <div id="activitiesPage" class="page">
             <div class="activities-section">
-                <h2>Mes activités</h2>
+                <div class="activities-header">
+                    <h2>Mes activités</h2>
+                    <button class="btn btn-primary" onclick="openActivityModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" x2="12" y1="5" y2="19"></line>
+                            <line x1="5" x2="19" y1="12" y2="12"></line>
+                        </svg>
+                        Nouvelle activité
+                    </button>
+                </div>
                 <div id="activitiesList" class="activities-grid">
                     <!-- Les activités seront chargées ici -->
                 </div>
@@ -464,6 +477,76 @@
                     <span id="pageInfo" class="page-info">Page 1</span>
                     <button class="btn btn-secondary" id="nextPageBtn" onclick="changePage(1)">Suivant →</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Modale CRUD Activité -->
+        <div id="activityModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Nouvelle activité</h3>
+                    <button class="modal-close" onclick="closeActivityModal()">&times;</button>
+                </div>
+                <form id="activityForm" onsubmit="saveActivity(event)">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="activityName">Nom de l'activité *</label>
+                            <input type="text" id="activityName" required placeholder="Morning Run">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activitySport">Type de sport *</label>
+                            <select id="activitySport" required>
+                                <option value="Run">Run</option>
+                                <option value="Trail">Trail</option>
+                                <option value="Bike">Bike</option>
+                                <option value="Hike">Hike</option>
+                                <option value="Swim">Swim</option>
+                                <option value="WeightTraining">Musculation</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityDate">Date et heure *</label>
+                            <input type="datetime-local" id="activityDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityDistance">Distance (km) *</label>
+                            <input type="number" id="activityDistance" step="0.1" min="0" required placeholder="10.5">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityMovingTime">Temps (minutes) *</label>
+                            <input type="number" id="activityMovingTime" step="0.1" min="0" required placeholder="55.3">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityElevation">Dénivelé (m)</label>
+                            <input type="number" id="activityElevation" step="1" min="0" placeholder="150">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityHeartrate">FC moyenne (bpm)</label>
+                            <input type="number" id="activityHeartrate" step="1" min="0" placeholder="155">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityMaxHeartrate">FC max (bpm)</label>
+                            <input type="number" id="activityMaxHeartrate" step="1" min="0" placeholder="180">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityCadence">Cadence moyenne</label>
+                            <input type="number" id="activityCadence" step="1" min="0" placeholder="170">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeActivityModal()">Annuler</button>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">Créer l'activité</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -504,42 +587,36 @@
                 <!-- Stats principales -->
                 <div class="activity-detail-stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon">📍</div>
                         <div class="stat-content">
                             <div class="stat-label">Distance</div>
                             <div class="stat-value" id="detailDistance">--</div>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">⏱️</div>
                         <div class="stat-content">
                             <div class="stat-label">Durée</div>
                             <div class="stat-value" id="detailDuration">--</div>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">⚡</div>
                         <div class="stat-content">
                             <div class="stat-label">Allure moyenne</div>
                             <div class="stat-value" id="detailPace">--</div>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">⛰️</div>
                         <div class="stat-content">
                             <div class="stat-label">Dénivelé +</div>
                             <div class="stat-value" id="detailElevation">--</div>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">❤️</div>
                         <div class="stat-content">
                             <div class="stat-label">Cardio moy.</div>
                             <div class="stat-value" id="detailHeartrate">--</div>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">👟</div>
                         <div class="stat-content">
                             <div class="stat-label">Cadence moy.</div>
                             <div class="stat-value" id="detailCadence">--</div>
@@ -597,11 +674,22 @@
                         <canvas id="detailTempChart"></canvas>
                         <div id="tempStats" class="chart-stats"></div>
                     </div>
+
+                    <div class="card" id="detailHrSpeedCorrelationCard" style="display: none;">
+                        <h3>Analyse Avancée : Corrélation HR-Vitesse</h3>
+                        <p style="font-size: 0.9em; color: var(--color-steel); margin-bottom: 1rem;">
+                            Ce graphique montre comment votre fréquence cardiaque évolue avec votre vitesse. Les zones rouges indiquent des moments critiques où l'effort ne suit plus la vitesse (fatigue, terrain difficile).
+                        </p>
+                        <canvas id="detailHrSpeedCorrelationChart"></canvas>
+                        <div id="hrSpeedCorrelationStats" class="chart-stats"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="assets/js/app.js"></script>
+    <script src="assets/js/activity-detail.js"></script>
+    <script src="assets/js/activity-crud.js"></script>
 </body>
 </html>

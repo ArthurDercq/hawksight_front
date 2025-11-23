@@ -1,3 +1,13 @@
+# Variables d'environnement (contiennent des secrets)
+.env
+.env.dev
+.env.prod
+.env.local
+.env*.local
+
+# Templates d'environnement (AUTORISÉS dans Git - pas de secrets)
+!.env*.example
+
 # Logs
 logs
 *.log
