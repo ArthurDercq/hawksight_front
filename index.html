@@ -15,7 +15,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/metrics-redesign.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -28,6 +30,7 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-content">
+            <!-- Logo -->
             <div class="logo" onclick="showPage('dashboardPage')" style="cursor: pointer;">
                 <div class="logo-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="hsTitle hsDesc">
@@ -44,6 +47,8 @@
                 </div>
                 <span>HawkSight</span>
             </div>
+
+            <!-- Navigation Items -->
             <div class="nav-buttons" id="navButtons">
                 <!-- Sera rempli dynamiquement -->
             </div>
@@ -194,24 +199,40 @@
                         Trace et profil
                     </h3>
                     <div id="lastActivityMapInteractive"
-                      style="flex: 1; min-height: 250px; border-radius: 12px; overflow: hidden; margin-top: 1rem;">
+                      style="flex: 1; min-height: 150px; border-radius: 12px; overflow: hidden; margin-top: 0.75rem;">
                     </div>
                     <div id="lastActivityMapStatic"
-                        style="flex: 1; min-height: 250px; border-radius: 12px; overflow: hidden; margin-top: 1rem; display: none;">
+                        style="flex: 1; min-height: 150px; border-radius: 12px; overflow: hidden; margin-top: 0.75rem; display: none;">
                     </div>
                     <div id="activityMap"
-                        style="flex: 1; min-height: 250px; border-radius: 12px; overflow: hidden; margin-top: 1rem; display: none;">
+                        style="flex: 1; min-height: 150px; border-radius: 12px; overflow: hidden; margin-top: 0.75rem; display: none;">
                     </div>
 
-                    <div id="elevationContainer" style="flex: 1; min-height: 200px; margin-top: 2rem;">
-                        <canvas id="elevationChart" width="600" height="200"></canvas>
+                    <div id="elevationContainer" style="flex: 1; min-height: 120px; margin-top: 1rem;">
+                        <canvas id="elevationChart" width="600" height="120"></canvas>
                     </div>
                 </div>
             </div>
 
             <!-- Nouveaux graphiques -->
             <div class="analytics-section">
-                <h2>Analyses hebdomadaires</h2>
+                <div class="section-title">
+                    <div class="section-title-icon">
+                        <div class="icon-glow"></div>
+                        <div class="icon-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="section-title-content">
+                        <h2>Analyses hebdomadaires</h2>
+                        <div class="section-title-underline">
+                            <div class="underline-gradient"></div>
+                            <div class="underline-dot"></div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="analytics-grid">
                     <!-- Heures par jour de la semaine -->
@@ -226,7 +247,7 @@
                                     <span class="stat-separator">•</span>
                                     <span class="stat-compact"><strong id="statElevation">-</strong> D+</span>
                                     <span class="stat-separator">•</span>
-                                    <span class="stat-compact"><strong id="statTime">-</strong> h</span>
+                                    <span class="stat-compact"><strong id="statTime">-</strong></span>
                                 </div>
                             </div>
                             <div class="week-controls">
@@ -343,112 +364,196 @@
         <!-- Page Chiffres clés -->
         <div id="kpiPage" class="page">
             <div class="kpi-section">
-                <div class="kpi-filter">
-                  <div class="kpi-title-filter-group">
-                      <h2>Mes chiffres clefs</h2>
-                      <label for="yearFilter"></label>
-                      <select id="yearFilter" onchange="loadKPIsWithFilter()">
-                          <option value="">Toutes</option>
-                          <option value="2025">2025</option>
-                          <option value="2024">2024</option>
-                          <option value="2023">2023</option>
-                          <!-- ajoute les années souhaitées -->
-                      </select>
-                  </div>
-                </div>
-
-                <!-- Layout en deux colonnes : KPIs + Graph à gauche, Records à droite -->
+                <!-- Layout en deux colonnes dès le début -->
                 <div class="kpi-layout-grid">
-                    <!-- Colonne gauche : KPIs et graphique -->
+                    <!-- Colonne gauche : Titre + Selectbox + KPIs + Graph -->
                     <div class="kpi-left-column">
-                        <!-- KPIs -->
-                        <div id="kpiContainer" class="kpi-grid"></div>
+                        <!-- Header with title and year filter -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                            <div class="section-title">
+                                <div class="section-title-icon">
+                                    <div class="icon-glow"></div>
+                                    <div class="icon-content">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="section-title-content">
+                                    <h2>Mes chiffres clefs</h2>
+                                    <div class="section-title-underline">
+                                        <div class="underline-gradient"></div>
+                                        <div class="underline-dot"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="year-filter-wrapper" style="margin-top: 0.5rem;">
+                                <label for="yearFilter" class="year-filter-label">Année</label>
+                                <select id="yearFilter" class="year-filter-select" onchange="loadKPIsWithFilter()">
+                                    <option value="">Toutes</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                    <!-- ajoute les années souhaitées -->
+                                </select>
+                            </div>
+                        </div>
 
-                        <div class="card">
+                        <!-- KPIs -->
+                        <div id="kpiContainer" class="metrics-grid"></div>
+
+                        <div class="chart-card">
                             <h3>Nombre d'activités par sport</h3>
-                            <div id="activityCountChartContainer" style="width: 100%; margin-top: 20px;"></div>
+                            <div id="activityCountChartContainer" style="width: 100%; height: 220px; position: relative;"></div>
                         </div>
                     </div>
 
                     <!-- Colonne droite : Records -->
                     <div class="kpi-right-column">
-                        <div class="card records-card">
-                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                                <img src="assets/images/icons/trophee.svg" alt="Trophée" class="title-icon">
-                                <h3 style="margin: 0;">Mes Records</h3>
+                        <div class="records-card-wrapper">
+                            <!-- Header -->
+                            <div class="records-header">
+                                <div class="records-header-grid"></div>
+                                <div class="records-header-content">
+                                    <div class="records-header-top">
+                                        <div class="records-title-group">
+                                            <div class="records-icon-wrapper">
+                                                <div class="records-icon-glow"></div>
+                                                <div class="records-icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <h3>Records</h3>
+                                        </div>
+                                        <div class="records-pr-badge">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                                                <polyline points="16 7 22 7 22 13"/>
+                                            </svg>
+                                            <span>PR</span>
+                                        </div>
+                                    </div>
+                                    <div class="records-accent-line"></div>
+                                </div>
                             </div>
+
+                            <!-- Records List -->
                             <div class="records-list">
                                 <!-- Record 5km -->
                                 <div class="record-item">
-                                    <div class="record-distance">5 km</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">5 km</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
 
                                 <!-- Record 10km -->
                                 <div class="record-item">
-                                    <div class="record-distance">10 km</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">10 km</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
 
                                 <!-- Record Semi-marathon -->
                                 <div class="record-item">
-                                    <div class="record-distance">Semi</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">Semi</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
 
                                 <!-- Record 30km -->
                                 <div class="record-item">
-                                    <div class="record-distance">30 km</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">30 km</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
 
                                 <!-- Record Marathon -->
                                 <div class="record-item">
-                                    <div class="record-distance">Marathon</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">Marathon</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
 
                                 <!-- Record 50km -->
                                 <div class="record-item">
-                                    <div class="record-distance">50 km</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">50 km</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
 
                                 <!-- Record 75km -->
                                 <div class="record-item">
-                                    <div class="record-distance">75 km</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">75 km</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
 
-                                <!-- Record 100km -->
+                                <!-- Record Plus longue sortie -->
                                 <div class="record-item">
-                                    <div class="record-distance">100 km</div>
+                                    <div class="record-left-accent"></div>
+                                    <div class="record-distance-wrapper">
+                                        <div class="record-distance">Plus longue</div>
+                                        <div class="record-pr-dot"></div>
+                                    </div>
                                     <div class="record-details">
                                         <div class="record-time">--:--</div>
-                                        <div class="record-pace">-- min/km</div>
+                                        <div class="record-date">--/--/--</div>
                                     </div>
                                 </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="records-footer">
+                                <div class="records-footer-accent">
+                                    <div class="footer-dot" style="background: #E8832A;"></div>
+                                    <div class="footer-dot" style="background: #3DB2E0;"></div>
+                                    <div class="footer-line"></div>
+                                </div>
+                                <span class="records-count">8 records</span>
                             </div>
                         </div>
                     </div>
@@ -460,7 +565,23 @@
         <div id="activitiesPage" class="page">
             <div class="activities-section">
                 <div class="activities-header">
-                    <h2>Mes activités</h2>
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <div class="icon-glow"></div>
+                            <div class="icon-content">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="section-title-content">
+                            <h2>Mes activités</h2>
+                            <div class="section-title-underline">
+                                <div class="underline-gradient"></div>
+                                <div class="underline-dot"></div>
+                            </div>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" onclick="openActivityModal()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" x2="12" y1="5" y2="19"></line>
@@ -540,6 +661,29 @@
                             <label for="activityCadence">Cadence moyenne</label>
                             <input type="number" id="activityCadence" step="1" min="0" placeholder="170">
                         </div>
+
+                        <!-- Section Tags -->
+                        <div class="form-group full-width" id="tagsSection" style="display: none;">
+                            <label>Tags de l'activité</label>
+                            <div id="tagsContainer" class="tags-container">
+                                <!-- Les tags seront chargés dynamiquement ici -->
+                            </div>
+                        </div>
+
+                        <!-- Option d'ajustement des streams (visible uniquement en mode édition) -->
+                        <div class="form-group full-width" id="adjustStreamsSection" style="display: none;">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="adjustStreams" checked>
+                                <label for="adjustStreams">
+                                    <strong>Ajuster automatiquement les streams GPS</strong>
+                                    <span class="help-text">Si la distance est modifiée, les données GPS seront recalculées proportionnellement. Les données de fréquence cardiaque, cadence et altitude seront préservées.</span>
+                                </label>
+                            </div>
+                            <div class="info-box">
+                                <span class="info-icon">ℹ️</span>
+                                <span>Recommandé pour les courses sur tapis où la distance GPS est incorrecte.</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="modal-footer">
@@ -567,7 +711,102 @@
             </div>
         </div>
 
-        <!-- Page Détails Activité -->
+        <!-- Page Profil -->
+        <div id="profilePage" class="page">
+            <div class="profile-section">
+                <div class="profile-header-card card">
+                    <div class="profile-header-content">
+                        <div class="profile-avatar">
+                            <img id="profileAvatar" src="" alt="Photo de profil">
+                        </div>
+                        <div class="profile-info">
+                            <h1 id="profileName">-</h1>
+                            <div class="profile-meta">
+                                <span id="profileLocation">-</span>
+                                <span id="profilePremium"></span>
+                            </div>
+                            <p id="profileEmail">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-stats-grid">
+                    <div class="card profile-stat-card">
+                        <div class="profile-stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="profile-stat-content">
+                            <div class="profile-stat-value" id="profileActivitiesCount">-</div>
+                            <div class="profile-stat-label">Activités</div>
+                        </div>
+                    </div>
+
+                    <div class="card profile-stat-card">
+                        <div class="profile-stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="profile-stat-content">
+                            <div class="profile-stat-value" id="profileMemberSince">-</div>
+                            <div class="profile-stat-label">Membre depuis</div>
+                        </div>
+                    </div>
+
+                    <div class="card profile-stat-card">
+                        <div class="profile-stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="profile-stat-content">
+                            <div class="profile-stat-value" id="profileStreamsCount">-</div>
+                            <div class="profile-stat-label">Streams enregistrés</div>
+                        </div>
+                    </div>
+
+                    <div class="card profile-stat-card">
+                        <div class="profile-stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="profile-stat-content">
+                            <div class="profile-stat-value" id="profileLastSync">-</div>
+                            <div class="profile-stat-label">Dernière synchro</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card profile-details-card">
+                    <h3>Informations du compte</h3>
+                    <div class="profile-details-grid">
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">Strava ID</span>
+                            <span class="profile-detail-value" id="profileStravaId">-</span>
+                        </div>
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">Email</span>
+                            <span class="profile-detail-value" id="profileEmailDetail">-</span>
+                        </div>
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">Sexe</span>
+                            <span class="profile-detail-value" id="profileSex">-</span>
+                        </div>
+                        <div class="profile-detail-item">
+                            <span class="profile-detail-label">Statut</span>
+                            <span class="profile-detail-value" id="profileStatus">Actif</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      <!-- Page Détails Activité -->
         <div id="activityDetailPage" class="page">
             <div class="activity-detail-container">
                 <!-- Header avec bouton retour -->
@@ -581,6 +820,22 @@
                             <span id="detailActivityDate"></span>
                             <span id="detailActivityType" class="activity-badge"></span>
                         </div>
+                    </div>
+                    <div class="activity-detail-actions">
+                        <button class="btn btn-primary" id="detailEditBtn" onclick="openActivityModal(null)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Modifier
+                        </button>
+                        <button class="btn btn-danger" id="detailDeleteBtn" onclick="deleteActivity(null, '')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Supprimer
+                        </button>
                     </div>
                 </div>
 
@@ -639,6 +894,7 @@
 
                 <!-- Graphiques des streams -->
                 <div class="activity-detail-charts-grid">
+
                     <div class="card">
                         <h3>Fréquence cardiaque</h3>
                         <canvas id="detailHeartrateChart"></canvas>
@@ -651,7 +907,8 @@
                         <div id="paceStats" class="chart-stats"></div>
                     </div>
 
-                    <div class="card">
+                    <!-- ✔️ ID ajouté ici -->
+                    <div class="card" id="detailCadenceCard">
                         <h3>Cadence</h3>
                         <canvas id="detailCadenceChart"></canvas>
                         <div id="cadenceStats" class="chart-stats"></div>
@@ -661,6 +918,12 @@
                         <h3>Pente</h3>
                         <canvas id="detailGradeChart"></canvas>
                         <div id="gradeStats" class="chart-stats"></div>
+                    </div>
+
+                    <div class="card" id="detailRCECard" style="display: none;">
+                        <h3>Efficacité cardiaque (RCE)</h3>
+                        <canvas id="detailRCEChart"></canvas>
+                        <div id="rceStats" class="chart-stats"></div>
                     </div>
 
                     <div class="card" id="detailPowerCard" style="display: none;">
@@ -686,10 +949,12 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="assets/js/app.js"></script>
-    <script src="assets/js/activity-detail.js"></script>
-    <script src="assets/js/activity-crud.js"></script>
+
+    <script src="./assets/js/app.js"></script>
+    <script src="./assets/js/metrics-redesign.js"></script>
+    <script src="./assets/js/activity-detail.js"></script>
+    <script src="./assets/js/activity-crud.js"></script>
+    <script src="./assets/js/profile.js"></script>
 </body>
 </html>

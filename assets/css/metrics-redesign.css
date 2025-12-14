@@ -1,0 +1,327 @@
+/* =============================================================================
+   METRICS REDESIGN - Nouveau design moderne
+   ============================================================================= */
+
+.metrics-grid-new {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card-new {
+    position: relative;
+    min-height: 140px;
+    /* Group class for hover effects */
+}
+
+.metric-card-new:hover {
+    /* Trigger hover state */
+}
+
+.metric-card-new:nth-child(n+5) {
+    grid-column: span 1;
+}
+
+/* Centrer la dernière ligne de 3 éléments */
+.metric-card-new:nth-child(5) {
+    grid-column: 1 / 2;
+}
+
+.metric-card-new:nth-child(6) {
+    grid-column: 2 / 3;
+}
+
+.metric-card-new:nth-child(7) {
+    grid-column: 3 / 4;
+}
+
+/* Glow effect on hover */
+.metric-glow {
+    position: absolute;
+    inset: -0.5rem;
+    border-radius: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: linear-gradient(135deg, var(--metric-color)40, transparent);
+    filter: blur(20px);
+    pointer-events: none;
+}
+
+.metric-card-new:hover .metric-glow {
+    opacity: 1;
+}
+
+/* Card inner container */
+.metric-card-inner {
+    position: relative;
+    background: #0B0C10;
+    border: 1px solid rgba(58, 63, 71, 0.3);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-card-new:hover .metric-card-inner {
+    border-color: var(--metric-color);
+}
+
+/* Grid pattern background */
+.metric-grid-pattern {
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image:
+        linear-gradient(to right, #F2F2F2 1px, transparent 1px),
+        linear-gradient(to bottom, #F2F2F2 1px, transparent 1px);
+    background-size: 16px 16px;
+    pointer-events: none;
+}
+
+/* Corner glow */
+.metric-corner-glow {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 64px;
+    height: 64px;
+    opacity: 0.1;
+    background: radial-gradient(circle at top right, var(--metric-color, #3DB2E0), transparent);
+    pointer-events: none;
+}
+
+/* Content */
+.metric-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+/* Header row */
+.metric-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.metric-icon-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.metric-icon-badge {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metric-icon-svg {
+    display: block;
+}
+
+.metric-label {
+    color: rgba(242, 242, 242, 0.6);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+}
+
+/* Dots - bottom right positioned */
+.metric-dots-bottom {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.25rem;
+    z-index: 1;
+}
+
+.metric-dot-item {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+}
+
+/* Value row */
+.metric-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.metric-value-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.metric-unit-text {
+    color: rgba(242, 242, 242, 0.4);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+}
+
+/* Footer */
+.metrics-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(58, 63, 71, 0.3);
+    margin-top: 1rem;
+}
+
+.metrics-footer-left,
+.metrics-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.metrics-footer-dots {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.footer-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+}
+
+.metrics-footer-text {
+    color: #3A3F47;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+}
+
+.live-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #E8832A;
+    animation: pulse-live 2s ease-in-out infinite;
+}
+
+@keyframes pulse-live {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Year filter styling - minimal design without card background */
+.year-filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.year-filter-label {
+    color: #3A3F47;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.year-filter-select {
+    min-width: 120px;
+    background: #0B0C10;
+    border: 1px solid rgba(58, 63, 71, 0.3);
+    border-radius: 0.375rem;
+    color: #F2F2F2;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    cursor: pointer;
+    outline: none;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.2s ease;
+}
+
+.year-filter-select:hover {
+    border-color: rgba(58, 63, 71, 0.5);
+}
+
+.year-filter-select:focus {
+    border-color: rgba(58, 63, 71, 0.5);
+    box-shadow: 0 0 0 2px rgba(58, 63, 71, 0.1);
+}
+
+.year-filter-select option {
+    background: #0B0C10;
+    color: #F2F2F2;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+}
+
+.year-filter-select option:hover,
+.year-filter-select option:focus {
+    background: rgba(58, 63, 71, 0.2);
+}
+
+/* Chart container styling */
+.chart-card {
+    position: relative;
+    background: #0B0C10;
+    border: 1px solid rgba(58, 63, 71, 0.3);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    overflow: hidden;
+}
+
+.chart-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image:
+        linear-gradient(to right, #F2F2F2 1px, transparent 1px),
+        linear-gradient(to bottom, #F2F2F2 1px, transparent 1px);
+    background-size: 16px 16px;
+    pointer-events: none;
+}
+
+.chart-card h3 {
+    position: relative;
+    color: #F2F2F2;
+    font-family: 'Space Grotesk', sans-serif;
+    margin-bottom: 1.5rem;
+    font-size: 1.125rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .metrics-grid-new {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metric-card-new:nth-child(5),
+    .metric-card-new:nth-child(6),
+    .metric-card-new:nth-child(7) {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .metrics-grid-new {
+        grid-template-columns: 1fr;
+    }
+
+    .metric-card-new:nth-child(5),
+    .metric-card-new:nth-child(6),
+    .metric-card-new:nth-child(7) {
+        grid-column: auto;
+    }
+}

@@ -1,4 +1,9 @@
-const API_BASE = 'http://localhost:3000/api';
+// Détection automatique de l'environnement
+// - Docker Compose : utilise le proxy nginx sur /api
+// - Dev local : utilise directement le backend sur :8000
+const API_BASE = window.location.port === '3000'
+    ? 'http://localhost:3000/api'  // Docker Compose avec nginx proxy
+    : 'http://localhost:8000';      // Dev local direct
 let currentToken = null;
 let charts = {};
 
@@ -42,6 +47,11 @@ function showPage(pageId) {
     if (pageId === 'activitiesPage') {
         loadActivities();
     }
+
+    // Charger le profil quand on accède à la page Profil
+    if (pageId === 'profilePage') {
+        initProfilePage();
+    }
 }
 
 function updateNavigation() {
@@ -51,12 +61,70 @@ function updateNavigation() {
     navButtons.innerHTML = '';
 
     if (currentToken) {
-        navButtons.innerHTML = `
-            <button class="btn btn-secondary" onclick="showPage('activitiesPage')">Activités</button>
-            <button class="btn btn-secondary" onclick="showPage('kpiPage')">Chiffres clés</button>
-            <button class="btn btn-secondary" onclick="showPage('calendarPage')">Calendrier</button>
-            <button class="btn btn-primary" onclick="logout()">Déconnexion</button>
+        // Navigation items avec icônes Lucide
+        const navItems = [
+            {
+                id: 'activitiesPage',
+                label: 'Activités',
+                icon: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'
+            },
+            {
+                id: 'kpiPage',
+                label: 'Chiffres clés',
+                icon: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>'
+            },
+            {
+                id: 'calendarPage',
+                label: 'Calendrier',
+                icon: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
+            }
+        ];
+
+        let buttonsHtml = '';
+        navItems.forEach(item => {
+            const isActive = currentPage === item.id;
+            buttonsHtml += `
+                <button class="nav-item ${isActive ? 'active' : ''}" onclick="showPage('${item.id}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        ${item.icon}
+                    </svg>
+                    <span>${item.label}</span>
+                </button>
+            `;
+        });
+
+        // Dropdown Paramètres
+        buttonsHtml += `
+            <div class="dropdown">
+                <button class="nav-item dropdown-toggle ${currentPage === 'profilePage' ? 'active' : ''}" onclick="toggleDropdown(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span>Paramètres</span>
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" onclick="showPage('profilePage')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Profil
+                    </a>
+                    <a class="dropdown-item dropdown-item-danger" onclick="logout()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
         `;
+
+        navButtons.innerHTML = buttonsHtml;
+
         if (currentPage === 'homePage') {
             showPage('dashboardPage');
         }
@@ -141,16 +209,31 @@ async function autoUpdateData() {
             console.warn('⚠️ Erreur lors de la mise à jour de la base de données');
         }
 
-        // Mettre à jour les streams
-        const streamsResponse = await fetch(`${API_BASE}/activities/update_streams`, {
-            method: 'POST',
-            headers: headers
-        });
+        // Mettre à jour les streams (avec timeout de 30 secondes)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        if (streamsResponse.ok) {
-            console.log('✅ Streams mis à jour');
-        } else {
-            console.warn('⚠️ Erreur lors de la mise à jour des streams');
+        try {
+            const streamsResponse = await fetch(`${API_BASE}/activities/update_streams`, {
+                method: 'POST',
+                headers: headers,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (streamsResponse.ok) {
+                const data = await streamsResponse.json();
+                console.log('✅ Streams mis à jour:', data.message);
+            } else {
+                console.warn('⚠️ Erreur lors de la mise à jour des streams');
+            }
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                console.warn('⚠️ Mise à jour des streams annulée (timeout) - Les streams seront synchronisés progressivement');
+            } else {
+                console.warn('⚠️ Erreur lors de la mise à jour des streams:', error.message);
+            }
         }
 
         console.log('✅ Mise à jour automatique terminée');
@@ -263,13 +346,48 @@ function displayKPIs(kpis) {
     container.innerHTML = '';
 
     const kpiConfig = {
-        total_km_run: { unit: 'km', label: 'Course à pied' },
-        total_km_trail: { unit: 'km', label: 'Trail' },
-        total_km_bike: { unit: 'km', label: 'Vélo' },
-        total_km_swim: { unit: 'km', label: 'Natation' },
-        total_hours: { unit: 'h', label: 'Sport' },
-        total_dplus_run_trail: { unit: 'm', label: 'dénivelé en courant' },
-        total_dplus_bike: { unit: 'm', label: 'dénivelé à vélo' }
+        total_km_run: {
+            unit: 'km',
+            label: 'Course à pied',
+            metric: 'run',
+            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`
+        },
+        total_km_trail: {
+            unit: 'km',
+            label: 'Trail',
+            metric: 'trail',
+            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M8 18v-1"/><path d="M16 18v-3"/></svg>`
+        },
+        total_km_bike: {
+            unit: 'km',
+            label: 'Vélo',
+            metric: 'bike',
+            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>`
+        },
+        total_km_swim: {
+            unit: 'km',
+            label: 'Natation',
+            metric: 'swim',
+            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16s.9 1 2 1c1.1 0 2-.9 2-.9s1.1-1 2-1 2 1 2 1 .9 1 2 1 2-1 2-1 1.1-1 2-1 2 1 2 1 .9 1 2 1 2-1 2-1"/><path d="M2 12s.9 1 2 1c1.1 0 2-.9 2-.9s1.1-1 2-1 2 1 2 1 .9 1 2 1 2-1 2-1 1.1-1 2-1 2 1 2 1 .9 1 2 1 2-1 2-1"/><path d="M20 4c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"/></svg>`
+        },
+        total_hours: {
+            unit: 'h',
+            label: 'Sport',
+            metric: 'hours',
+            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+        },
+        total_dplus_run_trail: {
+            unit: 'm',
+            label: 'dénivelé en courant',
+            metric: 'elevation',
+            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`
+        },
+        total_dplus_bike: {
+            unit: 'm',
+            label: 'dénivelé à vélo',
+            metric: 'elevation',
+            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`
+        }
     };
 
     // Liste des KPIs à afficher (exclure ceux non souhaités)
@@ -295,17 +413,44 @@ function displayKPIs(kpis) {
     kpisToDisplay.forEach((key) => {
         if (kpis[key] === undefined || kpis[key] === null) return;
 
-        const kpiCard = document.createElement('div');
-        kpiCard.className = 'kpi-card';
+        const metricCard = document.createElement('div');
+        metricCard.className = 'metric-card';
         const value = kpis[key];
         const displayValue = formatNumber(value);
         const config = kpiConfig[key];
 
-        kpiCard.innerHTML = `
-            <div class="kpi-value">${displayValue} ${config.unit}</div>
-            <div class="kpi-label" style="color: rgba(242, 242, 242, 0.6);">${config.label}</div>
+        metricCard.setAttribute('data-metric', config.metric);
+
+        metricCard.innerHTML = `
+            <div class="metric-corner"></div>
+            <div class="metric-header">
+                <div class="metric-icon">${config.icon}</div>
+                <div class="metric-label">${config.label}</div>
+            </div>
+            <div class="metric-value">
+                ${displayValue}<span class="metric-unit">${config.unit}</span>
+            </div>
+            <div class="metric-indicators">
+                <div class="metric-dot"></div>
+                <div class="metric-dot"></div>
+                <div class="metric-dot"></div>
+                <div class="metric-dot"></div>
+            </div>
+            <div class="metric-progress">
+                <div class="metric-progress-bar"></div>
+            </div>
         `;
-        container.appendChild(kpiCard);
+
+        // Track mouse position for glow effect
+        metricCard.addEventListener('mousemove', (e) => {
+            const rect = metricCard.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            metricCard.style.setProperty('--mouse-x', `${x}px`);
+            metricCard.style.setProperty('--mouse-y', `${y}px`);
+        });
+
+        container.appendChild(metricCard);
     });
 
     // ==========================
@@ -935,9 +1080,9 @@ function displayDailyHours(data) {
                     ticks: {
                         stepSize: 20,  // Graduation toutes les 20 minutes
                         callback: function(value) {
-                            // Afficher les minutes, ne pas afficher 0
+                            // Afficher seulement le nombre, sans 'min'
                             if (value === 0) return '';
-                            return value + ' min';
+                            return value;
                         }
                     }
                 }
@@ -950,7 +1095,10 @@ function displayDailyHours(data) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} heures`;
+                            const minutes = context.parsed.y;
+                            const hours = Math.floor(minutes / 60);
+                            const mins = Math.round(minutes % 60);
+                            return `${context.dataset.label}: ${hours}h ${mins.toString().padStart(2, '0')} min`;
                         }
                     }
                 }
@@ -1048,7 +1196,11 @@ async function updateWeekStats(monday, sunday) {
         // Mettre à jour l'affichage
         document.getElementById('statDistance').textContent = totalDistance.toFixed(1);
         document.getElementById('statElevation').textContent = Math.round(totalElevation);
-        document.getElementById('statTime').textContent = (totalTime / 60).toFixed(1);
+
+        // Convertir le temps total en format HHh MM min
+        const hours = Math.floor(totalTime / 60);
+        const minutes = Math.round(totalTime % 60);
+        document.getElementById('statTime').textContent = `${hours}h ${minutes.toString().padStart(2, '0')} min`;
 
     } catch (error) {
         console.error('Erreur mise à jour stats semaine:', error);
@@ -1110,11 +1262,15 @@ function displayWeeklyHours(data) {
     const averageHours = hours.length > 0 ? totalHours / hours.length : 0;
     const averageLabel = document.getElementById('weeklyHoursAverage');
     if (averageLabel) {
-        averageLabel.textContent = `Moyenne : ${averageHours.toFixed(1)}h/semaine`;
+        const avgH = Math.floor(averageHours);
+        const avgM = Math.round((averageHours - avgH) * 60);
+        averageLabel.textContent = `Moyenne : ${avgH}h ${avgM.toString().padStart(2, '0')} min/semaine`;
     }
 
-    // Créer un dégradé de couleur orange basé sur le nombre d'heures
+    // Calculer le maximum dynamique
     const maxHours = Math.max(...hours, 1); // Éviter division par zéro
+    // Arrondir à l'entier pair supérieur pour avoir des graduations propres
+    const dynamicMax = Math.ceil(maxHours / 2) * 2;
     const backgroundColor = hours.map(h => {
         // Calculer l'intensité (0 = clair, 1 = foncé)
         const intensity = h / maxHours;
@@ -1147,7 +1303,7 @@ function displayWeeklyHours(data) {
                     title: { display: false },
                     grid: { display: false },
                     beginAtZero: true,
-                    max: 15,
+                    max: dynamicMax,
                     ticks: {
                         stepSize: 2,
                         callback: function(value) {
@@ -1161,7 +1317,10 @@ function displayWeeklyHours(data) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return `${context.parsed.y.toFixed(1)} heures`;
+                            const totalHours = context.parsed.y;
+                            const h = Math.floor(totalHours);
+                            const m = Math.round((totalHours - h) * 60);
+                            return `${h}h ${m.toString().padStart(2, '0')} min`;
                         }
                     }
                 }
@@ -1352,67 +1511,93 @@ function displayRepartition(data) {
 
     const ctx = canvas.getContext('2d');
 
-    // Couleurs HawkSight par type de sport
-    const sportColors = {
-        'Run': COLORS.amber,
-        'Trail': COLORS.amberLight,
-        'Bike': COLORS.glacier,
-        'Swim': COLORS.moss,
-        'Run,Trail': COLORS.amber  // Orange pour Run & Trail combiné
+    // Mapper les catégories de distance à des couleurs spécifiques
+    const distanceColors = {
+        'Longs': '#B85A1F',      // Orange foncé
+        'Long': '#B85A1F',       // Variante singulier
+        'Moyens': '#E8832A',     // Orange clair (COLORS.amber)
+        'Moyen': '#E8832A',      // Variante singulier
+        'Courts': COLORS.glacier, // Bleu
+        'Court': COLORS.glacier   // Variante singulier
     };
 
-    // Récupérer le sport sélectionné
-    const selectedSport = document.getElementById('repartitionSportFilter').value;
-    const color = sportColors[selectedSport] || COLORS.amber;
-
-    // Créer un dégradé de couleurs pour chaque catégorie
-    const backgroundColors = data.labels.map((label, index) => {
-        const opacity = 0.7 - (index * 0.15); // Dégradé d'opacité
-        return color + Math.round(opacity * 255).toString(16).padStart(2, '0');
+    // Attribuer les couleurs en fonction des labels
+    const backgroundColors = data.labels.map(label => {
+        // Chercher si le label contient un mot-clé
+        for (const [key, color] of Object.entries(distanceColors)) {
+            if (label.toLowerCase().includes(key.toLowerCase())) {
+                return color;
+            }
+        }
+        // Couleur par défaut si aucune correspondance
+        return COLORS.amber;
     });
 
+    // Calculer le total pour les pourcentages
+    const total = data.values.reduce((sum, val) => sum + val, 0);
+
+    // Plugin personnalisé pour afficher les pourcentages sur le camembert
+    const percentagePlugin = {
+        id: 'percentageLabels',
+        afterDatasetsDraw(chart) {
+            const { ctx, data } = chart;
+            chart.getDatasetMeta(0).data.forEach((datapoint, index) => {
+                const { x, y } = datapoint.tooltipPosition();
+                const value = data.datasets[0].data[index];
+                const percentage = ((value / total) * 100).toFixed(1);
+
+                // N'afficher que si > 5%
+                if (percentage > 5) {
+                    ctx.save();
+                    ctx.font = 'bold 14px Poppins';
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${percentage}%`, x, y);
+                    ctx.restore();
+                }
+            });
+        }
+    };
+
     charts.repartition = new Chart(ctx, {
-        type: 'bar',
+        type: 'pie',
         data: {
             labels: data.labels || [],
             datasets: [{
                 label: 'Nombre d\'activités',
                 data: data.values || [],
                 backgroundColor: backgroundColors,
-                borderColor: color,
-                borderWidth: 1
+                borderColor: '#1a1a1a',
+                borderWidth: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            indexAxis: 'y',
-            scales: {
-                x: {
-                    grid: { display: false },
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1,
-                        callback: function(value) {
-                            return Math.round(value);
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12
                         }
                     }
                 },
-                y: {
-                    grid: { display: false }
-                }
-            },
-            plugins: {
-                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return `${context.parsed.x} activité${context.parsed.x > 1 ? 's' : ''}`;
+                            const value = context.parsed;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${value} activité${value > 1 ? 's' : ''} (${percentage}%)`;
                         }
                     }
                 }
             }
-        }
+        },
+        plugins: [percentagePlugin]
     });
 }
 
@@ -1494,9 +1679,9 @@ function displayWeeklyPace(data) {
                 label: 'Allure (min/km)',
                 data: paces,
                 borderColor: COLORS.glacier,
-                backgroundColor: 'rgba(61, 178, 224, 0.1)',
+                backgroundColor: 'rgba(61, 178, 224, 0.2)',
                 borderWidth: 2,
-                fill: true,
+                fill: 'start', // Remplir depuis le haut de l'axe (allures lentes) vers la ligne
                 tension: 0.3
             }]
         },
@@ -1512,6 +1697,7 @@ function displayWeeklyPace(data) {
                     grid: { display: false },
                     suggestedMin: suggestedMin,
                     suggestedMax: suggestedMax,
+                    reverse: true, // Inverser l'axe : allures rapides en haut
                     ticks: {
                         callback: function(value) {
                             const minutes = Math.floor(value);
@@ -1918,43 +2104,60 @@ function displayRecords(records) {
         else if (distanceText === 'Semi') recordKey = 'semi';
         else if (distanceText === '30 km') recordKey = '30k';
         else if (distanceText === 'Marathon') recordKey = 'marathon';
+        else if (distanceText === '50 km') recordKey = '50k';
+        else if (distanceText === '75 km') recordKey = '75k';
+        else if (distanceText === 'Plus longue') recordKey = 'longest';
 
         if (!recordKey) return;
 
         const record = records[recordKey];
         const timeEl = item.querySelector('.record-time');
-        const paceEl = item.querySelector('.record-pace');
+        const dateEl = item.querySelector('.record-date');
+        const prDot = item.querySelector('.record-pr-dot');
 
-        if (record && record.time) {
+        if (record && (record.time || record.distance)) {
+            // Formater la date en JJ/MM/YY
+            const dateObj = new Date(record.date);
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const year = dateObj.getFullYear().toString().slice(-2);
+            const formattedDate = `${day}/${month}/${year}`;
+
             // Mettre à jour les données
-            timeEl.textContent = record.time;
-            paceEl.textContent = `${record.pace} min/km`;
+            dateEl.textContent = formattedDate;
 
-            // Rendre l'item cliquable vers Strava
+            if (recordKey === 'longest') {
+                // Pour la plus longue sortie, afficher la distance en km
+                const distanceKm = parseFloat(record.distance);
+                timeEl.textContent = `${distanceKm.toFixed(2)} km`;
+            } else {
+                // Pour les autres, afficher le temps
+                timeEl.textContent = record.time;
+            }
+
+            // Tous les records sont des PR par définition, afficher le point PR
+            item.classList.add('is-pr');
+            if (prDot) prDot.style.display = 'block';
+
+            // Rendre l'item cliquable vers l'activité dans l'app
             item.style.cursor = 'pointer';
-            item.style.transition = 'all 0.3s ease';
 
             item.onclick = () => {
-                window.open(record.activity_url, '_blank', 'noopener,noreferrer');
-            };
-
-            item.onmouseenter = () => {
-                item.style.backgroundColor = 'rgba(232, 131, 42, 0.1)';
-                item.style.transform = 'translateX(5px)';
-            };
-
-            item.onmouseleave = () => {
-                item.style.backgroundColor = 'transparent';
-                item.style.transform = 'translateX(0)';
+                showActivityDetail(record.activity_id);
             };
 
             // Ajouter un tooltip avec les infos
-            item.title = `${record.activity_name}\nDate: ${record.date}\nSegment: ${record.start_km}km → ${record.end_km}km\nCliquez pour voir sur Strava`;
+            const tooltipText = recordKey === 'longest'
+                ? `${record.activity_name}\nDate: ${record.date}\nDistance: ${parseFloat(record.distance).toFixed(2)} km\nCliquez pour voir les détails`
+                : `${record.activity_name}\nDate: ${record.date}\nSegment: ${record.start_km}km → ${record.end_km}km\nCliquez pour voir les détails`;
+            item.title = tooltipText;
 
         } else {
             // Pas de record disponible
-            timeEl.textContent = '--:--';
-            paceEl.textContent = '-- min/km';
+            timeEl.textContent = recordKey === 'longest' ? '--.- km' : '--:--';
+            dateEl.textContent = '--/--/--';
+            item.classList.remove('is-pr');
+            if (prDot) prDot.style.display = 'none';
             item.style.cursor = 'default';
             item.onclick = null;
             item.title = 'Aucun record pour cette distance';
@@ -2346,6 +2549,35 @@ function changePage(delta) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
+
+// === GESTION DU MENU DROPDOWN ===
+function toggleDropdown(event) {
+    event.stopPropagation();
+    const dropdown = event.target.closest('.dropdown');
+    const isActive = dropdown.classList.contains('active');
+
+    // Fermer tous les dropdowns
+    document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+
+    // Ouvrir/fermer le dropdown cliqué
+    if (!isActive) {
+        dropdown.classList.add('active');
+    }
+}
+
+// Fermer le dropdown quand on clique ailleurs
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+    }
+});
+
+// Fermer le dropdown après un clic sur un item
+document.addEventListener('click', function(event) {
+    if (event.target.closest('.dropdown-item')) {
+        document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+    }
+});
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {

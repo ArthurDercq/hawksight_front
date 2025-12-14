@@ -3,6 +3,8 @@
  */
 
 let editingActivityId = null;
+let availableTags = [];
+let activityTags = [];
 
 // Ouvrir la modale pour créer une nouvelle activité
 function openActivityModal(activityId = null) {
@@ -19,11 +21,22 @@ function openActivityModal(activityId = null) {
         // Mode édition
         modalTitle.textContent = 'Modifier l\'activité';
         saveBtn.textContent = 'Enregistrer les modifications';
+
+        // Afficher les sections tags et ajustement streams
+        document.getElementById('tagsSection').style.display = 'block';
+        document.getElementById('adjustStreamsSection').style.display = 'block';
+
         loadActivityForEdit(activityId);
+        loadAvailableTags();
+        loadActivityTags(activityId);
     } else {
         // Mode création
         modalTitle.textContent = 'Nouvelle activité';
         saveBtn.textContent = 'Créer l\'activité';
+
+        // Cacher les sections tags et ajustement streams
+        document.getElementById('tagsSection').style.display = 'none';
+        document.getElementById('adjustStreamsSection').style.display = 'none';
 
         // Pré-remplir la date avec l'heure actuelle
         const now = new Date();
@@ -115,7 +128,10 @@ async function saveActivity(event) {
         let response;
         if (editingActivityId) {
             // Mise à jour
-            response = await fetch(`${API_BASE}/activities/activities/${editingActivityId}`, {
+            const adjustStreams = document.getElementById('adjustStreams')?.checked ?? true;
+            const url = `${API_BASE}/activities/activities/${editingActivityId}?adjust_streams=${adjustStreams}`;
+
+            response = await fetch(url, {
                 method: 'PUT',
                 headers: {
                     ...headers,
@@ -137,8 +153,17 @@ async function saveActivity(event) {
 
         if (response.ok) {
             closeActivityModal();
-            // Recharger la liste des activités
-            await loadActivities();
+
+            // Si on était sur la page de détail, recharger les données de l'activité
+            const currentPage = document.querySelector('.page.active').id;
+            if (currentPage === 'activityDetailPage' && editingActivityId) {
+                // Recharger les détails de l'activité pour mettre à jour les graphiques
+                await showActivityDetail(editingActivityId);
+            } else {
+                // Sinon recharger la liste des activités
+                await loadActivities();
+            }
+
             showNotification(editingActivityId ? 'Activité modifiée avec succès !' : 'Activité créée avec succès !', 'success');
         } else {
             const error = await response.json();
@@ -166,6 +191,12 @@ async function deleteActivity(activityId, activityName) {
         });
 
         if (response.status === 204 || response.ok) {
+            // Si on est sur la page de détail, retourner à la liste
+            const currentPage = document.querySelector('.page.active').id;
+            if (currentPage === 'activityDetailPage') {
+                showPage('activitiesPage');
+            }
+
             // Recharger la liste des activités
             await loadActivities();
             showNotification('Activité supprimée avec succès', 'success');
@@ -211,3 +242,126 @@ window.addEventListener('keydown', (event) => {
         closeActivityModal();
     }
 });
+
+// ==================== GESTION DES TAGS ====================
+
+// Charger tous les tags disponibles
+async function loadAvailableTags() {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/tags/`, { headers });
+        if (response.ok) {
+            availableTags = await response.json();
+            renderTagsContainer();
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des tags:', error);
+    }
+}
+
+// Charger les tags d'une activité
+async function loadActivityTags(activityId) {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/tags/activity/${activityId}`, { headers });
+        if (response.ok) {
+            activityTags = await response.json();
+            renderTagsContainer();
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des tags de l\'activité:', error);
+        activityTags = [];
+    }
+}
+
+// Afficher les tags dans le conteneur
+function renderTagsContainer() {
+    const container = document.getElementById('tagsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (availableTags.length === 0) {
+        container.innerHTML = '<p class="text-muted">Aucun tag disponible</p>';
+        return;
+    }
+
+    availableTags.forEach(tag => {
+        const isActive = activityTags.some(t => t.id === tag.id);
+
+        const tagElement = document.createElement('div');
+        tagElement.className = `tag-item ${isActive ? 'active' : ''}`;
+        tagElement.style.borderColor = tag.color || '#666';
+
+        tagElement.innerHTML = `
+            <span class="tag-icon">${getTagIcon(tag.icon)}</span>
+            <span class="tag-name">${tag.name}</span>
+            ${isActive ? '<span class="tag-check">✓</span>' : ''}
+        `;
+
+        tagElement.onclick = () => toggleTag(tag);
+        container.appendChild(tagElement);
+    });
+}
+
+// Icônes des tags
+function getTagIcon(iconName) {
+    const icons = {
+        'treadmill': '🏃',
+        'trophy': '🏆',
+        'mountain': '⛰️',
+        'clock': '⏱️',
+        'zap': '⚡',
+        'heart': '💚',
+        'target': '🎯'
+    };
+    return icons[iconName] || '🏷️';
+}
+
+// Basculer un tag (ajouter/retirer)
+async function toggleTag(tag) {
+    if (!editingActivityId) return;
+
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    const isActive = activityTags.some(t => t.id === tag.id);
+
+    try {
+        const endpoint = isActive ? '/tags/activity/remove' : '/tags/activity/add';
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                ...headers,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                activity_id: editingActivityId,
+                tag_id: tag.id
+            })
+        });
+
+        if (response.ok) {
+            // Mettre à jour localement
+            if (isActive) {
+                activityTags = activityTags.filter(t => t.id !== tag.id);
+            } else {
+                activityTags.push(tag);
+            }
+
+            // Re-rendre
+            renderTagsContainer();
+
+            // Notification discrète
+            const action = isActive ? 'retiré' : 'ajouté';
+            console.log(`Tag "${tag.name}" ${action}`);
+        }
+    } catch (error) {
+        console.error('Erreur lors de la modification du tag:', error);
+        showNotification('Erreur lors de la modification du tag', 'error');
+    }
+}
