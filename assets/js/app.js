@@ -1,10 +1,14 @@
-// Détection automatique de l'environnement
-// - Docker Compose : utilise le proxy nginx sur /api
-// - Dev local : utilise directement le backend sur :8000
-const API_BASE = window.location.port === '3000'
-    ? 'http://localhost:3000/api'  // Docker Compose avec nginx proxy
-    : 'http://localhost:8000';      // Dev local direct
+// Configuration de l'API backend
+// Priorité:
+// 1. Variable d'environnement (pour production)
+// 2. Détection automatique selon le port (pour développement)
+const API_BASE = window.ENV?.API_BASE_URL || (
+    window.location.port === '3000'
+        ? 'http://localhost:3000/api'  // Docker Compose avec nginx proxy
+        : 'http://localhost:8000'       // Dev local direct
+);
 let currentToken = null;
+let currentPage = 'homePage';
 let charts = {};
 
 // Palette de couleurs HawkSight
@@ -25,12 +29,95 @@ if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Inter', sans-serif";
 }
 
+// ===== OPTIMISATIONS PERFORMANCES =====
+
+/**
+ * Fetch avec cache automatique
+ * @param {string} url - URL à fetcher
+ * @param {Object} options - Options du fetch
+ * @param {number} cacheTTL - Durée de vie du cache en ms (défaut: 5 min)
+ * @returns {Promise} Données de l'API
+ */
+async function fetchWithCache(url, options = {}, cacheTTL = 300000) {
+    const cacheKey = chartCache.generateKey(url, {});
+
+    const cached = chartCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    const response = await fetch(url, options);
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    chartCache.set(cacheKey, data, cacheTTL);
+
+    return data;
+}
+
+/**
+ * Met à jour ou crée un graphique Chart.js
+ * Réutilise l'instance existante au lieu de destroy/create
+ * @param {string} chartKey - Clé du graphique dans l'objet global charts
+ * @param {string} canvasId - ID du canvas HTML
+ * @param {Object} config - Configuration Chart.js
+ * @param {Object} data - Données du graphique
+ */
+function updateOrCreateChart(chartKey, canvasId, config, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (charts[chartKey]) {
+        Object.assign(charts[chartKey].data, data);
+        charts[chartKey].update('none');
+    } else {
+        charts[chartKey] = new Chart(ctx, {
+            ...config,
+            data: data
+        });
+    }
+}
+
+/**
+ * Invalidation du cache lors de changements de filtres ou refresh
+ */
+function clearChartCache() {
+    chartCache.clear();
+}
+
+/**
+ * Invalidation du cache lors de la déconnexion
+ */
+function clearCacheOnLogout() {
+    chartCache.clear();
+    chartLoader.resetAll();
+}
+
+// ===== FIN OPTIMISATIONS =====
+
 // Gestion de l'état de l'application
 function showPage(pageId) {
+    // Pages publiques accessibles sans authentification
+    const publicPages = ['homePage', 'loginPage'];
+
+    // Vérifier l'authentification pour les pages protégées
+    if (!publicPages.includes(pageId)) {
+        if (!validateToken()) {
+            // Si pas authentifié, rediriger vers la page de connexion
+            showPage('loginPage');
+            return;
+        }
+    }
+
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
     document.getElementById(pageId).classList.add('active');
+    currentPage = pageId;
     updateNavigation();
 
     // Charger les KPI quand on accède à la page Chiffres clés
@@ -194,51 +281,29 @@ async function autoUpdateData() {
     const headers = getAuthHeaders();
     if (!headers) return;
 
-    console.log('🔄 Mise à jour automatique des données en cours...');
-
     try {
         // Mettre à jour la base de données
-        const dbResponse = await fetch(`${API_BASE}/activities/update_db`, {
+        await fetch(`${API_BASE}/activities/update_db`, {
             method: 'POST',
             headers: headers
         });
-
-        if (dbResponse.ok) {
-            console.log('✅ Base de données mise à jour');
-        } else {
-            console.warn('⚠️ Erreur lors de la mise à jour de la base de données');
-        }
 
         // Mettre à jour les streams (avec timeout de 30 secondes)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         try {
-            const streamsResponse = await fetch(`${API_BASE}/activities/update_streams`, {
+            await fetch(`${API_BASE}/activities/update_streams`, {
                 method: 'POST',
                 headers: headers,
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
-
-            if (streamsResponse.ok) {
-                const data = await streamsResponse.json();
-                console.log('✅ Streams mis à jour:', data.message);
-            } else {
-                console.warn('⚠️ Erreur lors de la mise à jour des streams');
-            }
         } catch (error) {
             clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
-                console.warn('⚠️ Mise à jour des streams annulée (timeout) - Les streams seront synchronisés progressivement');
-            } else {
-                console.warn('⚠️ Erreur lors de la mise à jour des streams:', error.message);
-            }
         }
-
-        console.log('✅ Mise à jour automatique terminée');
     } catch (error) {
-        console.error('❌ Erreur lors de la mise à jour automatique:', error);
+        // Silent error handling in production
     }
 }
 
@@ -291,16 +356,19 @@ let currentWeeklyOffset = 0;
 
 // Chargement des analyses
 async function loadAnalytics() {
-    await loadDailyHours();
-    await loadWeeklyHours();
-    await loadWeeklyDistance();
-    await loadRepartition();
-    await loadWeeklyPace();
+    // Charger immédiatement les éléments visibles (au-dessus du scroll)
     loadGoals();
-    await updateMonthlySummary();
-    await updateWeeklySummaryData();
-    await loadStreak();
-    await loadRecords();
+    updateMonthlySummary();
+    updateWeeklySummaryData();
+    loadStreak();
+    loadRecords();
+
+    // Lazy load des graphiques avec Intersection Observer
+    chartLoader.observe('dailyHoursChart', loadDailyHours);
+    chartLoader.observe('weeklyHoursChart', loadWeeklyHours);
+    chartLoader.observe('weeklyDistanceChart', loadWeeklyDistance);
+    chartLoader.observe('repartitionChart', loadRepartition);
+    chartLoader.observe('weeklyPaceChart', loadWeeklyPace);
 }
 
 async function loadKPIs() {
@@ -817,10 +885,8 @@ let polylineInteractive, polylineStatic;
 
 
 async function loadActivityElevation(sportType = null) {
-    console.log('loadActivityElevation appelée avec sportType:', sportType);
     const headers = getAuthHeaders();
     if (!headers) {
-        console.log('Pas de headers auth');
         return;
     }
 
@@ -830,32 +896,16 @@ async function loadActivityElevation(sportType = null) {
             ? `${API_BASE}/activities/last_activity_streams?sport_type=${encodeURIComponent(sportType)}`
             : `${API_BASE}/activities/last_activity_streams`;
 
-        console.log('Fetching elevation data from:', url);
-        const response = await fetch(url, {
-            headers: headers
-        });
-
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-            console.log('Pas de données d\'élévation disponibles');
-            clearElevationChart();
-            return;
-        }
-
-        const data = await response.json();
-        console.log('Données reçues:', data);
+        const data = await fetchWithCache(url, { headers }, 300000);
 
         if (!data.streams || data.streams.length === 0) {
-            console.log('Aucun stream d\'élévation trouvé');
             clearElevationChart();
             return;
         }
 
-        console.log('Appel de displayElevationProfile avec', data.streams.length, 'points');
         displayElevationProfile(data.streams);
 
     } catch (error) {
-        console.error('Erreur chargement élévation:', error);
         clearElevationChart();
     }
 }
@@ -882,15 +932,9 @@ function displayElevationProfile(streams) {
 
     const canvas = document.getElementById('elevationChart');
     if (!canvas) {
-        console.error('Canvas elevationChart non trouvé');
         return;
     }
 
-    if (charts.elevation) {
-        charts.elevation.destroy();
-    }
-
-    const ctx = canvas.getContext('2d');
     const distances = streams.map(s => s.distance_m / 1000);
     const elevations = streams.map(s => s.altitude);
 
@@ -900,17 +944,17 @@ function displayElevationProfile(streams) {
         y: elevations[index]
     }));
 
-    const minElevation = Math.min(...elevations);
-    const maxElevation = Math.max(...elevations);
     const totalDistance = Math.max(...distances);
 
-    console.log('Données élévation:', {
-        totalDistance,
-        points: dataPoints.length,
-        minElevation,
-        maxElevation
-    });
+    // Réutiliser l'instance si elle existe
+    if (charts.elevation) {
+        charts.elevation.data.datasets[0].data = dataPoints;
+        charts.elevation.options.scales.x.max = Math.ceil(totalDistance);
+        charts.elevation.update('none');
+        return;
+    }
 
+    const ctx = canvas.getContext('2d');
     charts.elevation = new Chart(ctx, {
         type: 'line',
         data: {
@@ -976,20 +1020,14 @@ async function loadDailyHours() {
 
     try {
         const url = `${API_BASE}/plot/daily_hours_bar?week_offset=${currentWeekOffset}`;
-        const response = await fetch(url, { headers });
+        const data = await fetchWithCache(url, { headers }, 300000);
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('loadDailyHours - Données reçues:', data);
-            displayDailyHours(data);
-            updateWeekLabel(data);
+        displayDailyHours(data);
+        updateWeekLabel(data);
 
-            // Mettre à jour la carte "Ce Mois" si on est sur la semaine courante
-            if (currentWeekOffset === 0) {
-                await updateMonthlySummary();
-            }
-        } else {
-            console.error('Erreur réponse API:', response.status, response.statusText);
+        // Mettre à jour la carte "Ce Mois" si on est sur la semaine courante
+        if (currentWeekOffset === 0) {
+            await updateMonthlySummary();
         }
     } catch (error) {
         console.error('Erreur chargement heures quotidiennes:', error);
@@ -999,18 +1037,6 @@ async function loadDailyHours() {
 function displayDailyHours(data) {
     const canvas = document.getElementById('dailyHoursChart');
     if (!canvas) return;
-
-    if (charts.dailyHours) {
-        charts.dailyHours.destroy();
-    }
-
-    const ctx = canvas.getContext('2d');
-
-    console.log('displayDailyHours - Structure des données:', {
-        hasLabels: !!data.labels,
-        hasDatasets: !!data.datasets,
-        datasetCount: data.datasets?.length || 0
-    });
 
     // Utiliser les données formatées du backend
     const labels = data.labels || ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -1032,7 +1058,6 @@ function displayDailyHours(data) {
     if (data.datasets && data.datasets.length > 0) {
         // Préparer les datasets pour chaque sport en gardant les minutes
         datasets = data.datasets.map(dataset => {
-            console.log(`Dataset ${dataset.label}:`, dataset.data);
             return {
                 label: dataset.label,
                 data: dataset.data,  // Garder les minutes
@@ -1057,6 +1082,16 @@ function displayDailyHours(data) {
         maxMinutes = Math.ceil(targetMax / 20) * 20;
     }
 
+    // Réutiliser l'instance si elle existe
+    if (charts.dailyHours) {
+        charts.dailyHours.data.labels = labels;
+        charts.dailyHours.data.datasets = datasets;
+        charts.dailyHours.options.scales.y.max = maxMinutes;
+        charts.dailyHours.update('none');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
     charts.dailyHours = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1178,11 +1213,6 @@ async function updateWeekStats(monday, sunday) {
         // Calculer les totaux pour Run + Trail
         const allActivities = [...runActivities, ...trailActivities];
 
-        console.log('updateWeekStats - Activités trouvées:', allActivities.length);
-        if (allActivities.length > 0) {
-            console.log('Exemple d\'activité:', allActivities[0]);
-        }
-
         // Essayer à la fois distance_km et distance
         const totalDistance = allActivities.reduce((total, activity) => {
             const distance = activity.distance_km || activity.distance || 0;
@@ -1190,8 +1220,6 @@ async function updateWeekStats(monday, sunday) {
         }, 0);
         const totalElevation = allActivities.reduce((total, activity) => total + (activity.total_elevation_gain || 0), 0);
         const totalTime = allActivities.reduce((total, activity) => total + (activity.moving_time || 0), 0);
-
-        console.log('Totaux calculés:', { totalDistance, totalElevation, totalTime });
 
         // Mettre à jour l'affichage
         document.getElementById('statDistance').textContent = totalDistance.toFixed(1);
@@ -1216,13 +1244,10 @@ async function loadWeeklyHours() {
         // Ajouter 1 semaine pour s'assurer que la semaine en cours est incluse
         const weeks = 11 + Math.abs(currentWeeklyOffset);
         const url = `${API_BASE}/plot/weekly_bar?value_col=moving_time&weeks=${weeks}`;
-        const response = await fetch(url, { headers });
+        const data = await fetchWithCache(url, { headers }, 300000);
 
-        if (response.ok) {
-            const data = await response.json();
-            displayWeeklyHours(data);
-            updateWeeklyLabel();
-        }
+        displayWeeklyHours(data);
+        updateWeeklyLabel();
     } catch (error) {
         console.error('Erreur chargement heures hebdomadaires:', error);
     }
@@ -1373,12 +1398,8 @@ async function loadWeeklyDistance() {
             url += `&${sportParams}`;
         }
 
-        const response = await fetch(url, { headers });
-
-        if (response.ok) {
-            const data = await response.json();
-            displayWeeklyDistance(data);
-        }
+        const data = await fetchWithCache(url, { headers }, 300000);
+        displayWeeklyDistance(data);
     } catch (error) {
         console.error('Erreur chargement distance hebdomadaire:', error);
     }
@@ -1490,12 +1511,8 @@ async function loadRepartition() {
             url += `&${sportParams}`;
         }
 
-        const response = await fetch(url, { headers });
-
-        if (response.ok) {
-            const data = await response.json();
-            displayRepartition(data);
-        }
+        const data = await fetchWithCache(url, { headers }, 300000);
+        displayRepartition(data);
     } catch (error) {
         console.error('Erreur chargement répartition:', error);
     }
@@ -1617,12 +1634,8 @@ async function loadWeeklyPace() {
             url += `&${sportParams}`;
         }
 
-        const response = await fetch(url, { headers });
-
-        if (response.ok) {
-            const data = await response.json();
-            displayWeeklyPace(data);
-        }
+        const data = await fetchWithCache(url, { headers }, 300000);
+        displayWeeklyPace(data);
     } catch (error) {
         console.error('Erreur chargement allure hebdomadaire:', error);
     }
@@ -2398,7 +2411,7 @@ async function loadActivitiesForCalendar(year, month) {
 // Page Activités
 // -----------------------------
 let allActivities = [];
-let currentPage = 1;
+let currentActivityPage = 1;
 const activitiesPerPage = 10;
 
 async function loadActivities() {
@@ -2411,7 +2424,7 @@ async function loadActivities() {
             allActivities = await response.json();
             // Trier par date décroissante
             allActivities.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
-            currentPage = 1;
+            currentActivityPage = 1;
             displayActivities();
         }
     } catch (error) {
@@ -2423,7 +2436,7 @@ function displayActivities() {
     const container = document.getElementById('activitiesList');
     if (!container) return;
 
-    const startIndex = (currentPage - 1) * activitiesPerPage;
+    const startIndex = (currentActivityPage - 1) * activitiesPerPage;
     const endIndex = startIndex + activitiesPerPage;
     const activitiesToShow = allActivities.slice(startIndex, endIndex);
 
@@ -2534,17 +2547,17 @@ function displayActivities() {
 
 function updatePagination() {
     const totalPages = Math.ceil(allActivities.length / activitiesPerPage);
-    document.getElementById('pageInfo').textContent = `Page ${currentPage} sur ${totalPages}`;
-    document.getElementById('prevPageBtn').disabled = currentPage === 1;
-    document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+    document.getElementById('pageInfo').textContent = `Page ${currentActivityPage} sur ${totalPages}`;
+    document.getElementById('prevPageBtn').disabled = currentActivityPage === 1;
+    document.getElementById('nextPageBtn').disabled = currentActivityPage === totalPages;
 }
 
 function changePage(delta) {
     const totalPages = Math.ceil(allActivities.length / activitiesPerPage);
-    const newPage = currentPage + delta;
+    const newPage = currentActivityPage + delta;
 
     if (newPage >= 1 && newPage <= totalPages) {
-        currentPage = newPage;
+        currentActivityPage = newPage;
         displayActivities();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -2584,13 +2597,18 @@ document.addEventListener('DOMContentLoaded', function() {
     currentToken = localStorage.getItem('eyesight_token');
 
     if (currentToken && !isTokenExpired()) {
-        // Mettre à jour automatiquement les données en arrière-plan
+        // Token valide, charger le dashboard
         autoUpdateData();
-
         showPage('dashboardPage');
         loadDashboard();
-    } else if (currentToken) {
-        logout();
+    } else {
+        // Pas de token ou token expiré, afficher la page de connexion
+        if (currentToken) {
+            // Token expiré, nettoyer
+            localStorage.removeItem('eyesight_token');
+            currentToken = null;
+        }
+        showPage('loginPage');
     }
 
     updateNavigation();

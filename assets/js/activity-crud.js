@@ -355,10 +355,6 @@ async function toggleTag(tag) {
 
             // Re-rendre
             renderTagsContainer();
-
-            // Notification discrète
-            const action = isActive ? 'retiré' : 'ajouté';
-            console.log(`Tag "${tag.name}" ${action}`);
         }
     } catch (error) {
         console.error('Erreur lors de la modification du tag:', error);

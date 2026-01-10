@@ -15,12 +15,7 @@ async function showActivityDetail(activityId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/activities/activity_detail/${activityId}`, { headers });
-        if (!response.ok) {
-            throw new Error('Erreur lors du chargement des details');
-        }
-
-        const data = await response.json();
+        const data = await fetchWithCache(`${API_BASE}/activities/activity_detail/${activityId}`, { headers }, 600000);
         if (data.error) {
             console.error(data.error);
             return;
@@ -648,34 +643,23 @@ function calculateRCEWithSlidingWindow(streams, windowSize) {
 async function loadHrSpeedCorrelation(activityId) {
     const headers = getAuthHeaders();
     if (!headers) {
-        console.log('HR-Speed: pas de headers disponibles');
         return;
     }
 
     try {
-        console.log(`HR-Speed: chargement analyse pour activité ${activityId}...`);
-        const response = await fetch(`${API_BASE}/analysis/rolling_hr_speed_correlation/${activityId}?window_seconds=180`, { headers });
-        if (!response.ok) {
-            console.log(`HR-Speed: réponse non OK (${response.status})`);
-            return;
-        }
-
-        const data = await response.json();
+        const data = await fetchWithCache(`${API_BASE}/analysis/rolling_hr_speed_correlation/${activityId}?window_seconds=180`, { headers }, 600000);
         if (data.error) {
-            console.log('HR-Speed: erreur dans les données:', data.error);
             return;
         }
 
         if (!data.hr || !data.speed || data.hr.length === 0) {
-            console.log('HR-Speed: pas de données HR ou vitesse');
             return;
         }
 
-        console.log(`HR-Speed: affichage de ${data.hr.length} points de données`);
         document.getElementById('detailHrSpeedCorrelationCard').style.display = 'block';
         displayHrSpeedCorrelationChart(data);
     } catch (error) {
-        console.log('HR-Speed: erreur chargement:', error);
+        // Silent error handling in production
     }
 }
 

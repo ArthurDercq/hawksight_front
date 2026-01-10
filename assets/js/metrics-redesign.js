@@ -132,15 +132,6 @@ function displayKPIsRedesign(kpis) {
     if (kpis["nombre d'activités par sport"]) {
         const chartContainer = document.getElementById('activityCountChartContainer');
         if (chartContainer) {
-            chartContainer.innerHTML = '';
-
-            if (window.charts && window.charts.activityCount) {
-                window.charts.activityCount.destroy();
-            }
-
-            const canvas = document.createElement('canvas');
-            chartContainer.appendChild(canvas);
-
             const value = kpis["nombre d'activités par sport"];
             const sports = ["Run", "Bike", "Trail", "WeightTraining", "Hike", "Swim"];
             const labels = [];
@@ -167,6 +158,20 @@ function displayKPIsRedesign(kpis) {
             });
 
             if (!window.charts) window.charts = {};
+
+            // Réutiliser l'instance si elle existe
+            if (window.charts.activityCount) {
+                window.charts.activityCount.data.labels = labels;
+                window.charts.activityCount.data.datasets[0].data = counts;
+                window.charts.activityCount.data.datasets[0].backgroundColor = backgroundColors;
+                window.charts.activityCount.update('none');
+                return;
+            }
+
+            // Créer canvas seulement si nécessaire
+            chartContainer.innerHTML = '';
+            const canvas = document.createElement('canvas');
+            chartContainer.appendChild(canvas);
 
             window.charts.activityCount = new Chart(canvas.getContext('2d'), {
                 type: 'doughnut',
