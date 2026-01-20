@@ -1,0 +1,184 @@
+/* Import Google Fonts - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-charcoal text-mist antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-charcoal;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-steel rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-steel-light;
+}
+
+/* Focus outline */
+*:focus-visible {
+  @apply outline-none ring-2 ring-amber ring-offset-2 ring-offset-charcoal;
+}
+
+/* Animated background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 400px;
+  background-image: url('/pattern.svg');
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: 1500px auto;
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
+  animation: patternMove 60s linear infinite;
+  transform: scaleY(-1);
+}
+
+@keyframes patternMove {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 3000px 0;
+  }
+}
+
+/* Ensure main content is above pattern */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Hover lift effect */
+.hover-lift {
+  @apply transition-all duration-300 ease-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Glow effects */
+.glow-amber {
+  box-shadow: 0 4px 12px rgba(232, 131, 42, 0.4);
+}
+
+.glow-glacier {
+  box-shadow: 0 4px 12px rgba(61, 178, 224, 0.4);
+}
+
+.glow-moss {
+  box-shadow: 0 4px 12px rgba(109, 170, 117, 0.4);
+}
+
+/* Grid pattern overlay */
+.grid-pattern {
+  background-image:
+    linear-gradient(to right, #F2F2F2 1px, transparent 1px),
+    linear-gradient(to bottom, #F2F2F2 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0.03;
+}
+
+/* Records card futuristic grid pattern */
+.records-grid-pattern {
+  background-image:
+    linear-gradient(to right, #E8832A 1px, transparent 1px),
+    linear-gradient(to bottom, #E8832A 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.08;
+}
+
+/* Card base styles */
+.card-glass {
+  background: rgba(58, 63, 71, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.card-glass:hover {
+  border-color: #E8832A;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient cards */
+.card-weekly {
+  background: linear-gradient(135deg, rgba(232, 131, 42, 0.2) 0%, rgba(61, 178, 224, 0.2) 100%);
+  border: 1px solid rgba(232, 131, 42, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.card-monthly {
+  background: linear-gradient(135deg, rgba(61, 178, 224, 0.2) 0%, rgba(109, 170, 117, 0.2) 100%);
+  border: 1px solid rgba(61, 178, 224, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.card-streak {
+  background: linear-gradient(135deg, rgba(232, 131, 42, 0.2) 0%, rgba(255, 99, 71, 0.2) 50%, rgba(255, 140, 0, 0.2) 100%);
+  border: 1px solid rgba(232, 131, 42, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+/* Pulse animation for live indicators */
+@keyframes pulse-live {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse-live {
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
+/* Typography helpers */
+.text-gradient-amber {
+  background: linear-gradient(135deg, #E8832A, #ff9942);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button hover lift */
+.btn-lift {
+  @apply transition-all duration-300 ease-out;
+}
+
+.btn-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(232, 131, 42, 0.4);
+}

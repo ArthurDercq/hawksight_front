@@ -1,0 +1,8 @@
+export { HomePage } from './HomePage';
+export { LoginPage } from './LoginPage';
+export { DashboardPage } from './DashboardPage';
+export { ActivitiesPage } from './ActivitiesPage';
+export { ActivityDetailPage } from './ActivityDetailPage';
+export { KPIPage } from './KPIPage';
+export { CalendarPage } from './CalendarPage';
+export { ProfilePage } from './ProfilePage';

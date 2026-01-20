@@ -1,0 +1,58 @@
+<svg width="1500" height="200" viewBox="0 0 1500 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sparkline pattern repeating -->
+  <g opacity="0.15">
+    <!-- First wave -->
+    <polyline
+      points="0,150 50,120 100,140 150,100 200,130 250,80 300,110 350,90 400,120 450,70 500,100"
+      stroke="#E8832A"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <polyline
+      points="500,100 550,130 600,85 650,115 700,75 750,105 800,95 850,125 900,80 950,110 1000,90"
+      stroke="#E8832A"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <polyline
+      points="1000,90 1050,120 1100,70 1150,100 1200,85 1250,115 1300,75 1350,105 1400,90 1450,120 1500,80"
+      stroke="#E8832A"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+  </g>
+
+  <!-- Second wave offset -->
+  <g opacity="0.1" transform="translate(0, 30)">
+    <polyline
+      points="0,150 75,110 150,135 225,90 300,120 375,70 450,100 525,85 600,115 675,65 750,95"
+      stroke="#3DB2E0"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <polyline
+      points="750,95 825,125 900,80 975,110 1050,70 1125,100 1200,90 1275,120 1350,75 1425,105 1500,85"
+      stroke="#3DB2E0"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+  </g>
+
+  <!-- Mountain silhouette hints -->
+  <g opacity="0.05">
+    <path
+      d="M0 200 L100 140 L200 180 L350 100 L500 160 L650 80 L800 150 L950 90 L1100 140 L1250 70 L1400 130 L1500 100 L1500 200 Z"
+      fill="#F2F2F2"
+    />
+  </g>
+</svg>
