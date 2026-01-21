@@ -10,6 +10,7 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) {
   const sportStyle = SPORT_COLORS[activity.sport_type] || SPORT_COLORS.Run;
+  const isBike = activity.sport_type === 'Bike';
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -18,11 +19,6 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
       month: 'short',
       year: 'numeric',
     });
-  };
-
-  const formatDistance = (distance: number) => {
-    const km = distance / 1000;
-    return `${km.toFixed(1)} km`;
   };
 
   return (
@@ -51,9 +47,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
         <div>
           <p className="text-xs text-mist/50">Distance</p>
           <p className="font-mono text-sm text-amber">
-            {activity.distance_km
-              ? `${activity.distance_km.toFixed(1)} km`
-              : formatDistance(activity.distance)}
+            {(activity.distance_km || activity.distance || 0).toFixed(1)} km
           </p>
         </div>
         <div>
@@ -72,8 +66,12 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
         )}
         {activity.speed_minutes_per_km_hms && (
           <div>
-            <p className="text-xs text-mist/50">Allure</p>
-            <p className="font-mono text-sm text-moss">{activity.speed_minutes_per_km_hms}</p>
+            <p className="text-xs text-mist/50">{isBike ? 'Vitesse' : 'Allure'}</p>
+            <p className="font-mono text-sm text-moss">
+              {isBike
+                ? `${activity.average_speed?.toFixed(1) || '--'} km/h`
+                : activity.speed_minutes_per_km_hms}
+            </p>
           </div>
         )}
       </div>

@@ -2,55 +2,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useActivityDetail, useActivities } from '@/hooks';
 import { ActivityMap } from '@/components/maps';
+import { ActivityPoster } from '@/components/activity';
 import {
   ElevationChart,
   HeartrateChart,
   PaceChart,
-  CadenceChart,
-  GradeChart,
-  PowerChart,
 } from '@/components/charts';
 import type { SportType } from '@/types';
-
-// SVG Icons for stats
-const DistanceIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 9l2-2 4 4 4-4 4 4" />
-    <path d="M5 15l2-2 4 4 4-4 4 4" />
-  </svg>
-);
-
-const ClockIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-
-const PaceIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="5 3 19 12 5 21 5 3" />
-  </svg>
-);
-
-const ElevationIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 3l4 8 5-5 2 8" />
-    <line x1="2" y1="21" x2="22" y2="21" />
-  </svg>
-);
-
-const HeartIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-);
-
-const CadenceIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-  </svg>
-);
 
 const ArrowLeftIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -82,24 +40,6 @@ const SPORT_LABELS: Record<SportType, string> = {
   Swim: 'Natation',
   Hike: 'Randonnee',
   WeightTraining: 'Musculation',
-};
-
-const STAT_ICONS: Record<string, React.ComponentType> = {
-  'Distance': DistanceIcon,
-  'Duree': ClockIcon,
-  'Allure': PaceIcon,
-  'Denivele': ElevationIcon,
-  'FC moy': HeartIcon,
-  'Cadence': CadenceIcon,
-};
-
-const STAT_COLORS: Record<string, string> = {
-  'Distance': '#E8832A',
-  'Duree': '#F2F2F2',
-  'Allure': '#6DAA75',
-  'Denivele': '#3DB2E0',
-  'FC moy': '#E85858',
-  'Cadence': '#9477D9',
 };
 
 export function ActivityDetailPage() {
@@ -166,8 +106,6 @@ export function ActivityDetailPage() {
 
   const sportColor = SPORT_COLORS[activity.sport_type] || '#E8832A';
   const hasStreams = streams.length > 0;
-  const hasPower = streams.some((s) => s.power !== null && s.power !== undefined);
-  const isBike = activity.sport_type === 'Bike';
 
   return (
     <div className="max-w-7xl mx-auto px-6">
@@ -184,7 +122,7 @@ export function ActivityDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="font-heading text-3xl font-bold text-mist">
+            <h1 className="text-2xl font-semibold text-mist">
               {activity.name || 'Activite sans titre'}
             </h1>
             <span
@@ -209,30 +147,36 @@ export function ActivityDetailPage() {
         </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <StatCard
-          label="Distance"
-          value={`${(activity.distance_km || activity.distance / 1000 || 0).toFixed(2)} km`}
-        />
-        <StatCard label="Duree" value={activity.moving_time_hms || '--'} />
-        <StatCard
-          label="Allure"
-          value={activity.speed_minutes_per_km_hms ? `${activity.speed_minutes_per_km_hms} /km` : '--'}
-        />
-        <StatCard
-          label="Denivele"
-          value={activity.total_elevation_gain ? `${Math.round(activity.total_elevation_gain)} m` : '--'}
-        />
-        <StatCard
-          label="FC moy"
-          value={activity.average_heartrate ? `${Math.round(activity.average_heartrate)} bpm` : '--'}
-        />
-        <StatCard
-          label="Cadence"
-          value={activity.average_cadence ? `${Math.round(activity.average_cadence)} spm` : '--'}
-        />
-      </div>
+      {/* Main content: Poster left, Charts right */}
+      {hasStreams && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Left: Poster (smaller) */}
+          <div className="lg:max-w-md">
+            <ActivityPoster activity={activity} streams={streams} />
+          </div>
+
+          {/* Right: Charts */}
+          <div className="space-y-4">
+            {/* Elevation */}
+            <div className="bg-charcoal-light border border-steel/30 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-mist/70 mb-3">Profil altimetrique</h3>
+              <ElevationChart streams={streams} />
+            </div>
+
+            {/* Pace */}
+            <div className="bg-charcoal-light border border-steel/30 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-mist/70 mb-3">Allure</h3>
+              <PaceChart activity={activity} streams={streams} />
+            </div>
+
+            {/* Heart Rate */}
+            <div className="bg-charcoal-light border border-steel/30 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-mist/70 mb-3">Frequence cardiaque</h3>
+              <HeartrateChart streams={streams} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Map */}
       {hasStreams && (
@@ -248,45 +192,6 @@ export function ActivityDetailPage() {
             <h2 className="font-heading text-lg font-semibold text-mist">Parcours</h2>
           </div>
           <ActivityMap streams={streams} className="h-[400px] rounded-lg overflow-hidden relative" />
-        </div>
-      )}
-
-      {/* Charts */}
-      {hasStreams && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Elevation */}
-          <ChartCard title="Profil altimetrique" icon="elevation" color="#3DB2E0">
-            <ElevationChart streams={streams} />
-          </ChartCard>
-
-          {/* Heart Rate */}
-          <ChartCard title="Frequence cardiaque" icon="heart" color="#E85858">
-            <HeartrateChart streams={streams} />
-          </ChartCard>
-
-          {/* Pace */}
-          <ChartCard title="Allure" icon="pace" color="#6DAA75">
-            <PaceChart activity={activity} streams={streams} />
-          </ChartCard>
-
-          {/* Grade */}
-          <ChartCard title="Pente" icon="grade" color="#9477D9">
-            <GradeChart streams={streams} />
-          </ChartCard>
-
-          {/* Cadence (Bike only) */}
-          {isBike && (
-            <ChartCard title="Cadence" icon="cadence" color="#E8832A">
-              <CadenceChart streams={streams} />
-            </ChartCard>
-          )}
-
-          {/* Power */}
-          {hasPower && (
-            <ChartCard title="Puissance" icon="power" color="#7B6BC8">
-              <PowerChart streams={streams} />
-            </ChartCard>
-          )}
         </div>
       )}
 
@@ -332,96 +237,6 @@ export function ActivityDetailPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// Sub-components
-interface StatCardProps {
-  label: string;
-  value: string;
-}
-
-function StatCard({ label, value }: StatCardProps) {
-  const Icon = STAT_ICONS[label];
-  const color = STAT_COLORS[label] || '#F2F2F2';
-
-  return (
-    <div className="bg-steel/20 rounded-xl p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-lg group">
-      <div className="flex items-center justify-center gap-2 mb-2">
-        {Icon && (
-          <span style={{ color }} className="opacity-70 group-hover:opacity-100 transition-opacity">
-            <Icon />
-          </span>
-        )}
-        <p className="text-mist/60 text-xs uppercase tracking-wider">{label}</p>
-      </div>
-      <p className="font-mono font-semibold text-lg" style={{ color }}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
-// Chart icons map
-const CHART_ICONS: Record<string, React.ReactNode> = {
-  elevation: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 3l4 8 5-5 2 8" />
-      <line x1="2" y1="21" x2="22" y2="21" />
-    </svg>
-  ),
-  heart: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  ),
-  pace: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="5 3 19 12 5 21 5 3" />
-    </svg>
-  ),
-  grade: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-    </svg>
-  ),
-  cadence: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  ),
-  power: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  ),
-};
-
-interface ChartCardProps {
-  title: string;
-  icon?: string;
-  color?: string;
-  children: React.ReactNode;
-}
-
-function ChartCard({ title, icon, color = '#3DB2E0', children }: ChartCardProps) {
-  return (
-    <div className="card-glass rounded-lg p-6 relative overflow-hidden">
-      <div className="absolute inset-0 grid-pattern pointer-events-none" />
-      <div className="flex items-center gap-3 mb-4 relative">
-        {icon && (
-          <div
-            className="p-2 rounded-lg border"
-            style={{ backgroundColor: `${color}15`, borderColor: `${color}30`, color }}
-          >
-            {CHART_ICONS[icon]}
-          </div>
-        )}
-        <h2 className="font-heading text-lg font-semibold text-mist">{title}</h2>
-      </div>
-      <div className="relative">{children}</div>
     </div>
   );
 }

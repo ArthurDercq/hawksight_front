@@ -1,6 +1,6 @@
 export function Footer() {
   return (
-    <footer className="max-w-7xl mx-auto px-6 mt-12 pb-6">
+    <footer className="w-full px-6 mt-12 pb-6">
       <div className="flex items-center justify-between pt-6 border-t border-steel/20">
         <div className="flex items-center gap-2">
           <div className="flex gap-1">

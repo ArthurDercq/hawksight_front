@@ -14,6 +14,7 @@ export interface Activity {
   max_heartrate?: number;
   average_cadence?: number;
   speed_minutes_per_km_hms?: string;
+  average_speed?: number; // Vitesse moyenne en km/h
   has_heartrate?: boolean;
 }
 

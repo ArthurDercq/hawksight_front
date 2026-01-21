@@ -301,7 +301,7 @@ export function KPIPage() {
             <div className="absolute inset-0 records-grid-pattern pointer-events-none" />
 
             {/* Records Header */}
-            <div className="relative p-4 border-b border-amber/20">
+            <div className="relative p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="relative p-2 rounded-lg bg-amber/20 border border-amber/40">
@@ -325,7 +325,7 @@ export function KPIPage() {
             </div>
 
             {/* Records List */}
-            <div className="relative divide-y divide-amber/10">
+            <div className="relative">
               {RECORD_DISTANCES.map((distance) => {
                 const record = recordsMap[distance];
                 return (
@@ -341,7 +341,7 @@ export function KPIPage() {
             </div>
 
             {/* Records Footer */}
-            <div className="relative p-4 border-t border-amber/20 flex items-center justify-between">
+            <div className="relative p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber" />
@@ -352,22 +352,6 @@ export function KPIPage() {
               <span className="text-amber/60 font-mono text-xs">8 records</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Footer dots decoration */}
-      <div className="flex items-center justify-between mt-8 pt-6 border-t border-steel/20">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <span className="w-1 h-1 rounded-full bg-amber" />
-            <span className="w-1 h-1 rounded-full bg-glacier" />
-            <span className="w-1 h-1 rounded-full bg-moss" />
-          </div>
-          <span className="text-steel font-mono text-xs">HawkSight Analytics</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-amber animate-pulse" />
-          <span className="text-steel font-mono text-xs">Live</span>
         </div>
       </div>
     </div>
