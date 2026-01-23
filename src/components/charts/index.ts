@@ -5,3 +5,6 @@ export { PaceChart } from './PaceChart';
 export { CadenceChart } from './CadenceChart';
 export { GradeChart } from './GradeChart';
 export { PowerChart } from './PowerChart';
+export { HRZonesChart } from './HRZonesChart';
+export { PaceProfileChart } from './PaceProfileChart';
+export { ElevationProfileChart } from './ElevationProfileChart';

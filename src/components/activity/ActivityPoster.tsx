@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useMemo, RefObject } from "react";
 import type { Activity, ActivityStream, SportType } from "@/types";
 
 // SVG Icons
@@ -6,14 +6,6 @@ const MapPinIcon = ({ color }: { color: string }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
     <circle cx="12" cy="10" r="3" />
-  </svg>
-);
-
-const DownloadIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="7 10 12 15 17 10" />
-    <line x1="12" y1="15" x2="12" y2="3" />
   </svg>
 );
 
@@ -26,6 +18,7 @@ const ActivitySvgIcon = () => (
 interface ActivityPosterProps {
   activity: Activity;
   streams: ActivityStream[];
+  posterRef?: RefObject<HTMLDivElement>;
 }
 
 const SPORT_COLORS: Record<SportType, string> = {
@@ -127,9 +120,7 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function ActivityPoster({ activity, streams }: ActivityPosterProps) {
-  const posterRef = useRef<HTMLDivElement>(null);
-
+export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterProps) {
   const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
   const sportLabel = SPORT_LABELS[activity.sport_type] || activity.sport_type;
 
@@ -149,7 +140,7 @@ export function ActivityPoster({ activity, streams }: ActivityPosterProps) {
   const path = useMemo(() => createSmoothPath(points), [points]);
 
   // Calculate metrics
-  const distance = activity.distance_km ?? (activity.distance ? activity.distance / 1000 : 0);
+  const distance = activity.distance_km || activity.distance || 0;
   const duration = activity.moving_time_hms ?? formatDuration(activity.moving_time);
   const isBike = activity.sport_type === "Bike";
   const pace = isBike
@@ -160,51 +151,13 @@ export function ActivityPoster({ activity, streams }: ActivityPosterProps) {
   const elevation = activity.total_elevation_gain ?? 0;
   const heartRate = activity.average_heartrate ?? null;
 
-  const exportAsPNG = async () => {
-    if (!posterRef.current) return;
-
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(posterRef.current, {
-        backgroundColor: "#0B0C10",
-        scale: 3,
-      });
-
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `hawksight-${activity.name?.toLowerCase().replace(/\s+/g, "-") || "activity"}.png`;
-          link.click();
-          URL.revokeObjectURL(url);
-        }
-      });
-    } catch (error) {
-      console.error("Error exporting PNG:", error);
-    }
-  };
-
   const hasGPSData = points.length > 0;
 
   return (
-    <div className="space-y-4">
-      {/* Export Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={exportAsPNG}
-          className="flex items-center gap-2 px-4 py-2 bg-[#E8832A]/10 border border-[#E8832A]/30 text-[#E8832A] rounded hover:bg-[#E8832A]/20 transition-all font-['Inter'] text-sm"
-        >
-          <DownloadIcon />
-          Exporter PNG
-        </button>
-      </div>
-
-      {/* Poster Container - Format Portrait */}
-      <div
-        ref={posterRef}
-        className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-8 relative overflow-hidden max-w-2xl mx-auto"
-      >
+    <div
+      ref={posterRef}
+      className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden w-[555px]"
+    >
         {/* Background effects */}
         <div className="absolute top-0 left-0 w-64 h-64 bg-[#E8832A]/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#3DB2E0]/5 rounded-full blur-3xl" />
@@ -230,7 +183,7 @@ export function ActivityPoster({ activity, streams }: ActivityPosterProps) {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-['Space_Grotesk'] text-[#F2F2F2]">
+                  <h3 className="font-heading text-[#F2F2F2]">
                     {activity.name || "Activite sans titre"}
                   </h3>
                   <p className="text-[#3A3F47] font-['Inter'] text-sm mt-1">
@@ -456,6 +409,5 @@ export function ActivityPoster({ activity, streams }: ActivityPosterProps) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
