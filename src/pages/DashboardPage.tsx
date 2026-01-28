@@ -311,7 +311,7 @@ export function DashboardPage() {
               onClick={syncData}
               disabled={isSyncing}
               className="p-2 rounded-lg bg-steel/20 border border-steel/30 hover:bg-steel/40 hover:border-glacier/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-              title="Synchroniser avec Strava"
+              title="Synchroniser mes données"
             >
               <svg
                 width="18"
