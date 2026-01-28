@@ -10,6 +10,7 @@ import {
   KPIPage,
   CalendarPage,
   ProfilePage,
+  PerformancePage,
 } from '@/pages';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -82,6 +83,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/performance"
+        element={
+          <ProtectedRoute>
+            <PerformancePage />
           </ProtectedRoute>
         }
       />

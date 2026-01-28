@@ -167,24 +167,25 @@ interface CalendarWeekRowProps {
 function CalendarWeekRow({ week }: CalendarWeekRowProps) {
   const { stats } = week;
 
-  // Format time as XhYY
-  const hours = Math.floor(stats.totalTime / 3600);
-  const minutes = Math.floor((stats.totalTime % 3600) / 60);
+  // Format time as XhYY (totalTime is in minutes from activity.moving_time)
+  const hours = Math.floor(stats.totalTime / 60);
+  const minutes = Math.floor(stats.totalTime % 60);
   const timeFormatted = stats.totalTime > 0
-    ? `${hours}h${minutes > 0 ? minutes.toString().padStart(2, '0') : ''}`
+    ? `${hours}h${minutes.toString().padStart(2, '0')}`
     : '-';
 
   const distanceFormatted = stats.totalDistance > 0
     ? `${stats.totalDistance.toFixed(1)} km`
     : '-';
 
-  // Average pace for Run & Trail only (time in seconds, distance in km)
-  const avgPace = stats.runTrailDistance > 0
-    ? (stats.runTrailTime / 60) / stats.runTrailDistance // minutes per km
+  // Average pace for Run & Trail only (time in minutes, distance in km)
+  // Pace = total_minutes / distance_km gives minutes per km
+  const avgPaceMinPerKm = stats.runTrailDistance > 0
+    ? stats.runTrailTime / stats.runTrailDistance
     : 0;
-  const paceMinutes = Math.floor(avgPace);
-  const paceSeconds = Math.round((avgPace - paceMinutes) * 60);
-  const paceFormatted = avgPace > 0
+  const paceMinutes = Math.floor(avgPaceMinPerKm);
+  const paceSeconds = Math.round((avgPaceMinPerKm - paceMinutes) * 60);
+  const paceFormatted = avgPaceMinPerKm > 0
     ? `${paceMinutes}:${paceSeconds.toString().padStart(2, '0')}`
     : '-';
 

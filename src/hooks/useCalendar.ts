@@ -145,7 +145,8 @@ export function generateCalendarWeeks(
 
       // Calculate week stats
       dayActivities.forEach((activity) => {
-        const distance = activity.distance_km || activity.distance / 1000 || 0;
+        // distance_km is preferred, otherwise use distance directly (already in km)
+        const distance = activity.distance_km || activity.distance || 0;
         const time = activity.moving_time || 0;
 
         week.stats.totalDistance += distance;

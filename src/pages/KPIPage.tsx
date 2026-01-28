@@ -4,6 +4,7 @@ import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useKPI } from '@/hooks';
 import { SectionTitle } from '@/components/ui/SectionTitle';
+import { ActivityGridPosters } from '@/components/activity/ActivityGridPosters';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -243,54 +244,134 @@ export function KPIPage() {
 
           {/* Activity Distribution Chart */}
           {chartData && (
-            <div className="card-glass rounded-lg overflow-hidden">
-              {/* Header like dashboard charts */}
-              <div className="flex items-center justify-between p-4 border-b border-steel/20">
-                <h3 className="font-heading font-semibold text-mist">
-                  Nombre d'activites par sport
-                </h3>
-              </div>
-              <div className="h-[220px] flex items-center justify-center p-4">
-                <Doughnut
-                  data={chartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                      legend: {
-                        position: 'right',
-                        labels: {
-                          color: '#F2F2F2',
-                          font: { size: 11, family: 'JetBrains Mono' },
-                          padding: 12,
-                          usePointStyle: true,
-                          pointStyle: 'circle',
-                        },
-                      },
-                      tooltip: {
-                        backgroundColor: 'rgba(11, 12, 16, 0.95)',
-                        titleColor: '#F2F2F2',
-                        bodyColor: '#F2F2F2',
-                        titleFont: { family: 'Poppins' },
-                        bodyFont: { family: 'JetBrains Mono' },
-                        borderColor: 'rgba(61, 178, 224, 0.3)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                          label: (context) => {
-                            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return ` ${context.label}: ${context.parsed} activites (${percentage}%)`;
+            <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
+              {/* Background effects */}
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#3DB2E0]/5 rounded-full blur-3xl" />
+
+              <div className="relative space-y-6">
+                {/* Header */}
+                <div className="flex items-start justify-between pb-4 border-b border-[#3A3F47]/30">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 border rounded" style={{ backgroundColor: '#3DB2E010', borderColor: '#3DB2E030' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                        <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-heading text-[#F2F2F2]">Nombre d'activites par sport</h3>
+                      <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
+                        Repartition des activites
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chart with labels */}
+                <div className="relative">
+                  {/* Chart container */}
+                  <div className="h-[220px] flex items-center justify-center">
+                    <div className="relative w-[180px] h-[180px]">
+                      <Doughnut
+                        data={chartData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: true,
+                          cutout: '65%',
+                          plugins: {
+                            legend: {
+                              display: false,
+                            },
+                            tooltip: {
+                              backgroundColor: 'rgba(11, 12, 16, 0.95)',
+                              titleColor: '#F2F2F2',
+                              bodyColor: '#F2F2F2',
+                              titleFont: { family: 'Poppins' },
+                              bodyFont: { family: 'JetBrains Mono' },
+                              borderColor: 'rgba(61, 178, 224, 0.3)',
+                              borderWidth: 1,
+                              padding: 12,
+                              callbacks: {
+                                label: (context) => {
+                                  const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                                  const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                  return ` ${context.label}: ${context.parsed} activites (${percentage}%)`;
+                                },
+                              },
+                            },
                           },
-                        },
-                      },
-                    },
-                  }}
-                />
+                        }}
+                      />
+                      {/* Center total */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-2xl font-bold font-mono text-[#F2F2F2]">
+                          {chartData.datasets[0].data.reduce((a: number, b: number) => a + b, 0)}
+                        </span>
+                        <span className="text-[10px] text-[#3A3F47] font-mono uppercase tracking-wider">
+                          activites
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sport labels grid */}
+                  <div className="flex flex-wrap justify-center gap-3 mt-4">
+                    {chartData.labels.map((label: string, index: number) => {
+                      const value = chartData.datasets[0].data[index];
+                      const color = chartData.datasets[0].backgroundColor[index];
+                      const total = chartData.datasets[0].data.reduce((a: number, b: number) => a + b, 0);
+                      const percentage = ((value / total) * 100).toFixed(0);
+                      return (
+                        <div
+                          key={label}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all hover:scale-105"
+                          style={{
+                            backgroundColor: `${color}15`,
+                            borderColor: `${color}40`,
+                          }}
+                        >
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="text-[#F2F2F2] font-['Inter'] text-xs">
+                            {label}
+                          </span>
+                          <span
+                            className="font-['JetBrains_Mono'] text-xs font-semibold"
+                            style={{ color }}
+                          >
+                            {value}
+                          </span>
+                          <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+                            ({percentage}%)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-[#3A3F47]/30">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#3DB2E0]" />
+                    <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                      SPORT_DISTRIBUTION
+                    </span>
+                  </div>
+                  <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                    {selectedYear ? `ANNEE ${selectedYear}` : 'TOUTES ANNEES'}
+                  </span>
+                </div>
               </div>
             </div>
           )}
+
+          {/* Activity Grid Posters */}
+          <div className="mt-6">
+            <ActivityGridPosters />
+          </div>
         </div>
 
         {/* Right Column: Records Card */}
