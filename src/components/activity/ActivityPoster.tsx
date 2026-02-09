@@ -1,5 +1,6 @@
-import { useMemo, RefObject } from "react";
+import { useMemo, useState, RefObject } from "react";
 import type { Activity, ActivityStream, SportType } from "@/types";
+import { buildStaticMapUrl } from "@/services/mapbox/staticMap";
 
 // SVG Icons
 const MapPinIcon = ({ color }: { color: string }) => (
@@ -123,6 +124,7 @@ function formatDate(dateString: string): string {
 export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterProps) {
   const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
   const sportLabel = SPORT_LABELS[activity.sport_type] || activity.sport_type;
+  const [mapImageError, setMapImageError] = useState(false);
 
   // Extract GPS coordinates from streams
   const gpsCoords = useMemo(() => {
@@ -138,6 +140,21 @@ export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterP
 
   // Create SVG path
   const path = useMemo(() => createSmoothPath(points), [points]);
+
+  // Build Mapbox Static Image URL
+  const mapboxUrl = useMemo(() => {
+    if (gpsCoords.length < 2) return null;
+    return buildStaticMapUrl({
+      coordinates: gpsCoords.map((c) => [c.lat, c.lon] as [number, number]),
+      color: color,
+      width: 500,
+      height: 500,
+      strokeWidth: 4,
+    });
+  }, [gpsCoords, color]);
+
+  // Use Mapbox if URL is available and no error, otherwise fallback to SVG
+  const useMapbox = mapboxUrl && !mapImageError;
 
   // Calculate metrics
   const distance = activity.distance_km || activity.distance || 0;
@@ -214,38 +231,48 @@ export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterP
 
           {/* Main GPS Trace */}
           <div className="relative aspect-square border border-[#3A3F47]/40 rounded-lg overflow-hidden bg-[#0B0C10]">
-            {/* Grid background */}
-            <div
-              className="absolute inset-0 opacity-[0.03]"
-              style={{
-                backgroundImage: `
-                  linear-gradient(to right, #F2F2F2 1px, transparent 1px),
-                  linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)
-                `,
-                backgroundSize: "20px 20px",
-              }}
-            />
+            {/* Grid background (only shown when not using Mapbox) */}
+            {!useMapbox && (
+              <div
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, #F2F2F2 1px, transparent 1px),
+                    linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)
+                  `,
+                  backgroundSize: "20px 20px",
+                }}
+              />
+            )}
 
             {/* Corner coordinates overlay */}
             {hasGPSData && (
               <>
-                <div className="absolute top-2 left-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+                <div className="absolute top-2 left-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
                   {formatCoord(bounds.maxLat, true)}
                 </div>
-                <div className="absolute top-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+                <div className="absolute top-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
                   {formatCoord(bounds.maxLon, false)}
                 </div>
-                <div className="absolute bottom-2 left-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+                <div className="absolute bottom-2 left-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
                   ALT {Math.round(elevation)}m
                 </div>
-                <div className="absolute bottom-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+                <div className="absolute bottom-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
                   {distance.toFixed(1)}km
                 </div>
               </>
             )}
 
-            {/* GPS Trace SVG */}
-            {hasGPSData ? (
+            {/* Mapbox Static Image or SVG Fallback */}
+            {useMapbox ? (
+              <img
+                src={mapboxUrl}
+                alt="Trace GPS sur carte"
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={() => setMapImageError(true)}
+              />
+            ) : hasGPSData ? (
               <svg viewBox="0 0 100 100" className="w-full h-full relative">
                 {/* Shadow/glow effect */}
                 <defs>
@@ -331,19 +358,19 @@ export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterP
 
             {/* Technical overlay corners */}
             <div
-              className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 opacity-20"
+              className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 opacity-20 z-10"
               style={{ borderColor: color }}
             />
             <div
-              className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 opacity-20"
+              className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 opacity-20 z-10"
               style={{ borderColor: color }}
             />
             <div
-              className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 opacity-20"
+              className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 opacity-20 z-10"
               style={{ borderColor: color }}
             />
             <div
-              className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 opacity-20"
+              className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 opacity-20 z-10"
               style={{ borderColor: color }}
             />
           </div>

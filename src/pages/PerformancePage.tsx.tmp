@@ -22,6 +22,12 @@ const TrendingUpIcon = ({ color, size = 20 }: { color: string; size?: number }) 
   </svg>
 );
 
+const HeartIcon = ({ color, size = 16 }: { color: string; size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+  </svg>
+);
+
 const ZapIcon = ({ color, size = 16 }: { color: string; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -56,6 +62,14 @@ const MapPinIcon = ({ color, size = 20 }: { color: string; size?: number }) => (
 const ChevronRightIcon = ({ className }: { className?: string }) => (
   <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+const DownloadIcon = ({ className }: { className?: string }) => (
+  <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
   </svg>
 );
 
@@ -126,6 +140,132 @@ const formatDuration = (seconds: number) => {
     return `${hours}h ${mins.toString().padStart(2, '0')}min`;
   }
   return `${mins}min`;
+};
+
+const generateHRZones = (activity: Activity) => {
+  const zones = [
+    { name: 'Z1', label: 'Récupération', range: '50-60%', min: 98, max: 117, color: '#3DB2E0' },
+    { name: 'Z2', label: 'Endurance', range: '60-70%', min: 117, max: 137, color: '#4CAF50' },
+    { name: 'Z3', label: 'Tempo', range: '70-80%', min: 137, max: 156, color: '#FFC107' },
+    { name: 'Z4', label: 'Seuil', range: '80-90%', min: 156, max: 176, color: '#FF9800' },
+    { name: 'Z5', label: 'VO2max', range: '90-100%', min: 176, max: 195, color: '#E8832A' },
+  ];
+
+  const avgHR = activity.average_heartrate || 150;
+  const seed = activity.id * 999;
+  const random = (i: number) => {
+    const val = Math.sin(seed + i * 54321) * 10000;
+    return val - Math.floor(val);
+  };
+
+  let percentages = zones.map((zone, i) => {
+    const isMainZone = avgHR >= zone.min && avgHR <= zone.max;
+    if (isMainZone) {
+      return 35 + random(i) * 15;
+    } else {
+      const distance = Math.abs(avgHR - (zone.min + zone.max) / 2);
+      const proximity = Math.max(0, 50 - distance);
+      return proximity * 0.3 * random(i + 10);
+    }
+  });
+
+  const total = percentages.reduce((sum, p) => sum + p, 0);
+  percentages = percentages.map((p) => (p / total) * 100);
+
+  return zones.map((zone, i) => ({
+    ...zone,
+    percentage: percentages[i],
+    time: (activity.moving_time * percentages[i]) / 100,
+  }));
+};
+
+const generatePaceProfile = (activity: Activity) => {
+  const numPoints = 50;
+  const seed = activity.id * 777;
+
+  const random = (i: number) => {
+    const val = Math.sin(seed + i * 98765) * 10000;
+    return val - Math.floor(val);
+  };
+
+  // Parse pace from speed_minutes_per_km_hms or calculate from average_speed
+  let avgPaceSeconds = 300; // Default 5:00/km
+  if (activity.speed_minutes_per_km_hms) {
+    const parts = activity.speed_minutes_per_km_hms.split(':').map(Number);
+    avgPaceSeconds = parts[0] * 60 + (parts[1] || 0);
+  } else if (activity.average_speed && activity.average_speed > 0) {
+    avgPaceSeconds = 3600 / activity.average_speed; // Convert km/h to s/km
+  }
+
+  const distanceKm = activity.distance_km || activity.distance / 1000;
+
+  const points = [];
+  for (let i = 0; i < numPoints; i++) {
+    const progress = i / (numPoints - 1);
+    const distance = distanceKm * progress;
+
+    const variation = (random(i) - 0.5) * 60;
+    const fatigue = progress * 15;
+    const paceSeconds = avgPaceSeconds + variation + fatigue;
+
+    points.push({
+      distance: parseFloat(distance.toFixed(2)),
+      paceSeconds,
+      paceDisplay: `${Math.floor(paceSeconds / 60)}:${Math.floor(paceSeconds % 60)
+        .toString()
+        .padStart(2, '0')}`,
+    });
+  }
+
+  return points;
+};
+
+const generatePerformanceMetrics = (activity: Activity) => {
+  const seed = activity.id * 555;
+  const random = (i: number) => {
+    const val = Math.sin(seed + i * 33333) * 10000;
+    return val - Math.floor(val);
+  };
+
+  const distanceKm = activity.distance_km || activity.distance / 1000;
+  const avgHR = activity.average_heartrate || 150;
+  const avgCadence = activity.average_cadence || 170;
+
+  const metrics = [
+    {
+      label: 'Cadence',
+      value: Math.min(100, (avgCadence / 190) * 100),
+      color: SPORT_COLORS[activity.sport_type] || '#E8832A',
+    },
+    {
+      label: 'Cardio',
+      value: Math.min(100, (avgHR / 195) * 100),
+      color: '#E8832A',
+    },
+    {
+      label: 'Allure',
+      value: 60 + random(1) * 30,
+      color: '#3DB2E0',
+    },
+    {
+      label: 'Endurance',
+      value: Math.min(100, (distanceKm / 50) * 100),
+      color: '#4CAF50',
+    },
+    {
+      label: 'Intensité',
+      value: (avgHR / 195) * 100,
+      color: '#FFC107',
+    },
+  ];
+
+  return metrics;
+};
+
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 // Play icon for launch button
@@ -263,6 +403,31 @@ export function PerformancePage() {
       setAnalysisStarted(false);
     }
   }, []);
+
+  const exportChart = async (ref: React.RefObject<HTMLDivElement | null>, name: string) => {
+    if (!ref.current || !selectedActivity) return;
+
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(ref.current, {
+        backgroundColor: '#0B0C10',
+        scale: 3,
+      });
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `hawksight-${name}-${selectedActivity.id}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      });
+    } catch (error) {
+      console.error('Error exporting chart:', error);
+    }
+  };
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8">
