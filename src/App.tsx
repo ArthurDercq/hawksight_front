@@ -11,6 +11,7 @@ import {
   CalendarPage,
   ProfilePage,
   PerformancePage,
+  ExplorationPage,
 } from '@/pages';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -91,6 +92,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <PerformancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/exploration"
+        element={
+          <ProtectedRoute>
+            <ExplorationPage />
           </ProtectedRoute>
         }
       />

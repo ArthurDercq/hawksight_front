@@ -162,8 +162,9 @@ function calculateWeekSummary(
   activities: Activity[],
   prevActivities: Activity[]
 ): WeeklySummaryData {
-  const getDistance = (a: Activity) => a.distance_km || a.distance / 1000 || 0;
-  const getTime = (a: Activity) => a.moving_time || 0;
+  // Backend renvoie: distance en km, moving_time en minutes
+  const getDistance = (a: Activity) => a.distance || 0;  // Déjà en km
+  const getTime = (a: Activity) => (a.moving_time || 0) * 60;  // Convertir minutes → secondes
   const getElevation = (a: Activity) => a.total_elevation_gain || 0;
 
   const totalDistance = activities.reduce((sum, a) => sum + getDistance(a), 0);
@@ -189,8 +190,9 @@ function calculateMonthSummary(
   daysInMonth: number,
   daysPassed: number
 ): MonthlySummaryData {
-  const getDistance = (a: Activity) => a.distance_km || a.distance / 1000 || 0;
-  const getTime = (a: Activity) => a.moving_time || 0;
+  // Backend renvoie: distance en km, moving_time en minutes
+  const getDistance = (a: Activity) => a.distance || 0;  // Déjà en km
+  const getTime = (a: Activity) => (a.moving_time || 0) * 60;  // Convertir minutes → secondes
   const getElevation = (a: Activity) => a.total_elevation_gain || 0;
 
   const totalDistance = activities.reduce((sum, a) => sum + getDistance(a), 0);

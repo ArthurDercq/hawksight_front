@@ -7,3 +7,4 @@ export { KPIPage } from './KPIPage';
 export { CalendarPage } from './CalendarPage';
 export { ProfilePage } from './ProfilePage';
 export { PerformancePage } from './PerformancePage';
+export { ExplorationPage } from './ExplorationPage';

@@ -6,3 +6,4 @@ export type { CalendarDay, CalendarWeek } from './useCalendar';
 export { useKPI } from './useKPI';
 export { useDashboard } from './useDashboard';
 export { useDashboardCharts } from './useDashboardCharts';
+export { useExploration } from './useExploration';
