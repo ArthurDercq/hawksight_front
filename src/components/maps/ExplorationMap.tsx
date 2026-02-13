@@ -11,6 +11,24 @@ interface ExplorationMapProps {
 
 const SOURCE_ID = 'exploration-cells';
 const LAYER_ID = 'exploration-fill';
+const HEATMAP_SOURCE = 'exploration-heatmap-points';
+const HEATMAP_LAYER = 'exploration-heatmap';
+
+function polygonsToCentroidPoints(data: ExplorationGeoJSON): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: data.features.map(f => {
+      const ring = f.geometry.coordinates[0];
+      let x = 0, y = 0;
+      for (const [lng, lat] of ring) { x += lng; y += lat; }
+      return {
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [x / ring.length, y / ring.length] },
+        properties: { activity_count: f.properties.activity_count }
+      };
+    })
+  };
+}
 
 export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -28,8 +46,8 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
-      center: [2.3522, 46.8566], // Center on France
-      zoom: 5,
+      center: [3.5, 50.5], // Belgium + Nord de la France (Lille)
+      zoom: 7,
       attributionControl: false,
     });
 
@@ -51,15 +69,107 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
         data: data as unknown as GeoJSON.FeatureCollection,
       });
 
-      // Add fill layer with data-driven styling
+      // Glow layer (subtle background, visible at high zoom)
+      map.addLayer({
+        id: 'exploration-glow',
+        type: 'fill',
+        source: SOURCE_ID,
+        paint: {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['ln', ['+', ['get', 'activity_count'], 1]],
+            0, '#0B1E33',
+            1, '#123A6B',
+            2, '#1D6FA5',
+            3, '#3DB2E0'
+          ],
+          'fill-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            3, 0.05,
+            8, 0.1,
+            12, 0.15
+          ]
+        }
+      });
+
+      // Main fill layer (reduced opacity, detail visible at high zoom)
       map.addLayer({
         id: LAYER_ID,
         type: 'fill',
         source: SOURCE_ID,
         paint: {
-          'fill-color': ['get', 'color'],
-          'fill-opacity': ['get', 'opacity'],
-        },
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['ln', ['+', ['get', 'activity_count'], 1]],
+            0, '#1B2A41',
+            1, '#1F4E79',
+            2, '#2EA6D6',
+            3, '#60D5FF',
+            4, '#B3ECFF'
+          ],
+          'fill-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            3, 0.1,
+            8, 0.25,
+            12, 0.5
+          ],
+          'fill-color-transition': { duration: 700 },
+          'fill-opacity-transition': { duration: 700 }
+        }
+      });
+
+      // Heatmap layer (smooth overlay that hides hexagonal edges)
+      map.addSource(HEATMAP_SOURCE, {
+        type: 'geojson',
+        data: polygonsToCentroidPoints(data),
+      });
+
+      map.addLayer({
+        id: HEATMAP_LAYER,
+        type: 'heatmap',
+        source: HEATMAP_SOURCE,
+        paint: {
+          'heatmap-weight': [
+            'interpolate', ['linear'],
+            ['get', 'activity_count'],
+            1, 0.3,
+            10, 0.7,
+            50, 1
+          ],
+          'heatmap-intensity': [
+            'interpolate', ['linear'], ['zoom'],
+            3, 0.5,
+            8, 1.2,
+            12, 1.5
+          ],
+          'heatmap-color': [
+            'interpolate', ['linear'], ['heatmap-density'],
+            0,    'rgba(11,30,51,0)',
+            0.2,  '#0B1E33',
+            0.4,  '#1F4E79',
+            0.6,  '#2EA6D6',
+            0.8,  '#60D5FF',
+            1,    '#B3ECFF'
+          ],
+          'heatmap-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            3, 15,
+            8, 30,
+            12, 45
+          ],
+          'heatmap-opacity': [
+            'interpolate', ['linear'], ['zoom'],
+            3, 0.8,
+            10, 0.6,
+            14, 0.3
+          ]
+        }
       });
 
       // Fit bounds to all features
@@ -81,24 +191,11 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
           const props = e.features[0].properties;
           if (!props) return;
 
-          // Parse sports array (comes as string from GeoJSON)
-          let sports: string[] = [];
-          try {
-            sports = typeof props.sports === 'string' ? JSON.parse(props.sports) : props.sports || [];
-          } catch {
-            sports = [];
-          }
-
-          const sportsText = sports
-            .map((s: string) => (s === 'run' ? 'Course' : 'Velo'))
-            .join(', ');
-
           popup
             .setLngLat(e.lngLat)
             .setHTML(
               `<div class="text-sm p-1">
-                <p class="font-semibold text-white">${sportsText || 'Activite'}</p>
-                <p class="text-gray-300">${props.activity_count} activite${props.activity_count > 1 ? 's' : ''}</p>
+                <p class="font-semibold text-white">${props.activity_count} activite${props.activity_count > 1 ? 's' : ''}</p>
               </div>`
             )
             .addTo(map);
@@ -126,10 +223,15 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
     const source = map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource;
     if (source) {
       source.setData(data as unknown as GeoJSON.FeatureCollection);
-
-      // Refit bounds with animation
-      fitBoundsToData(map, data, true);
     }
+
+    const heatmapSource = map.getSource(HEATMAP_SOURCE) as mapboxgl.GeoJSONSource;
+    if (heatmapSource) {
+      heatmapSource.setData(polygonsToCentroidPoints(data) as GeoJSON.FeatureCollection);
+    }
+
+    // Refit bounds with animation
+    fitBoundsToData(map, data, true);
   }, [data, mapLoaded]);
 
   if (!ENV.MAPBOX_ACCESS_TOKEN) {
