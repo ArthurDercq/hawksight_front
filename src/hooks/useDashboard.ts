@@ -61,62 +61,41 @@ export function useDashboard(): UseDashboardReturn {
     setError(null);
 
     try {
-      // Fetch all data in parallel
-      const [kpiData, streakData, lastActivityData] = await Promise.all([
+      // Prepare all date boundaries (synchronous)
+      const { start: weekStart, end: weekEnd } = getWeekBoundaries(0);
+      const { start: prevWeekStart, end: prevWeekEnd } = getWeekBoundaries(-1);
+      const { start: monthStart, end: monthEnd, daysInMonth, daysPassed } = getMonthBoundaries();
+      const prevMonthStart = new Date(monthStart);
+      prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+      const prevMonthEnd = new Date(prevMonthStart);
+      prevMonthEnd.setDate(daysPassed);
+
+      // Fetch ALL data in a single parallel batch
+      const [
+        kpiData, streakData, lastActivityData,
+        weekActivitiesRaw, prevWeekActivitiesRaw,
+        monthActivitiesRaw, prevMonthActivitiesRaw,
+      ] = await Promise.all([
         dashboardApi.getKPIs().catch(() => null),
         dashboardApi.getStreak().catch(() => null),
         dashboardApi.getLastActivity().catch(() => null),
+        dashboardApi.getActivitiesForPeriod(formatDateForAPI(weekStart), formatDateForAPI(weekEnd)).catch(() => null),
+        dashboardApi.getActivitiesForPeriod(formatDateForAPI(prevWeekStart), formatDateForAPI(prevWeekEnd)).catch(() => null),
+        dashboardApi.getActivitiesForPeriod(formatDateForAPI(monthStart), formatDateForAPI(monthEnd)).catch(() => null),
+        dashboardApi.getActivitiesForPeriod(formatDateForAPI(prevMonthStart), formatDateForAPI(prevMonthEnd)).catch(() => null),
       ]);
 
       setKpis(kpiData);
       setStreak(streakData);
       setLastActivity(lastActivityData);
 
-      // Fetch weekly summary
-      const { start: weekStart, end: weekEnd } = getWeekBoundaries(0);
-      const { start: prevWeekStart, end: prevWeekEnd } = getWeekBoundaries(-1);
-
-      const [weekActivitiesRaw, prevWeekActivitiesRaw] = await Promise.all([
-        dashboardApi
-          .getActivitiesForPeriod(formatDateForAPI(weekStart), formatDateForAPI(weekEnd))
-          .catch(() => null),
-        dashboardApi
-          .getActivitiesForPeriod(formatDateForAPI(prevWeekStart), formatDateForAPI(prevWeekEnd))
-          .catch(() => null),
-      ]);
-
       const weekActivities = normalizeActivities(weekActivitiesRaw);
       const prevWeekActivities = normalizeActivities(prevWeekActivitiesRaw);
-      const weekData = calculateWeekSummary(weekActivities, prevWeekActivities);
-      setWeeklySummary(weekData);
-
-      // Fetch monthly summary
-      const { start: monthStart, end: monthEnd, daysInMonth, daysPassed } = getMonthBoundaries();
-
-      // Previous month comparison (same number of days)
-      const prevMonthStart = new Date(monthStart);
-      prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
-      const prevMonthEnd = new Date(prevMonthStart);
-      prevMonthEnd.setDate(daysPassed);
-
-      const [monthActivitiesRaw, prevMonthActivitiesRaw] = await Promise.all([
-        dashboardApi
-          .getActivitiesForPeriod(formatDateForAPI(monthStart), formatDateForAPI(monthEnd))
-          .catch(() => null),
-        dashboardApi
-          .getActivitiesForPeriod(formatDateForAPI(prevMonthStart), formatDateForAPI(prevMonthEnd))
-          .catch(() => null),
-      ]);
+      setWeeklySummary(calculateWeekSummary(weekActivities, prevWeekActivities));
 
       const monthActivities = normalizeActivities(monthActivitiesRaw);
       const prevMonthActivities = normalizeActivities(prevMonthActivitiesRaw);
-      const monthData = calculateMonthSummary(
-        monthActivities,
-        prevMonthActivities,
-        daysInMonth,
-        daysPassed
-      );
-      setMonthlySummary(monthData);
+      setMonthlySummary(calculateMonthSummary(monthActivities, prevMonthActivities, daysInMonth, daysPassed));
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Erreur lors du chargement du tableau de bord');

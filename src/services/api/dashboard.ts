@@ -42,43 +42,36 @@ export interface MonthlySummary {
 export const dashboardApi = {
   async getKPIs(year?: number): Promise<KPIData> {
     const params = year ? { year } : {};
-    const response = await apiClient.get<KPIData>('/kpi/', { params });
-    return response.data;
+    return apiClient.fetchWithCache<KPIData>('/kpi/', { params });
   },
 
   async getStreak(): Promise<StreakData> {
-    const response = await apiClient.get<StreakData>('/kpi/streak');
-    return response.data;
+    return apiClient.fetchWithCache<StreakData>('/kpi/streak');
   },
 
   async getLastActivity(sportType?: string): Promise<LastActivity> {
     const params = sportType ? { sport_type: sportType } : {};
-    const response = await apiClient.get<LastActivity>('/activities/last_activity', { params });
-    return response.data;
+    return apiClient.fetchWithCache<LastActivity>('/activities/last_activity', { params });
   },
 
   async getActivitiesForPeriod(startDate: string, endDate: string): Promise<Activity[] | { activities: Activity[] }> {
-    const response = await apiClient.get<Activity[] | { activities: Activity[] }>('/activities/filter_activities', {
+    return apiClient.fetchWithCache<Activity[] | { activities: Activity[] }>('/activities/filter_activities', {
       params: { start_date: startDate, end_date: endDate },
     });
-    return response.data;
   },
 
   // Chart endpoints for analytics
   async getDailyHours(weekOffset: number = 0): Promise<ChartData> {
-    const response = await apiClient.get<ChartData>('/plot/daily_hours_bar', {
+    return apiClient.fetchWithCache<ChartData>('/plot/daily_hours_bar', {
       params: { week_offset: weekOffset },
     });
-    return response.data;
   },
 
   async getWeeklyHours(offset: number = 0): Promise<ChartData> {
-    // Use weeks parameter: 11 + offset to include current week
     const weeks = 11 + Math.abs(offset);
-    const response = await apiClient.get<ChartData>('/plot/weekly_bar', {
+    return apiClient.fetchWithCache<ChartData>('/plot/weekly_bar', {
       params: { value_col: 'moving_time', weeks },
     });
-    return response.data;
   },
 
   async getWeeklyDistance(sport: string = 'Run,Trail', offset: number = 0): Promise<ChartData> {
@@ -89,8 +82,7 @@ export const dashboardApi = {
     params.append('weeks', weeks.toString());
     sportTypes.forEach(s => params.append('sport_types', s.trim()));
 
-    const response = await apiClient.get<ChartData>(`/plot/weekly_bar?${params.toString()}`);
-    return response.data;
+    return apiClient.fetchWithCache<ChartData>(`/plot/weekly_bar?${params.toString()}`);
   },
 
   async getRepartition(sport: string = 'Run,Trail', weeks: number = 4): Promise<ChartData> {
@@ -99,8 +91,7 @@ export const dashboardApi = {
     params.append('weeks', weeks.toString());
     sportTypes.forEach(s => params.append('sport_type', s.trim()));
 
-    const response = await apiClient.get<ChartData>(`/plot/repartition_run?${params.toString()}`);
-    return response.data;
+    return apiClient.fetchWithCache<ChartData>(`/plot/repartition_run?${params.toString()}`);
   },
 
   async getWeeklyPace(sport: string = 'Run,Trail', offset: number = 0): Promise<ChartData> {
@@ -110,8 +101,7 @@ export const dashboardApi = {
     params.append('weeks', weeks.toString());
     sportTypes.forEach(s => params.append('sport_types', s.trim()));
 
-    const response = await apiClient.get<ChartData>(`/plot/weekly_pace?${params.toString()}`);
-    return response.data;
+    return apiClient.fetchWithCache<ChartData>(`/plot/weekly_pace?${params.toString()}`);
   },
 };
 

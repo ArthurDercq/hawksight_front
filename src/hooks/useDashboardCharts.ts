@@ -95,7 +95,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
   const [globalOffset, setGlobalOffset] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   // Fetch daily hours
   const fetchDailyHours = useCallback(async () => {
@@ -233,27 +233,19 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
     }
   }, [paceSport, globalOffset]);
 
-  // Initial fetch
+  // Separate useEffects per chart - only refetch what changed
+  useEffect(() => { fetchDailyHours(); }, [fetchDailyHours]);
+  useEffect(() => { fetchWeeklyHours(); }, [fetchWeeklyHours]);
+  useEffect(() => { fetchWeeklyDistance(); }, [fetchWeeklyDistance]);
+  useEffect(() => { fetchRepartition(); }, [fetchRepartition]);
+  useEffect(() => { fetchWeeklyPace(); }, [fetchWeeklyPace]);
+
+  // Initial loading state - set to false once first data arrives
   useEffect(() => {
-    const fetchAll = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await Promise.all([
-          fetchDailyHours(),
-          fetchWeeklyHours(),
-          fetchWeeklyDistance(),
-          fetchRepartition(),
-          fetchWeeklyPace(),
-        ]);
-      } catch (err) {
-        setError('Erreur lors du chargement des graphiques');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchAll();
-  }, [fetchDailyHours, fetchWeeklyHours, fetchWeeklyDistance, fetchRepartition, fetchWeeklyPace]);
+    if (dailyHoursData || weeklyHoursData || weeklyDistanceData || repartitionData || weeklyPaceData) {
+      setIsLoading(false);
+    }
+  }, [dailyHoursData, weeklyHoursData, weeklyDistanceData, repartitionData, weeklyPaceData]);
 
   return {
     dailyHoursData,

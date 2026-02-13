@@ -276,15 +276,15 @@ export function DashboardPage() {
         {/* Streak */}
         <div className="card-streak rounded-lg p-4">
           <h2 className="font-heading font-semibold text-mist mb-4">Serie</h2>
-          {streak ? (
+          {streak && streak.streak_weeks > 0 ? (
             <div className="text-center">
               <div className="mb-2 flex justify-center">
                 <FireIcon />
               </div>
-              <p className="text-3xl font-bold text-amber mb-1">{streak.current_streak}</p>
-              <p className="text-sm text-mist/60">jours consecutifs</p>
+              <p className="text-3xl font-bold text-amber mb-1">{streak.streak_weeks}</p>
+              <p className="text-sm text-mist/60">semaines consecutives</p>
               <div className="mt-4 pt-4 border-t border-amber/20">
-                <p className="text-xs text-mist/50">Record: {streak.longest_streak} jours</p>
+                <p className="text-xs text-mist/50">{streak.total_activities} activites sur la serie</p>
               </div>
             </div>
           ) : (

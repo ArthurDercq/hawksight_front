@@ -10,9 +10,8 @@ export interface KPIData {
 }
 
 export interface StreakData {
-  current_streak: number;
-  longest_streak: number;
-  last_activity_date: string;
+  streak_weeks: number;
+  total_activities: number;
 }
 
 export interface PersonalRecord {
