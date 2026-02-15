@@ -13,7 +13,9 @@ export const analysisApi = {
    */
   async analyzeActivity(activityId: number): Promise<TrailAnalysisResult> {
     const response = await apiClient.post<TrailAnalysisResult>(
-      `/analysis/trail/${activityId}`
+      `/analysis/trail/${activityId}`,
+      undefined,
+      { timeout: 120000 }
     );
     return response.data;
   },
@@ -32,6 +34,7 @@ export const analysisApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 120000,
       }
     );
     return response.data;

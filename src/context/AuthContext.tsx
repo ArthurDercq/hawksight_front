@@ -5,7 +5,7 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<true | string>;
   logout: () => void;
 }
 
@@ -35,15 +35,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (username: string, password: string): Promise<true | string> => {
     try {
       const { access_token } = await authApi.login(username, password);
       localStorage.setItem('eyesight_token', access_token);
       setToken(access_token);
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Login failed:', error);
-      return false;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 401) {
+          return 'Identifiants incorrects';
+        }
+        if (axiosError.response?.status && axiosError.response.status >= 500) {
+          return 'Erreur serveur, veuillez reessayer';
+        }
+      }
+      if (error instanceof Error && error.message === 'Network Error') {
+        return 'Impossible de contacter le serveur';
+      }
+      return 'Erreur de connexion';
     }
   }, []);
 

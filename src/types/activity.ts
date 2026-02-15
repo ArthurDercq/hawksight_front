@@ -41,6 +41,7 @@ export interface LastActivity {
   id: number;
   name: string;
   date: string;
+  type?: string;
   distance_km: number;
   duree_hms: string;
   denivele_m: number;

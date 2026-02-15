@@ -5,6 +5,7 @@ import {
   getWeekBoundaries,
   getMonthBoundaries,
   activitiesApi,
+  apiClient,
 } from '@/services/api';
 import type { Activity, LastActivity, StreakData, KPIData } from '@/types';
 
@@ -30,6 +31,7 @@ interface UseDashboardReturn {
   kpis: KPIData | null;
   streak: StreakData | null;
   lastActivity: LastActivity | null;
+  recentActivities: LastActivity[];
   weeklySummary: WeeklySummaryData | null;
   monthlySummary: MonthlySummaryData | null;
   isLoading: boolean;
@@ -50,6 +52,7 @@ export function useDashboard(): UseDashboardReturn {
   const [kpis, setKpis] = useState<KPIData | null>(null);
   const [streak, setStreak] = useState<StreakData | null>(null);
   const [lastActivity, setLastActivity] = useState<LastActivity | null>(null);
+  const [recentActivities, setRecentActivities] = useState<LastActivity[]>([]);
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummaryData | null>(null);
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,13 +75,14 @@ export function useDashboard(): UseDashboardReturn {
 
       // Fetch ALL data in a single parallel batch
       const [
-        kpiData, streakData, lastActivityData,
+        kpiData, streakData, lastActivityData, recentData,
         weekActivitiesRaw, prevWeekActivitiesRaw,
         monthActivitiesRaw, prevMonthActivitiesRaw,
       ] = await Promise.all([
         dashboardApi.getKPIs().catch(() => null),
         dashboardApi.getStreak().catch(() => null),
         dashboardApi.getLastActivity().catch(() => null),
+        dashboardApi.getRecentActivities(3).catch(() => [] as LastActivity[]),
         dashboardApi.getActivitiesForPeriod(formatDateForAPI(weekStart), formatDateForAPI(weekEnd)).catch(() => null),
         dashboardApi.getActivitiesForPeriod(formatDateForAPI(prevWeekStart), formatDateForAPI(prevWeekEnd)).catch(() => null),
         dashboardApi.getActivitiesForPeriod(formatDateForAPI(monthStart), formatDateForAPI(monthEnd)).catch(() => null),
@@ -88,6 +92,7 @@ export function useDashboard(): UseDashboardReturn {
       setKpis(kpiData);
       setStreak(streakData);
       setLastActivity(lastActivityData);
+      setRecentActivities(recentData || []);
 
       const weekActivities = normalizeActivities(weekActivitiesRaw);
       const prevWeekActivities = normalizeActivities(prevWeekActivitiesRaw);
@@ -115,7 +120,8 @@ export function useDashboard(): UseDashboardReturn {
       // Synchroniser les activités puis les streams
       await activitiesApi.syncActivities();
       await activitiesApi.syncStreams();
-      // Recharger les données du dashboard
+      // Vider le cache pour forcer le re-fetch des données fraîches
+      apiClient.clearCache();
       await fetchDashboardData();
     } catch (err) {
       console.error('Error syncing data:', err);
@@ -128,6 +134,7 @@ export function useDashboard(): UseDashboardReturn {
     kpis,
     streak,
     lastActivity,
+    recentActivities,
     weeklySummary,
     monthlySummary,
     isLoading,

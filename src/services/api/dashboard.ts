@@ -54,6 +54,10 @@ export const dashboardApi = {
     return apiClient.fetchWithCache<LastActivity>('/activities/last_activity', { params });
   },
 
+  async getRecentActivities(n: number = 3): Promise<LastActivity[]> {
+    return apiClient.fetchWithCache<LastActivity[]>('/activities/recent', { params: { n } });
+  },
+
   async getActivitiesForPeriod(startDate: string, endDate: string): Promise<Activity[] | { activities: Activity[] }> {
     return apiClient.fetchWithCache<Activity[] | { activities: Activity[] }>('/activities/filter_activities', {
       params: { start_date: startDate, end_date: endDate },

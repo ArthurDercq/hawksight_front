@@ -5,6 +5,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useKPI } from '@/hooks';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { ActivityGridPosters } from '@/components/activity/ActivityGridPosters';
+import { ElevationGridPosters } from '@/components/activity/ElevationGridPosters';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -368,10 +369,6 @@ export function KPIPage() {
             </div>
           )}
 
-          {/* Activity Grid Posters */}
-          <div className="mt-6">
-            <ActivityGridPosters />
-          </div>
         </div>
 
         {/* Right Column: Records Card */}
@@ -434,6 +431,12 @@ export function KPIPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Activity & Elevation Grids - Full width, side by side */}
+      <div className="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <ActivityGridPosters />
+        <ElevationGridPosters />
       </div>
     </div>
   );

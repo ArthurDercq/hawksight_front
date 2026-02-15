@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { useActivities } from '@/hooks/useActivities';
 import { TrailAnalysisDashboard } from '@/components/analysis';
@@ -206,9 +206,20 @@ export function PerformancePage() {
       setTimeout(() => {
         analysisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Analysis error:', err);
-      setAnalysisError(err instanceof Error ? err.message : 'Erreur lors de l\'analyse');
+      let message = 'Erreur lors de l\'analyse';
+      if (err && typeof err === 'object') {
+        const axiosErr = err as { code?: string; message?: string };
+        if (axiosErr.code === 'ECONNABORTED' || axiosErr.message?.includes('timeout')) {
+          message = 'L\'analyse a pris trop de temps. Réessayez ou choisissez une activité plus courte.';
+        } else if (axiosErr.message === 'Network Error') {
+          message = 'Impossible de contacter le serveur. Vérifiez votre connexion.';
+        } else if (axiosErr.message) {
+          message = axiosErr.message;
+        }
+      }
+      setAnalysisError(message);
       setAnalysisStatus('error');
     }
   };
@@ -464,7 +475,7 @@ export function PerformancePage() {
                   {filteredActivities.map((activity) => {
                     const isSelected = selectedActivity?.id === activity.id;
                     const sportColor = SPORT_COLORS[activity.sport_type] || '#E8832A';
-                    const distanceKm = activity.distance_km || activity.distance / 1000;
+                    const distanceKm = activity.distance_km || activity.distance;
                     return (
                       <button
                         key={activity.id}
@@ -594,24 +605,10 @@ export function PerformancePage() {
         <div ref={analysisRef} className="space-y-6 pt-4">
           {/* Loading State */}
           {analysisStatus === 'loading' && (
-            <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-12">
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-[#3A3F47]/30 border-t-[#E8832A] rounded-full animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <ChartBarIcon color="#E8832A" size={24} />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-[#F2F2F2] font-['Inter'] font-medium">
-                    Analyse en cours...
-                  </p>
-                  <p className="text-[#3A3F47] font-['Inter'] text-sm mt-1">
-                    {uploadedFile ? `Traitement de ${uploadedFile.name}` : `Analyse de ${selectedActivity?.name}`}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <AnalysisLoader
+              activityName={uploadedFile ? uploadedFile.name : selectedActivity?.name}
+              isFile={!!uploadedFile}
+            />
           )}
 
           {/* Error State */}
@@ -653,6 +650,71 @@ export function PerformancePage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+const ANALYSIS_STEPS = [
+  'Chargement des données GPS...',
+  'Analyse des segments de course et marche...',
+  'Calcul du profil d\'effort et VAM...',
+  'Détection des ravitaillements...',
+  'Analyse du découplage cardiaque...',
+  'Finalisation du rapport...',
+];
+
+function AnalysisLoader({ activityName, isFile }: { activityName?: string; isFile: boolean }) {
+  const [elapsed, setElapsed] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (stepIndex < ANALYSIS_STEPS.length - 1) {
+      const delay = 3000 + Math.random() * 4000;
+      const timer = setTimeout(() => setStepIndex((i) => i + 1), delay);
+      return () => clearTimeout(timer);
+    }
+  }, [stepIndex]);
+
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  const timeStr = minutes > 0
+    ? `${minutes}:${seconds.toString().padStart(2, '0')}`
+    : `${seconds}s`;
+
+  return (
+    <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-12">
+      <div className="flex flex-col items-center gap-5">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#3A3F47]/30 border-t-[#E8832A] rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ChartBarIcon color="#E8832A" size={24} />
+          </div>
+        </div>
+        <div className="text-center space-y-2">
+          <p className="text-[#F2F2F2] font-['Inter'] font-medium">
+            Analyse en cours...
+          </p>
+          <p className="text-[#E8832A] font-['Inter'] text-sm font-medium">
+            {ANALYSIS_STEPS[stepIndex]}
+          </p>
+          <p className="text-[#3A3F47] font-['Inter'] text-sm">
+            {isFile ? `Traitement de ${activityName}` : `Analyse de ${activityName}`}
+          </p>
+          <p className="text-[#3A3F47]/60 font-['Inter'] text-xs font-mono mt-2">
+            {timeStr}
+          </p>
+          {elapsed >= 15 && (
+            <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
+              L'analyse peut prendre jusqu'à 2 minutes pour les activités longues
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

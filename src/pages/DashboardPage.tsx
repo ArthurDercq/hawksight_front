@@ -63,6 +63,30 @@ function getRepartitionColor(label: string): string {
   return '#E8832A'; // Couleur par défaut
 }
 
+// Convert polyline coordinates to SVG path
+function polylineToSvgPath(coords: [number, number][]): string {
+  if (coords.length === 0) return '';
+
+  const lats = coords.map(c => c[0]);
+  const lngs = coords.map(c => c[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const rangeLat = maxLat - minLat || 0.001;
+  const rangeLng = maxLng - minLng || 0.001;
+
+  const scale = Math.max(rangeLat, rangeLng);
+  const pad = 10;
+  const w = 100 - 2 * pad;
+
+  const points = coords.map(([lat, lng]) => {
+    const x = pad + ((lng - minLng) / scale) * w;
+    const y = pad + ((maxLat - lat) / scale) * w;
+    return `${x.toFixed(1)} ${y.toFixed(1)}`;
+  });
+
+  return `M ${points.join(' L ')}`;
+}
+
 // SVG Icons
 const FireIcon = () => (
   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#E8832A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -79,7 +103,7 @@ const BarChartIcon = () => (
 );
 
 export function DashboardPage() {
-  const { kpis, streak, lastActivity, weeklySummary, monthlySummary, isLoading, error, isSyncing, syncData } = useDashboard();
+  const { streak, lastActivity, recentActivities, weeklySummary, monthlySummary, isLoading, error, isSyncing, syncData } = useDashboard();
   const {
     dailyHoursData,
     weekOffset,
@@ -337,7 +361,7 @@ export function DashboardPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="font-medium text-mist">{lastActivity.name}</p>
-                  <p className="text-sm text-mist/60">{lastActivity.date}</p>
+                  <p className="text-sm text-mist/60">{formatActivityDate(lastActivity.date)}</p>
                 </div>
                 <span className="text-amber text-sm font-medium hover:text-amber-light transition-colors">Voir →</span>
               </div>
@@ -365,53 +389,61 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Quick KPI Stats */}
-        {kpis && (
-          <div className="card-glass rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-glacier/10 border border-glacier/30">
-                  <svg width="20" height="20" viewBox="0 0 256 256" fill="none" stroke="#3DB2E0" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="128" cy="128" r="88" />
-                    <circle cx="128" cy="128" r="60" />
-                    <circle cx="128" cy="128" r="32" />
-                    <circle cx="128" cy="128" r="8" fill="#3DB2E0" stroke="none" />
-                  </svg>
-                </div>
-                <h2 className="font-heading font-semibold text-mist">Statistiques globales</h2>
+        {/* Recent Traces */}
+        <div className="card-glass rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-glacier/10 border border-glacier/30">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
               </div>
-              <Link to="/kpi" className="text-sm text-amber hover:text-amber-light font-medium transition-colors">
-                Voir tout →
-              </Link>
+              <h2 className="font-heading font-semibold text-mist">Dernieres traces</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-charcoal/50 rounded-lg p-3 border border-glacier/20 hover:border-glacier/40 transition-colors">
-                <p className="text-xs text-mist/50 mb-1">Course</p>
-                <p className="text-xl font-mono text-glacier font-semibold">
-                  {Math.ceil(kpis.total_km_run).toLocaleString()} km
-                </p>
-              </div>
-              <div className="bg-charcoal/50 rounded-lg p-3 border border-[#7B6BC8]/20 hover:border-[#7B6BC8]/40 transition-colors">
-                <p className="text-xs text-mist/50 mb-1">Velo</p>
-                <p className="text-xl font-mono text-[#7B6BC8] font-semibold">
-                  {Math.ceil(kpis.total_km_bike).toLocaleString()} km
-                </p>
-              </div>
-              <div className="bg-charcoal/50 rounded-lg p-3 border border-amber/20 hover:border-amber/40 transition-colors">
-                <p className="text-xs text-mist/50 mb-1">Heures totales</p>
-                <p className="text-xl font-mono text-amber font-semibold">
-                  {Math.ceil(kpis.total_hours).toLocaleString()} h
-                </p>
-              </div>
-              <div className="bg-charcoal/50 rounded-lg p-3 border border-moss/20 hover:border-moss/40 transition-colors">
-                <p className="text-xs text-mist/50 mb-1">D+ total</p>
-                <p className="text-xl font-mono text-moss font-semibold">
-                  {Math.ceil(kpis.total_dplus_run_trail + kpis.total_dplus_bike).toLocaleString()} m
-                </p>
-              </div>
-            </div>
+            <Link to="/activities" className="text-sm text-amber hover:text-amber-light font-medium transition-colors">
+              Voir tout →
+            </Link>
           </div>
-        )}
+          {recentActivities.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide">
+              {recentActivities.map((activity) => (
+                <Link
+                  key={activity.id}
+                  to={`/activity/${activity.id}`}
+                  className="flex-shrink-0 w-[160px] snap-start group"
+                >
+                  <div className="bg-charcoal/50 rounded-lg border border-steel/20 overflow-hidden hover:border-glacier/40 transition-all hover:-translate-y-0.5">
+                    <div className="aspect-square bg-[#0B0C10] relative">
+                      {activity.polyline_coords && activity.polyline_coords.length > 0 ? (
+                        <svg viewBox="0 0 100 100" className="w-full h-full">
+                          <path
+                            d={polylineToSvgPath(activity.polyline_coords)}
+                            fill="none"
+                            stroke={SPORT_COLORS[activity.type || ''] || '#3DB2E0'}
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            opacity="0.8"
+                          />
+                        </svg>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-mist/20 text-xs">
+                          Pas de trace
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs text-mist truncate group-hover:text-glacier transition-colors">{activity.name}</p>
+                      <p className="text-[10px] text-mist/40 font-mono">{activity.date}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-mist/60 text-center py-4">Aucune trace recente</p>
+          )}
+        </div>
       </div>
 
       {/* Analytics Section - Graphiques */}
@@ -711,6 +743,13 @@ function QuickLink({ to, label, color, children }: QuickLinkProps) {
       <p className="text-sm text-mist/70 group-hover:text-mist transition-colors">{label}</p>
     </Link>
   );
+}
+
+function formatActivityDate(dateString: string): string {
+  const date = new Date(dateString);
+  const weekday = date.toLocaleDateString('fr-FR', { weekday: 'long' });
+  const rest = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${rest}`;
 }
 
 function formatTime(seconds: number): string {

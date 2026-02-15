@@ -22,12 +22,12 @@ export function LoginPage() {
     setError('');
     setIsLoading(true);
 
-    const success = await login(username, password);
+    const result = await login(username.trim(), password);
 
-    if (success) {
+    if (result === true) {
       navigate('/dashboard');
     } else {
-      setError('Identifiants incorrects');
+      setError(result);
     }
 
     setIsLoading(false);
