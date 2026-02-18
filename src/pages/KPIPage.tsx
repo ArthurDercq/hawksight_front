@@ -1,11 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useKPI } from '@/hooks';
 import { SectionTitle } from '@/components/ui/SectionTitle';
-import { ActivityGridPosters } from '@/components/activity/ActivityGridPosters';
-import { ElevationGridPosters } from '@/components/activity/ElevationGridPosters';
+import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
+
+const ActivityGridPosters = lazy(() =>
+  import('@/components/activity/ActivityGridPosters').then(m => ({ default: m.ActivityGridPosters }))
+);
+const ElevationGridPosters = lazy(() =>
+  import('@/components/activity/ElevationGridPosters').then(m => ({ default: m.ElevationGridPosters }))
+);
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -157,48 +163,17 @@ export function KPIPage() {
     };
   }, [kpis]);
 
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-8">
-          <SectionTitle
-            icon={<ChartIcon />}
-            title="Mes chiffres clefs"
-          />
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <svg className="animate-spin w-12 h-12 text-amber mx-auto mb-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            <p className="text-mist/60">Chargement des statistiques...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-8">
-          <SectionTitle
-            icon={<ChartIcon />}
-            title="Mes chiffres clefs"
-          />
-        </div>
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6 text-center">
-          <p className="text-red-400">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   // Build records map from API data
   const recordsMap = records?.records || {};
 
   return (
+    <PageStateWrapper
+      isLoading={isLoading}
+      error={error}
+      icon={<ChartIcon />}
+      title="Mes chiffres clefs"
+      loadingMessage="Chargement des statistiques..."
+    >
     <div className="max-w-7xl mx-auto px-6">
       {/* Two-column asymmetric layout like vanilla JS */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
@@ -376,7 +351,6 @@ export function KPIPage() {
           <div className="relative rounded-lg overflow-hidden border border-amber/30">
             {/* Full card background with grid pattern and orange gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-amber/20 via-charcoal to-amber/10" />
-            <div className="absolute inset-0 records-grid-pattern pointer-events-none" />
 
             {/* Records Header */}
             <div className="relative p-4">
@@ -435,10 +409,15 @@ export function KPIPage() {
 
       {/* Activity & Elevation Grids - Full width, side by side */}
       <div className="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <ActivityGridPosters />
-        <ElevationGridPosters />
+        <Suspense fallback={<div className="h-64 animate-pulse bg-charcoal/50 rounded-lg" />}>
+          <ActivityGridPosters />
+        </Suspense>
+        <Suspense fallback={<div className="h-64 animate-pulse bg-charcoal/50 rounded-lg" />}>
+          <ElevationGridPosters />
+        </Suspense>
       </div>
     </div>
+    </PageStateWrapper>
   );
 }
 
@@ -498,8 +477,6 @@ function MetricCard({ icon: Icon, label, value, unit, color }: MetricCardProps) 
 
       {/* Card inner */}
       <div className="relative h-full bg-charcoal border border-steel/30 rounded-lg p-3 overflow-hidden transition-all duration-300 group-hover:border-opacity-100 flex flex-col" style={{ borderColor: `${color}30` }}>
-        {/* Grid pattern background */}
-        <div className="absolute inset-0 grid-pattern pointer-events-none" />
 
         {/* Corner glow */}
         <div

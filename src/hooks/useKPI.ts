@@ -19,7 +19,7 @@ export function useKPI(): UseKPIReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (cancelled: { current: boolean }) => {
     setIsLoading(true);
     setError(null);
 
@@ -28,18 +28,30 @@ export function useKPI(): UseKPIReturn {
         kpiApi.getKPIs(selectedYear || undefined),
         kpiApi.getRecords(),
       ]);
-      setKpis(kpiData);
-      setRecords(recordsData);
+      if (!cancelled.current) {
+        setKpis(kpiData);
+        setRecords(recordsData);
+      }
     } catch (err) {
-      console.error('Error fetching KPIs:', err);
-      setError('Erreur lors du chargement des statistiques');
+      if (!cancelled.current) {
+        console.error('Error fetching KPIs:', err);
+        setError('Erreur lors du chargement des statistiques');
+      }
     } finally {
-      setIsLoading(false);
+      if (!cancelled.current) {
+        setIsLoading(false);
+      }
     }
   }, [selectedYear]);
 
   useEffect(() => {
-    fetchData();
+    const cancelled = { current: false };
+    fetchData(cancelled);
+    return () => { cancelled.current = true; };
+  }, [fetchData]);
+
+  const refetch = useCallback(() => {
+    fetchData({ current: false });
   }, [fetchData]);
 
   return {
@@ -49,6 +61,6 @@ export function useKPI(): UseKPIReturn {
     isLoading,
     error,
     setSelectedYear,
-    refetch: fetchData,
+    refetch,
   };
 }

@@ -113,6 +113,13 @@ export function useDashboard(): UseDashboardReturn {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // Re-fetch when activities are mutated (create/update/delete)
+  useEffect(() => {
+    const handleActivitiesUpdated = () => { fetchDashboardData(); };
+    window.addEventListener('activities-updated', handleActivitiesUpdated);
+    return () => window.removeEventListener('activities-updated', handleActivitiesUpdated);
+  }, [fetchDashboardData]);
+
   // Fonction de synchronisation avec Strava
   const syncData = useCallback(async () => {
     setIsSyncing(true);

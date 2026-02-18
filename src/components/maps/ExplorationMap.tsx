@@ -249,7 +249,28 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
     );
   }
 
-  return <div ref={mapContainer} className={`rounded-lg ${className}`} />;
+  const handleResetView = () => {
+    if (mapRef.current && data) {
+      fitBoundsToData(mapRef.current, data, true);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div ref={mapContainer} className={`rounded-lg ${className}`} />
+      <button
+        onClick={handleResetView}
+        className="absolute top-3 right-3 bg-charcoal/80 backdrop-blur-sm border border-steel/30 rounded-lg px-3 py-2 text-xs text-mist/70 hover:text-mist hover:border-amber/50 transition-all flex items-center gap-2"
+        title="Recentrer sur mon territoire principal"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        Mon territoire
+      </button>
+    </div>
+  );
 }
 
 /**

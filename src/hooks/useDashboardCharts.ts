@@ -103,9 +103,14 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
       const data = await dashboardApi.getDailyHours(weekOffset);
 
       // Ensure datasets array exists even if empty
+      // Convert seconds to minutes for display
+      const datasetsInMinutes = (data.datasets || []).map((ds: { label: string; data: number[] }) => ({
+        ...ds,
+        data: ds.data.map((seconds: number) => Math.round(seconds / 60)),
+      }));
       const chartData: ChartData = {
         labels: data.labels || ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-        datasets: data.datasets || [],
+        datasets: datasetsInMinutes,
         week_range: data.week_range,
         stats: data.stats,
       };
@@ -239,6 +244,19 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
   useEffect(() => { fetchWeeklyDistance(); }, [fetchWeeklyDistance]);
   useEffect(() => { fetchRepartition(); }, [fetchRepartition]);
   useEffect(() => { fetchWeeklyPace(); }, [fetchWeeklyPace]);
+
+  // Re-fetch all charts when activities are mutated (create/update/delete)
+  useEffect(() => {
+    const handleActivitiesUpdated = () => {
+      fetchDailyHours();
+      fetchWeeklyHours();
+      fetchWeeklyDistance();
+      fetchRepartition();
+      fetchWeeklyPace();
+    };
+    window.addEventListener('activities-updated', handleActivitiesUpdated);
+    return () => window.removeEventListener('activities-updated', handleActivitiesUpdated);
+  }, [fetchDailyHours, fetchWeeklyHours, fetchWeeklyDistance, fetchRepartition, fetchWeeklyPace]);
 
   // Initial loading state - set to false once first data arrives
   useEffect(() => {

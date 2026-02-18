@@ -3,8 +3,7 @@ import type { Activity, ActivityDetail, ActivityFormData } from '@/types';
 
 export const activitiesApi = {
   async getActivities(): Promise<Activity[]> {
-    const response = await apiClient.get<Activity[]>('/activities/activities');
-    return response.data;
+    return apiClient.fetchWithCache<Activity[]>('/activities/activities');
   },
 
   async getActivity(id: number): Promise<Activity> {
@@ -19,6 +18,10 @@ export const activitiesApi = {
 
   async createActivity(data: ActivityFormData): Promise<Activity> {
     const response = await apiClient.post<Activity>('/activities/activities', data);
+    apiClient.clearCache(/activities/);
+    apiClient.clearCache(/kpi/);
+    apiClient.clearCache(/plot/);
+    window.dispatchEvent(new Event('activities-updated'));
     return response.data;
   },
 
@@ -28,6 +31,10 @@ export const activitiesApi = {
       data,
       { params: { adjust_streams: adjustStreams } }
     );
+    apiClient.clearCache(/activities/);
+    apiClient.clearCache(/kpi/);
+    apiClient.clearCache(/plot/);
+    window.dispatchEvent(new Event('activities-updated'));
     return response.data;
   },
 
@@ -35,17 +42,20 @@ export const activitiesApi = {
     await apiClient.delete(`/activities/activities/${id}`, {
       params: { delete_streams: deleteStreams },
     });
+    apiClient.clearCache(/activities/);
+    apiClient.clearCache(/kpi/);
+    apiClient.clearCache(/plot/);
+    window.dispatchEvent(new Event('activities-updated'));
   },
 
   async filterActivities(startDate: string, endDate: string, sportType?: string): Promise<Activity[]> {
-    const response = await apiClient.get<Activity[]>('/activities/filter_activities', {
+    return apiClient.fetchWithCache<Activity[]>('/activities/filter_activities', {
       params: {
         start_date: startDate,
         end_date: endDate,
         ...(sportType && { sport_type: sportType }),
       },
     });
-    return response.data;
   },
 
   async syncActivities(): Promise<void> {

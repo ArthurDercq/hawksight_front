@@ -76,7 +76,7 @@ export function Navbar() {
   };
 
   const navItems = [
-    { path: '/activities', label: 'Activites', icon: <ActivityIcon /> },
+    { path: '/activities', label: 'Activités', icon: <ActivityIcon /> },
     { path: '/kpi', label: 'Chiffres cles', icon: <ChartIcon /> },
     { path: '/performance', label: 'Performance', icon: <TrendingUpIcon /> },
     { path: '/exploration', label: 'Exploration', icon: <GlobeIcon /> },

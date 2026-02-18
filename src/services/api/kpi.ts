@@ -28,17 +28,17 @@ export const kpiApi = {
     const params = year
       ? { start_date: `${year}-01-01`, end_date: `${year}-12-31` }
       : {};
-    const response = await apiClient.get<KPIResponse>('/kpi/', { params });
-    return response.data.kpis;
+    const response = await apiClient.fetchWithCache<KPIResponse>('/kpi/', { params }, 300000);
+    return response.kpis;
   },
 
   async getRecords(): Promise<RecordsData> {
-    const response = await apiClient.get<RecordsResponse>('/kpi/records');
+    const response = await apiClient.fetchWithCache<RecordsResponse>('/kpi/records', undefined, 600000);
 
     // Transform API keys to display keys
     const transformedRecords: Record<string, PersonalRecord | null> = {};
     for (const [apiKey, displayKey] of Object.entries(RECORD_KEY_MAP)) {
-      transformedRecords[displayKey] = response.data.records[apiKey] || null;
+      transformedRecords[displayKey] = response.records[apiKey] || null;
     }
 
     return { records: transformedRecords };

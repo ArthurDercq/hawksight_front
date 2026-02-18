@@ -152,12 +152,6 @@ export function ExplorationPage() {
             color="#3DB2E0"
           />
           <StatCard
-            label="Cellules H3"
-            value={formatNumber(stats.total_cells)}
-            unit="hexagones"
-            color="#E8832A"
-          />
-          <StatCard
             label="Nouvelles cette annee"
             value={formatNumber(stats.new_this_year)}
             unit="cellules"

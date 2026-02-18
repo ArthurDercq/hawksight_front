@@ -182,6 +182,40 @@ export function DashboardPage() {
     },
   };
 
+  const paceChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
+      y: {
+        reverse: true,
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: {
+          color: '#F2F2F2',
+          callback: (value: number | string) => {
+            const v = Number(value);
+            const min = Math.floor(v);
+            const sec = Math.round((v - min) * 60);
+            return `${min}:${sec.toString().padStart(2, '0')}`;
+          },
+        },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context: { parsed: { y: number | null } }) => {
+            const v = context.parsed.y ?? 0;
+            const min = Math.floor(v);
+            const sec = Math.round((v - min) * 60);
+            return `${min}:${sec.toString().padStart(2, '0')} min/km`;
+          },
+        },
+      },
+    },
+  };
+
   const doughnutChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -458,7 +492,7 @@ export function DashboardPage() {
           <div className="card-glass rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-heading font-semibold text-mist text-sm">Heures d'activite par jour</h3>
+                <h3 className="font-heading font-semibold text-mist text-sm">Minutes d'activités quotidiennes</h3>
                 {weekStats && (
                   <div className="flex items-center gap-2 mt-1 text-xs text-mist/60 font-mono">
                     <span className="text-amber">{weekStats.distance.toFixed(1)} km</span>
@@ -669,7 +703,7 @@ export function DashboardPage() {
                       tension: 0.4,
                     })),
                   }}
-                  options={lineChartOptions}
+                  options={paceChartOptions}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
@@ -679,71 +713,10 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <QuickLink to="/activities" label="Activites" color="#E8832A">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
-        </QuickLink>
-        <QuickLink to="/calendar" label="Calendrier" color="#3DB2E0">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-        </QuickLink>
-        <QuickLink to="/kpi" label="KPIs" color="#6DAA75">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10" />
-            <line x1="12" y1="20" x2="12" y2="4" />
-            <line x1="6" y1="20" x2="6" y2="14" />
-          </svg>
-        </QuickLink>
-        <QuickLink to="/profile" label="Profil" color="#7B6BC8">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </QuickLink>
-      </div>
     </div>
   );
 }
 
-interface QuickLinkProps {
-  to: string;
-  label: string;
-  color: string;
-  children: React.ReactNode;
-}
-
-function QuickLink({ to, label, color, children }: QuickLinkProps) {
-  return (
-    <Link
-      to={to}
-      className="card-glass rounded-lg p-4 text-center group hover:-translate-y-0.5 transition-all"
-      style={{ ['--link-color' as string]: color }}
-    >
-      <div
-        className="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center transition-all group-hover:scale-110"
-        style={{
-          backgroundColor: `${color}15`,
-          border: `1px solid ${color}30`,
-          color: color
-        }}
-      >
-        {children}
-      </div>
-      <p className="text-sm text-mist/70 group-hover:text-mist transition-colors">{label}</p>
-    </Link>
-  );
-}
 
 function formatActivityDate(dateString: string): string {
   const date = new Date(dateString);

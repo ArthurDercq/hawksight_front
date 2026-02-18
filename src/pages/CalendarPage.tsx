@@ -102,7 +102,6 @@ export function CalendarPage() {
       />
 
       <div className="card-glass rounded-lg p-4 sm:p-6 relative overflow-hidden">
-        <div className="absolute inset-0 grid-pattern pointer-events-none" />
 
         {/* Navigation */}
         <div className="flex items-center justify-between mb-6 relative">

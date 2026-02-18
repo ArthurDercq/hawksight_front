@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useActivities } from '@/hooks';
 import { ActivityCard } from '@/components/activity';
 import { SectionTitle } from '@/components/ui/SectionTitle';
+import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
 import type { Activity, ActivityFormData } from '@/types';
 
 const ITEMS_PER_PAGE = 10;
@@ -46,7 +47,7 @@ const ArrowRightIcon = () => (
 );
 
 export function ActivitiesPage() {
-  const { activities, isLoading, error, createActivity, updateActivity, deleteActivity } = useActivities();
+  const { activities, isLoading, error, mutationError, createActivity, updateActivity, deleteActivity } = useActivities();
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
@@ -94,45 +95,14 @@ export function ActivitiesPage() {
     return success;
   };
 
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-8">
-          <SectionTitle
-            icon={<ActivityIcon />}
-            title="Mes activites"
-          />
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <svg className="animate-spin w-12 h-12 text-amber mx-auto mb-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            <p className="text-mist/60">Chargement des activites...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-8">
-          <SectionTitle
-            icon={<ActivityIcon />}
-            title="Mes activites"
-          />
-        </div>
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6 text-center">
-          <p className="text-red-400">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
+    <PageStateWrapper
+      isLoading={isLoading}
+      error={error}
+      icon={<ActivityIcon />}
+      title="Mes activites"
+      loadingMessage="Chargement des activites..."
+    >
     <div className="max-w-7xl mx-auto px-6">
       {/* Header with SectionTitle */}
       <div className="flex items-start justify-between mb-8">
@@ -151,6 +121,13 @@ export function ActivitiesPage() {
           Nouvelle activite
         </button>
       </div>
+
+      {/* Mutation Error Banner */}
+      {mutationError && (
+        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6 text-center">
+          <p className="text-red-400 text-sm">{mutationError}</p>
+        </div>
+      )}
 
       {/* Activities Grid */}
       {activities.length === 0 ? (
@@ -256,6 +233,7 @@ export function ActivitiesPage() {
         />
       )}
     </div>
+    </PageStateWrapper>
   );
 }
 
@@ -293,8 +271,10 @@ function ActivityModal({ activity, onClose, onSave }: ActivityModalProps) {
       moving_time: formData.moving_time * 60, // minutes to seconds
     };
 
-    await onSave(apiData);
-    setIsSubmitting(false);
+    const success = await onSave(apiData);
+    if (!success) {
+      setIsSubmitting(false);
+    }
   };
 
   // Close on Escape key
@@ -308,7 +288,6 @@ function ActivityModal({ activity, onClose, onSave }: ActivityModalProps) {
       onKeyDown={handleKeyDown}
     >
       <div className="card-glass rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto relative">
-        <div className="absolute inset-0 grid-pattern pointer-events-none rounded-lg" />
         <div className="relative">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 rounded-lg bg-amber/10 border border-amber/30 text-amber">
