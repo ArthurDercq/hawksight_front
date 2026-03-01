@@ -96,16 +96,7 @@ export function RunWalkScatter({ data, color = '#E8832A', onExport }: RunWalkSca
           style={{ background: `linear-gradient(135deg, ${color}20, transparent)`, filter: 'blur(20px)' }}
         />
 
-        <div className="relative bg-charcoal border border-steel/30 rounded-lg p-6 transition-all duration-300 group-hover:border-[var(--metric-color)]">
-          {/* Grid pattern */}
-          <div
-            className="absolute inset-0 pointer-events-none rounded-lg"
-            style={{
-              backgroundImage: `linear-gradient(to right, #F2F2F2 1px, transparent 1px), linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)`,
-              backgroundSize: '16px 16px',
-              opacity: 0.03,
-            }}
-          />
+        <div className="relative bg-charcoal border border-steel/30 rounded-lg p-6 transition-all duration-300 group-hover:border-[var(--metric-color)]"> 
 
           <div className="relative">
             <div className="flex items-center gap-3 pb-4 border-b border-steel/30">
@@ -141,16 +132,7 @@ export function RunWalkScatter({ data, color = '#E8832A', onExport }: RunWalkSca
         style={{ background: `linear-gradient(135deg, ${color}20, transparent)`, filter: 'blur(20px)' }}
       />
 
-      <div className="relative bg-charcoal border border-steel/30 rounded-lg p-6 overflow-hidden transition-all duration-300 group-hover:border-[var(--metric-color)]">
-        {/* Grid pattern background */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(to right, #F2F2F2 1px, transparent 1px), linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)`,
-            backgroundSize: '16px 16px',
-            opacity: 0.03,
-          }}
-        />
+      <div className="relative bg-charcoal border border-steel/30 rounded-lg p-6 overflow-hidden transition-all duration-300 group-hover:border-[var(--metric-color)]"> 
 
         {/* Corner glow */}
         <div

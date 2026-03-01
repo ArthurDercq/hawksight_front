@@ -1,3 +1,11 @@
+export type UserRole = 'admin' | 'user' | 'demo';
+
+export interface CurrentUser {
+  sub: string;
+  role: UserRole;
+  username?: string;
+}
+
 export interface UserProfile {
   strava_id: number;
   firstname: string;

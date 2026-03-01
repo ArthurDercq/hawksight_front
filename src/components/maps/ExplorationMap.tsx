@@ -34,6 +34,7 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; count: number } | null>(null);
 
   // Initialize map once
   useEffect(() => {
@@ -172,39 +173,18 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
         }
       });
 
-      // Fit bounds to all features
-      fitBoundsToData(map, data);
-
       setMapLoaded(true);
 
-      // Add hover interaction
-      const popup = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        className: 'exploration-popup',
-      });
-
-      map.on('mouseenter', LAYER_ID, (e) => {
+      // Hover interaction — React tooltip (no Mapbox Popup to avoid DOM/WebGL conflicts)
+      map.on('mousemove', LAYER_ID, (e) => {
         map.getCanvas().style.cursor = 'pointer';
-
-        if (e.features && e.features[0]) {
-          const props = e.features[0].properties;
-          if (!props) return;
-
-          popup
-            .setLngLat(e.lngLat)
-            .setHTML(
-              `<div class="text-sm p-1">
-                <p class="font-semibold text-white">${props.activity_count} activite${props.activity_count > 1 ? 's' : ''}</p>
-              </div>`
-            )
-            .addTo(map);
-        }
+        const count = e.features?.[0]?.properties?.activity_count ?? 0;
+        setTooltip({ x: e.point.x, y: e.point.y, count });
       });
 
       map.on('mouseleave', LAYER_ID, () => {
         map.getCanvas().style.cursor = '';
-        popup.remove();
+        setTooltip(null);
       });
     });
 
@@ -229,9 +209,6 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
     if (heatmapSource) {
       heatmapSource.setData(polygonsToCentroidPoints(data) as GeoJSON.FeatureCollection);
     }
-
-    // Refit bounds with animation
-    fitBoundsToData(map, data, true);
   }, [data, mapLoaded]);
 
   if (!ENV.MAPBOX_ACCESS_TOKEN) {
@@ -250,17 +227,42 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
   }
 
   const handleResetView = () => {
-    if (mapRef.current && data) {
-      fitBoundsToData(mapRef.current, data, true);
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [3.5, 50.5],
+        zoom: 7,
+        duration: 1000,
+      });
     }
   };
 
   return (
     <div className="relative">
       <div ref={mapContainer} className={`rounded-lg ${className}`} />
+      {tooltip && (
+        <div
+          style={{
+            position: 'absolute',
+            left: tooltip.x + 12,
+            top: tooltip.y - 36,
+            pointerEvents: 'none',
+            background: '#1C2A3A',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '6px',
+            padding: '6px 10px',
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            color: '#E2E8F0',
+            whiteSpace: 'nowrap',
+            zIndex: 10,
+          }}
+        >
+          {tooltip.count} passage{tooltip.count > 1 ? 's' : ''}
+        </div>
+      )}
       <button
         onClick={handleResetView}
-        className="absolute top-3 right-3 bg-charcoal/80 backdrop-blur-sm border border-steel/30 rounded-lg px-3 py-2 text-xs text-mist/70 hover:text-mist hover:border-amber/50 transition-all flex items-center gap-2"
+        className="absolute top-3 left-3 bg-charcoal/80 backdrop-blur-sm border border-steel/30 rounded-lg px-3 py-2 text-xs text-mist/70 hover:text-mist hover:border-amber/50 transition-all flex items-center gap-2"
         title="Recentrer sur mon territoire principal"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -271,29 +273,4 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
       </button>
     </div>
   );
-}
-
-/**
- * Fit map bounds to GeoJSON data
- */
-function fitBoundsToData(
-  map: mapboxgl.Map,
-  data: ExplorationGeoJSON,
-  animate: boolean = false
-) {
-  if (data.features.length === 0) return;
-
-  const bounds = new mapboxgl.LngLatBounds();
-
-  data.features.forEach((feature) => {
-    const coords = feature.geometry.coordinates[0];
-    coords.forEach(([lng, lat]) => {
-      bounds.extend([lng, lat]);
-    });
-  });
-
-  map.fitBounds(bounds, {
-    padding: 50,
-    duration: animate ? 1000 : 0,
-  });
 }

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useRef, useEffect, type ReactNode } from 'react';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -13,8 +14,9 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { useDashboard, useDashboardCharts } from '@/hooks';
+import { useDashboard, useDashboardCharts, usePermissions } from '@/hooks';
 import { SectionTitle } from '@/components/ui/SectionTitle';
+import { DemoBanner } from '@/components/ui/DemoBanner';
 import type { ChartDataset } from '@/services/api';
 
 // Register Chart.js components
@@ -88,12 +90,6 @@ function polylineToSvgPath(coords: [number, number][]): string {
 }
 
 // SVG Icons
-const FireIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#E8832A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-  </svg>
-);
-
 const BarChartIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="20" x2="12" y2="10" />
@@ -102,8 +98,21 @@ const BarChartIcon = () => (
   </svg>
 );
 
+function ScrollToEndContainer({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollLeft = ref.current.scrollWidth;
+  }, []);
+  return (
+    <div ref={ref} className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide">
+      {children}
+    </div>
+  );
+}
+
 export function DashboardPage() {
-  const { streak, lastActivity, recentActivities, weeklySummary, monthlySummary, isLoading, error, isSyncing, syncData } = useDashboard();
+  const { streak, lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
+  const { isDemo, canSync } = usePermissions();
   const {
     dailyHoursData,
     weekOffset,
@@ -125,6 +134,9 @@ export function DashboardPage() {
     paceSport,
     setPaceSport,
     weeklyPaceAverage,
+    conqueteData,
+    conqueteAverage,
+    weeklyElevationAverage,
     globalOffset,
     setGlobalOffset,
   } = useDashboardCharts();
@@ -175,7 +187,7 @@ export function DashboardPage() {
     maintainAspectRatio: false,
     scales: {
       x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
-      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#F2F2F2' } },
+      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#F2F2F2', stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}` : null } },
     },
     plugins: {
       legend: { display: false },
@@ -188,29 +200,36 @@ export function DashboardPage() {
     scales: {
       x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
       y: {
-        reverse: true,
         grid: { color: 'rgba(255,255,255,0.05)' },
-        ticks: {
-          color: '#F2F2F2',
-          callback: (value: number | string) => {
-            const v = Number(value);
-            const min = Math.floor(v);
-            const sec = Math.round((v - min) * 60);
-            return `${min}:${sec.toString().padStart(2, '0')}`;
-          },
-        },
+        ticks: { display: false },
       },
     },
     plugins: {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (context: { parsed: { y: number | null } }) => {
-            const v = context.parsed.y ?? 0;
-            const min = Math.floor(v);
-            const sec = Math.round((v - min) * 60);
+          label: (context: { dataIndex: number; dataset: { _rawPaces?: number[] }; parsed: { y: number } }) => {
+            const raw = context.dataset._rawPaces?.[context.dataIndex] ?? context.parsed.y;
+            const min = Math.floor(raw);
+            const sec = Math.round((raw - min) * 60);
             return `${min}:${sec.toString().padStart(2, '0')} min/km`;
           },
+        },
+      },
+    },
+  };
+
+  const barChartOptionsMinutes = {
+    ...barChartOptions,
+    scales: {
+      ...barChartOptions.scales,
+      y: {
+        ...barChartOptions.scales.y,
+        stacked: true,
+        ticks: {
+          color: '#F2F2F2',
+          stepSize: 1,
+          callback: (value: number | string) => Number.isInteger(Number(value)) ? `${Number(value)}` : null,
         },
       },
     },
@@ -230,8 +249,11 @@ export function DashboardPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-6">
+      {/* Demo mode banner */}
+      {isDemo && <DemoBanner />}
+
       {/* Top Row - Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
         {/* Weekly Summary */}
         <div className="card-weekly rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
@@ -332,21 +354,54 @@ export function DashboardPage() {
         </div>
 
         {/* Streak */}
-        <div className="card-streak rounded-lg p-4">
-          <h2 className="font-heading font-semibold text-mist mb-4">Serie</h2>
+        <div className="card-streak rounded-lg p-4 flex flex-col gap-3">
+          <h2 className="font-heading font-semibold text-mist">Série</h2>
           {streak && streak.streak_weeks > 0 ? (
-            <div className="text-center">
-              <div className="mb-2 flex justify-center">
-                <FireIcon />
+            <>
+              <div className="flex-1 flex items-center gap-4 bg-charcoal/30 rounded-lg p-3">
+                <span className="text-4xl font-bold text-amber font-mono">{streak.streak_weeks}</span>
+                <div>
+                  <p className="text-sm font-semibold text-mist">semaines</p>
+                  <p className="text-xs text-mist/50">consécutives</p>
+                </div>
               </div>
-              <p className="text-3xl font-bold text-amber mb-1">{streak.streak_weeks}</p>
-              <p className="text-sm text-mist/60">semaines consecutives</p>
-              <div className="mt-4 pt-4 border-t border-amber/20">
-                <p className="text-xs text-mist/50">{streak.total_activities} activites sur la serie</p>
+              <div className="flex-1 flex items-center justify-center bg-charcoal/30 rounded-lg p-3">
+                <p className="text-xs text-mist/30">— à venir —</p>
+              </div>
+            </>
+          ) : (
+            <p className="text-mist/60 text-center">Pas de série en cours</p>
+          )}
+        </div>
+
+        {/* Conquête */}
+        <div className="card-glass rounded-lg p-4">
+          <h2 className="font-heading font-semibold text-mist mb-4">Conquête</h2>
+          {explorationStats ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-mist/50 mb-1">Ce mois</p>
+                <p className="text-lg font-mono text-amber font-semibold">
+                  +{Math.round(explorationStats.new_cells_per_month)}
+                </p>
+                <p className="text-[10px] text-mist/40">territoires</p>
+              </div>
+              <div>
+                <p className="text-xs text-mist/50 mb-1">Total</p>
+                <p className="text-lg font-mono text-glacier font-semibold">
+                  {explorationStats.total_cells}
+                </p>
+                <p className="text-[10px] text-mist/40">cellules</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-mist/50 mb-1">Nouveauté</p>
+                <p className="text-sm font-mono text-moss font-semibold">
+                  {explorationStats.novelty_percent.toFixed(1)}% cette année
+                </p>
               </div>
             </div>
           ) : (
-            <p className="text-mist/60 text-center">Pas de serie en cours</p>
+            <p className="text-mist/60 text-sm">Chargement...</p>
           )}
         </div>
       </div>
@@ -363,13 +418,13 @@ export function DashboardPage() {
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
               </div>
-              <h2 className="font-heading font-semibold text-mist">Derniere activite</h2>
+              <h2 className="font-heading font-semibold text-mist">Dernière activité</h2>
             </div>
             <button
               onClick={syncData}
-              disabled={isSyncing}
+              disabled={isSyncing || !canSync}
               className="p-2 rounded-lg bg-steel/20 border border-steel/30 hover:bg-steel/40 hover:border-glacier/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-              title="Synchroniser mes données"
+              title={canSync ? "Synchroniser mes données" : "Indisponible en mode démo"}
             >
               <svg
                 width="18"
@@ -405,7 +460,7 @@ export function DashboardPage() {
                   <p className="font-mono text-amber font-semibold">{lastActivity.distance_km.toFixed(1)} km</p>
                 </div>
                 <div className="bg-charcoal/50 rounded-lg p-2">
-                  <p className="text-xs text-mist/50 mb-1">Duree</p>
+                  <p className="text-xs text-mist/50 mb-1">Durée</p>
                   <p className="font-mono text-mist font-semibold">{lastActivity.duree_hms}</p>
                 </div>
                 <div className="bg-charcoal/50 rounded-lg p-2">
@@ -416,7 +471,26 @@ export function DashboardPage() {
                   <p className="text-xs text-mist/50 mb-1">Allure</p>
                   <p className="font-mono text-moss font-semibold">{lastActivity.allure_min_per_km}</p>
                 </div>
+                {lastActivity.bpm_moyen && lastActivity.bpm_moyen > 0 && (
+                  <div className="bg-charcoal/50 rounded-lg p-2">
+                    <p className="text-xs text-mist/50 mb-1">FC moy.</p>
+                    <p className="font-mono text-red-400 font-semibold">{Math.round(lastActivity.bpm_moyen!)} bpm</p>
+                  </div>
+                )}
               </div>
+              {lastActivityExploration && lastActivityExploration.total_cells > 0 && (
+                <div className="mt-3 flex items-center gap-2 px-2 py-1.5 rounded-lg bg-glacier/5 border border-glacier/20">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                  </svg>
+                  <span className="text-xs text-glacier/80">{lastActivityExploration.label}</span>
+                  {lastActivityExploration.exploration_rate !== null && (
+                    <span className="ml-auto text-xs font-mono text-glacier font-semibold">
+                      {lastActivityExploration.exploration_rate.toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+              )}
             </Link>
           ) : (
             <p className="text-mist/60">Aucune activite recente</p>
@@ -432,15 +506,15 @@ export function DashboardPage() {
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
               </div>
-              <h2 className="font-heading font-semibold text-mist">Dernieres traces</h2>
+              <h2 className="font-heading font-semibold text-mist">Mes activités</h2>
             </div>
             <Link to="/activities" className="text-sm text-amber hover:text-amber-light font-medium transition-colors">
               Voir tout →
             </Link>
           </div>
           {recentActivities.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide">
-              {recentActivities.map((activity) => (
+            <ScrollToEndContainer>
+              {[...recentActivities].reverse().map((activity) => (
                 <Link
                   key={activity.id}
                   to={`/activity/${activity.id}`}
@@ -468,12 +542,12 @@ export function DashboardPage() {
                     </div>
                     <div className="p-2">
                       <p className="text-xs text-mist truncate group-hover:text-glacier transition-colors">{activity.name}</p>
-                      <p className="text-[10px] text-mist/40 font-mono">{activity.date}</p>
+                      <p className="text-[10px] text-mist/40 font-mono">{formatActivityDate(activity.date)}</p>
                     </div>
                   </div>
                 </Link>
               ))}
-            </div>
+            </ScrollToEndContainer>
           ) : (
             <p className="text-mist/60 text-center py-4">Aucune trace recente</p>
           )}
@@ -533,7 +607,7 @@ export function DashboardPage() {
                         }))
                       : [{ label: 'Aucune activité', data: [0, 0, 0, 0, 0, 0, 0], backgroundColor: '#3A3F47' }],
                   }}
-                  options={barChartOptions}
+                  options={barChartOptionsMinutes}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-mist/40">Chargement...</div>
@@ -591,7 +665,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-heading font-semibold text-mist text-sm">Kilometres par semaine</h3>
-                <span className="text-xs text-mist/60 font-mono">{weeklyDistanceAverage}</span>
+                <span className="text-xs text-mist/60 font-mono">{weeklyDistanceAverage} · <span style={{color: '#C4561A'}}>{weeklyElevationAverage}</span></span>
               </div>
               <select
                 value={distanceSport}
@@ -610,13 +684,47 @@ export function DashboardPage() {
                 <Bar
                   data={{
                     labels: weeklyDistanceData.labels,
-                    datasets: weeklyDistanceData.datasets.map((ds: ChartDataset) => ({
-                      ...ds,
-                      backgroundColor: '#E8832A',
-                      borderColor: '#E8832A',
-                    })),
+                    datasets: [
+                      {
+                        ...weeklyDistanceData.datasets[0],
+                        type: 'bar' as const,
+                        backgroundColor: 'rgba(232, 131, 42, 0.8)',
+                        borderColor: '#E8832A',
+                        borderWidth: 1,
+                        borderRadius: 3,
+                        yAxisID: 'y',
+                      },
+                      {
+                        ...weeklyDistanceData.datasets[1],
+                        type: 'line' as const,
+                        borderColor: '#C4561A',
+                        backgroundColor: 'rgba(196, 86, 26, 0.15)',
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        fill: 'origin',
+                        tension: 0.4,
+                        yAxisID: 'y1',
+                      },
+                    ],
                   }}
-                  options={{ ...barChartOptions, scales: { ...barChartOptions.scales, x: { ...barChartOptions.scales.x, stacked: false }, y: { ...barChartOptions.scales.y, stacked: false } }, plugins: { ...barChartOptions.plugins, legend: { display: false } } }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
+                      y: {
+                        position: 'left' as const,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#F2F2F2', callback: (v: number | string) => `${Number(v).toFixed(0)}` },
+                      },
+                      y1: {
+                        position: 'right' as const,
+                        grid: { display: false },
+                        ticks: { color: '#C4561A', callback: (v: number | string) => `${Number(v).toFixed(0)}m` },
+                      },
+                    },
+                    plugins: { legend: { display: false } },
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
@@ -672,7 +780,7 @@ export function DashboardPage() {
           </div>
 
           {/* Weekly Pace Chart */}
-          <div className="card-glass rounded-lg p-6 lg:col-span-2">
+          <div className="card-glass rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-heading font-semibold text-mist text-sm">Allure moyenne par semaine</h3>
@@ -692,18 +800,58 @@ export function DashboardPage() {
             </div>
             <div className="h-[200px]">
               {weeklyPaceData && weeklyPaceData.datasets?.length > 0 ? (
-                <Line
+                <Bar
                   data={{
                     labels: weeklyPaceData.labels,
                     datasets: weeklyPaceData.datasets.map((ds: ChartDataset) => ({
                       ...ds,
+                      backgroundColor: 'rgba(109, 170, 117, 0.7)',
                       borderColor: '#6DAA75',
-                      backgroundColor: 'rgba(109, 170, 117, 0.1)',
-                      fill: true,
-                      tension: 0.4,
+                      borderWidth: 1,
+                      borderRadius: 3,
                     })),
                   }}
                   options={paceChartOptions}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
+              )}
+            </div>
+          </div>
+
+          {/* Conquête Chart */}
+          <div className="card-glass rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-heading font-semibold text-mist text-sm">Taux de conquête</h3>
+                <span className="text-xs text-mist/60 font-mono">{conqueteAverage}</span>
+              </div>
+            </div>
+            <div className="h-[200px]">
+              {conqueteData && conqueteData.datasets?.length > 0 ? (
+                <Bar
+                  data={{
+                    labels: conqueteData.labels,
+                    datasets: conqueteData.datasets.map((ds: ChartDataset) => ({
+                      ...ds,
+                      backgroundColor: 'rgba(61, 178, 224, 0.7)',
+                      borderColor: '#3DB2E0',
+                      borderWidth: 1,
+                      borderRadius: 3,
+                    })),
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
+                      y: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#F2F2F2', stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}` : null },
+                      },
+                    },
+                    plugins: { legend: { display: false } },
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>

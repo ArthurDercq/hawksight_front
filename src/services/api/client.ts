@@ -35,6 +35,7 @@ class ApiClient {
           localStorage.removeItem('eyesight_token');
           window.location.href = '/login';
         }
+        // 403 (demo role restrictions) are handled at hook/component level — no redirect
         return Promise.reject(error);
       }
     );

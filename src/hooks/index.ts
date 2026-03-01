@@ -1,4 +1,5 @@
 export { useProfile } from './useProfile';
+export { usePermissions } from './usePermissions';
 export { useActivities } from './useActivities';
 export { useActivityDetail } from './useActivityDetail';
 export { useCalendar, generateCalendarWeeks, getActivitiesForDate } from './useCalendar';

@@ -98,16 +98,6 @@ export function TrailAnalysisDashboard({ data, color = '#E8832A' }: TrailAnalysi
         />
 
         <div className="relative bg-charcoal border border-steel/30 rounded-lg p-6 transition-all duration-300 group-hover:border-[var(--metric-color)]">
-          {/* Grid pattern */}
-          <div
-            className="absolute inset-0 pointer-events-none rounded-lg"
-            style={{
-              backgroundImage: `linear-gradient(to right, #F2F2F2 1px, transparent 1px), linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)`,
-              backgroundSize: '16px 16px',
-              opacity: 0.03,
-            }}
-          />
-
           {/* Corner glow */}
           <div
             className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
@@ -191,29 +181,21 @@ export function TrailAnalysisDashboard({ data, color = '#E8832A' }: TrailAnalysi
           onExport={(ref) => exportChart(ref, 'run-walk')}
         />
 
-        {/* Row 2: VAM Comparison (full width) */}
-        <div className="lg:col-span-2">
-          <VAMComparisonChart
-            data={data.vam_comparison}
-            color={color}
-            onExport={(ref) => exportChart(ref, 'vam-comparison')}
-          />
-        </div>
-
-        {/* Row 3: Efficiency + Decoupling */}
-        <EfficiencyDriftChart
-          data={data.efficiency}
-          color="#8e44ad"
-          onExport={(ref) => exportChart(ref, 'efficiency')}
+        {/* Row 2: VAM + Efficiency */}
+        <VAMComparisonChart
+          data={data.vam_comparison}
+          color={color}
+          onExport={(ref) => exportChart(ref, 'vam-comparison')}
         />
 
+        {/* Row 3: Decoupling + Force Profile (full width) */}
         <DecouplingChart
           data={data.decoupling}
           color="#e74c3c"
           onExport={(ref) => exportChart(ref, 'decoupling')}
         />
 
-        {/* Row 4: Force Profile (full width) */}
+        {/* Force Profile (full width) */}
         <div className="lg:col-span-2">
           <ForceProfileHeatmap
             data={data.force_profile}

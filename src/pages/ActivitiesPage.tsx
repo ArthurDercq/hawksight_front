@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { useActivities } from '@/hooks';
+import { useState, useMemo, useEffect } from 'react';
+import { useActivities, usePermissions } from '@/hooks';
 import { ActivityCard } from '@/components/activity';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
+import { DemoBanner } from '@/components/ui/DemoBanner';
 import type { Activity, ActivityFormData } from '@/types';
 
 const ITEMS_PER_PAGE = 10;
@@ -46,17 +47,50 @@ const ArrowRightIcon = () => (
   </svg>
 );
 
+const SearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
 export function ActivitiesPage() {
   const { activities, isLoading, error, mutationError, createActivity, updateActivity, deleteActivity } = useActivities();
+  const { isDemo, canWrite, canDelete } = usePermissions();
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Activity | null>(null);
 
+  // Search filters
+  const [searchName, setSearchName] = useState('');
+  const [searchDateFrom, setSearchDateFrom] = useState('');
+  const [searchDateTo, setSearchDateTo] = useState('');
+
+  const filteredActivities = useMemo(() => {
+    return activities.filter((a) => {
+      const matchName = !searchName || a.name.toLowerCase().includes(searchName.toLowerCase());
+      const actDate = a.start_date ? a.start_date.slice(0, 10) : '';
+      const matchFrom = !searchDateFrom || actDate >= searchDateFrom;
+      const matchTo = !searchDateTo || actDate <= searchDateTo;
+      return matchName && matchFrom && matchTo;
+    });
+  }, [activities, searchName, searchDateFrom, searchDateTo]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchName, searchDateFrom, searchDateTo]);
+
   // Pagination
-  const totalPages = Math.ceil(activities.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredActivities.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedActivities = activities.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedActivities = filteredActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleEdit = (activity: Activity) => {
     setEditingActivity(activity);
@@ -104,6 +138,9 @@ export function ActivitiesPage() {
       loadingMessage="Chargement des activites..."
     >
     <div className="max-w-7xl mx-auto px-6">
+      {/* Demo mode banner */}
+      {isDemo && <DemoBanner />}
+
       {/* Header with SectionTitle */}
       <div className="flex items-start justify-between mb-8">
         <div className="flex-1">
@@ -113,13 +150,15 @@ export function ActivitiesPage() {
             subtitle={`${activities.length} activites au total`}
           />
         </div>
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-light text-charcoal font-medium rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30 mt-1"
-        >
-          <PlusIcon />
-          Nouvelle activite
-        </button>
+        {canWrite && (
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-light text-charcoal font-medium rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30 mt-1"
+          >
+            <PlusIcon />
+            Nouvelle activite
+          </button>
+        )}
       </div>
 
       {/* Mutation Error Banner */}
@@ -129,19 +168,70 @@ export function ActivitiesPage() {
         </div>
       )}
 
+      {/* Search bar */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px]">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-mist/40 pointer-events-none">
+            <SearchIcon />
+          </span>
+          <input
+            type="text"
+            placeholder="Rechercher par nom..."
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-steel/20 border border-steel/30 rounded-lg text-mist text-sm focus:border-amber focus:outline-none transition-colors placeholder:text-mist/30"
+          />
+        </div>
+        <input
+          type="date"
+          value={searchDateFrom}
+          onChange={(e) => setSearchDateFrom(e.target.value)}
+          className="px-3 py-2 bg-steel/20 border border-steel/30 rounded-lg text-mist text-sm focus:border-amber focus:outline-none transition-colors"
+        />
+        <span className="text-mist/40 text-sm">→</span>
+        <input
+          type="date"
+          value={searchDateTo}
+          onChange={(e) => setSearchDateTo(e.target.value)}
+          className="px-3 py-2 bg-steel/20 border border-steel/30 rounded-lg text-mist text-sm focus:border-amber focus:outline-none transition-colors"
+        />
+        {(searchName || searchDateFrom || searchDateTo) && (
+          <>
+            <button
+              onClick={() => { setSearchName(''); setSearchDateFrom(''); setSearchDateTo(''); }}
+              className="px-3 py-2 bg-steel/20 hover:bg-steel/30 border border-steel/30 rounded-lg text-mist/60 hover:text-mist transition-all"
+              title="Effacer les filtres"
+            >
+              <XIcon />
+            </button>
+            <span className="text-amber text-xs font-mono">
+              {filteredActivities.length} résultat{filteredActivities.length !== 1 ? 's' : ''}
+            </span>
+          </>
+        )}
+      </div>
+
       {/* Activities Grid */}
-      {activities.length === 0 ? (
+      {filteredActivities.length === 0 ? (
         <div className="card-glass rounded-lg p-12 text-center relative overflow-hidden">
           <div className="absolute inset-0 grid-pattern pointer-events-none" />
           <div className="relative">
-            <p className="text-mist/60 text-lg mb-4">Aucune activite pour le moment</p>
-            <button
-              onClick={handleCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-light text-charcoal font-medium rounded-lg transition-all hover:-translate-y-0.5"
-            >
-              <PlusIcon />
-              Creer votre premiere activite
-            </button>
+            {activities.length === 0 ? (
+              <>
+                <p className="text-mist/60 text-lg mb-4">Aucune activite pour le moment</p>
+                {canWrite && (
+                  <button
+                    onClick={handleCreate}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-light text-charcoal font-medium rounded-lg transition-all hover:-translate-y-0.5"
+                  >
+                    <PlusIcon />
+                    Creer votre premiere activite
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-mist/60 text-lg">Aucune activite ne correspond aux filtres</p>
+            )}
           </div>
         </div>
       ) : (
@@ -151,8 +241,8 @@ export function ActivitiesPage() {
               <ActivityCard
                 key={activity.id}
                 activity={activity}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
+                onEdit={canWrite ? handleEdit : undefined}
+                onDelete={canDelete ? handleDelete : undefined}
               />
             ))}
           </div>
@@ -252,7 +342,7 @@ function ActivityModal({ activity, onClose, onSave }: ActivityModalProps) {
     start_date: activity?.start_date
       ? new Date(activity.start_date).toISOString().slice(0, 16)
       : new Date().toISOString().slice(0, 16),
-    distance: activity?.distance ? activity.distance / 1000 : 0,
+    distance: activity?.distance ?? 0,
     moving_time: activity?.moving_time ? activity.moving_time / 60 : 0,
     total_elevation_gain: activity?.total_elevation_gain || 0,
     average_heartrate: activity?.average_heartrate || undefined,
@@ -260,14 +350,16 @@ function ActivityModal({ activity, onClose, onSave }: ActivityModalProps) {
     average_cadence: activity?.average_cadence || undefined,
   });
 
+  const durationHours = Math.floor(formData.moving_time / 60);
+  const durationMins = Math.round(formData.moving_time % 60);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Convert back to API format
+    // Convert back to API format (distance already in km, moving_time in minutes → seconds)
     const apiData: ActivityFormData = {
       ...formData,
-      distance: formData.distance * 1000, // km to meters
       moving_time: formData.moving_time * 60, // minutes to seconds
     };
 
@@ -286,8 +378,12 @@ function ActivityModal({ activity, onClose, onSave }: ActivityModalProps) {
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onKeyDown={handleKeyDown}
+      onClick={onClose}
     >
-      <div className="card-glass rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto relative">
+      <div
+        className="card-glass rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="relative">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 rounded-lg bg-amber/10 border border-amber/30 text-amber">
@@ -355,15 +451,34 @@ function ActivityModal({ activity, onClose, onSave }: ActivityModalProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm text-mist/70 mb-2">Duree (min)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={formData.moving_time}
-                  onChange={(e) => setFormData({ ...formData, moving_time: parseFloat(e.target.value) || 0 })}
-                  required
-                  className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors"
-                />
+                <label className="block text-sm text-mist/70 mb-2">Durée</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={durationHours}
+                    onChange={(e) => {
+                      const h = parseInt(e.target.value) || 0;
+                      setFormData({ ...formData, moving_time: h * 60 + durationMins });
+                    }}
+                    required
+                    className="w-16 px-2 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors text-center"
+                  />
+                  <span className="text-mist/50 text-sm">h</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={durationMins}
+                    onChange={(e) => {
+                      const m = parseInt(e.target.value) || 0;
+                      setFormData({ ...formData, moving_time: durationHours * 60 + m });
+                    }}
+                    className="w-16 px-2 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors text-center"
+                  />
+                  <span className="text-mist/50 text-sm">min</span>
+                </div>
               </div>
             </div>
 

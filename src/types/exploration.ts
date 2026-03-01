@@ -36,4 +36,11 @@ export interface ExplorationGeoJSON {
   stats: ExplorationStats;
 }
 
+export interface ActivityExplorationRate {
+  exploration_rate: number | null;
+  new_cells: number;
+  total_cells: number;
+  label: string;
+}
+
 export type SportFilter = 'run' | 'bike' | 'all';

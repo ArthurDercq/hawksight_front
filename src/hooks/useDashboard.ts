@@ -6,8 +6,9 @@ import {
   getMonthBoundaries,
   activitiesApi,
   apiClient,
+  explorationApi,
 } from '@/services/api';
-import type { Activity, LastActivity, StreakData, KPIData } from '@/types';
+import type { Activity, LastActivity, StreakData, KPIData, ExplorationStats, ActivityExplorationRate } from '@/types';
 
 interface WeeklySummaryData {
   totalDistance: number;
@@ -31,9 +32,11 @@ interface UseDashboardReturn {
   kpis: KPIData | null;
   streak: StreakData | null;
   lastActivity: LastActivity | null;
+  lastActivityExploration: ActivityExplorationRate | null;
   recentActivities: LastActivity[];
   weeklySummary: WeeklySummaryData | null;
   monthlySummary: MonthlySummaryData | null;
+  explorationStats: ExplorationStats | null;
   isLoading: boolean;
   error: string | null;
   isSyncing: boolean;
@@ -55,12 +58,14 @@ export function useDashboard(): UseDashboardReturn {
   const [recentActivities, setRecentActivities] = useState<LastActivity[]>([]);
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummaryData | null>(null);
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryData | null>(null);
+  const [explorationStats, setExplorationStats] = useState<ExplorationStats | null>(null);
+  const [lastActivityExploration, setLastActivityExploration] = useState<ActivityExplorationRate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const fetchDashboardData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchDashboardData = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
 
     try {
@@ -78,21 +83,30 @@ export function useDashboard(): UseDashboardReturn {
         kpiData, streakData, lastActivityData, recentData,
         weekActivitiesRaw, prevWeekActivitiesRaw,
         monthActivitiesRaw, prevMonthActivitiesRaw,
+        explorationStatsData,
       ] = await Promise.all([
         dashboardApi.getKPIs().catch(() => null),
         dashboardApi.getStreak().catch(() => null),
         dashboardApi.getLastActivity().catch(() => null),
-        dashboardApi.getRecentActivities(3).catch(() => [] as LastActivity[]),
+        dashboardApi.getRecentActivities(10).catch(() => [] as LastActivity[]),
         dashboardApi.getActivitiesForPeriod(formatDateForAPI(weekStart), formatDateForAPI(weekEnd)).catch(() => null),
         dashboardApi.getActivitiesForPeriod(formatDateForAPI(prevWeekStart), formatDateForAPI(prevWeekEnd)).catch(() => null),
         dashboardApi.getActivitiesForPeriod(formatDateForAPI(monthStart), formatDateForAPI(monthEnd)).catch(() => null),
         dashboardApi.getActivitiesForPeriod(formatDateForAPI(prevMonthStart), formatDateForAPI(prevMonthEnd)).catch(() => null),
+        explorationApi.getStats().catch(() => null),
       ]);
 
       setKpis(kpiData);
       setStreak(streakData);
       setLastActivity(lastActivityData);
       setRecentActivities(recentData || []);
+      setExplorationStats(explorationStatsData);
+
+      if (lastActivityData?.id) {
+        explorationApi.getActivityExplorationRate(lastActivityData.id)
+          .then(setLastActivityExploration)
+          .catch(() => null);
+      }
 
       const weekActivities = normalizeActivities(weekActivitiesRaw);
       const prevWeekActivities = normalizeActivities(prevWeekActivitiesRaw);
@@ -113,9 +127,9 @@ export function useDashboard(): UseDashboardReturn {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Re-fetch when activities are mutated (create/update/delete)
+  // Re-fetch silently when activities are mutated (create/update/delete)
   useEffect(() => {
-    const handleActivitiesUpdated = () => { fetchDashboardData(); };
+    const handleActivitiesUpdated = () => { fetchDashboardData(true); };
     window.addEventListener('activities-updated', handleActivitiesUpdated);
     return () => window.removeEventListener('activities-updated', handleActivitiesUpdated);
   }, [fetchDashboardData]);
@@ -141,9 +155,11 @@ export function useDashboard(): UseDashboardReturn {
     kpis,
     streak,
     lastActivity,
+    lastActivityExploration,
     recentActivities,
     weeklySummary,
     monthlySummary,
+    explorationStats,
     isLoading,
     error,
     isSyncing,
@@ -156,7 +172,7 @@ function calculateWeekSummary(
   prevActivities: Activity[]
 ): WeeklySummaryData {
   // Backend renvoie: distance en km, moving_time en minutes
-  const getDistance = (a: Activity) => a.distance || 0;  // Déjà en km
+  const getDistance = (a: Activity) => a.distance_km ?? a.distance ?? 0;
   const getTime = (a: Activity) => (a.moving_time || 0) * 60;  // Convertir minutes → secondes
   const getElevation = (a: Activity) => a.total_elevation_gain || 0;
 
@@ -184,7 +200,7 @@ function calculateMonthSummary(
   daysPassed: number
 ): MonthlySummaryData {
   // Backend renvoie: distance en km, moving_time en minutes
-  const getDistance = (a: Activity) => a.distance || 0;  // Déjà en km
+  const getDistance = (a: Activity) => a.distance_km ?? a.distance ?? 0;
   const getTime = (a: Activity) => (a.moving_time || 0) * 60;  // Convertir minutes → secondes
   const getElevation = (a: Activity) => a.total_elevation_gain || 0;
 

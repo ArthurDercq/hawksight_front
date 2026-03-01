@@ -60,7 +60,10 @@ export function useActivities(): UseActivitiesReturn {
       return true;
     } catch (err) {
       console.error('Error creating activity:', err);
-      setMutationError("Erreur lors de la création de l'activité");
+      const status = (err as { response?: { status?: number } }).response?.status;
+      setMutationError(status === 403
+        ? "Action non disponible en mode démo."
+        : "Erreur lors de la création de l'activité");
       return false;
     }
   }, [fetchActivities]);
@@ -77,7 +80,10 @@ export function useActivities(): UseActivitiesReturn {
       return true;
     } catch (err) {
       console.error('Error updating activity:', err);
-      setMutationError("Erreur lors de la modification de l'activité");
+      const status = (err as { response?: { status?: number } }).response?.status;
+      setMutationError(status === 403
+        ? "Action non disponible en mode démo."
+        : "Erreur lors de la modification de l'activité");
       return false;
     }
   }, [fetchActivities]);
@@ -90,7 +96,10 @@ export function useActivities(): UseActivitiesReturn {
       return true;
     } catch (err) {
       console.error('Error deleting activity:', err);
-      setMutationError("Erreur lors de la suppression de l'activité");
+      const status = (err as { response?: { status?: number } }).response?.status;
+      setMutationError(status === 403
+        ? "Action non disponible en mode démo."
+        : "Erreur lors de la suppression de l'activité");
       return false;
     }
   }, [fetchActivities]);

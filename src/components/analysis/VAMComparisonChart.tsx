@@ -55,16 +55,6 @@ export function VAMComparisonChart({ data, color = '#E8832A', onExport }: VAMCom
         />
 
         <div className="relative bg-charcoal border border-steel/30 rounded-lg p-6 transition-all duration-300 group-hover:border-[var(--metric-color)]">
-          {/* Grid pattern */}
-          <div
-            className="absolute inset-0 pointer-events-none rounded-lg"
-            style={{
-              backgroundImage: `linear-gradient(to right, #F2F2F2 1px, transparent 1px), linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)`,
-              backgroundSize: '16px 16px',
-              opacity: 0.03,
-            }}
-          />
-
           <div className="relative">
             <div className="flex items-center gap-3 pb-4 border-b border-steel/30">
               <div
@@ -103,15 +93,6 @@ export function VAMComparisonChart({ data, color = '#E8832A', onExport }: VAMCom
       />
 
       <div className="relative bg-charcoal border border-steel/30 rounded-lg p-6 overflow-hidden transition-all duration-300 group-hover:border-[var(--metric-color)]">
-        {/* Grid pattern background */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(to right, #F2F2F2 1px, transparent 1px), linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)`,
-            backgroundSize: '16px 16px',
-            opacity: 0.03,
-          }}
-        />
 
         {/* Corner glow */}
         <div
@@ -148,27 +129,18 @@ export function VAMComparisonChart({ data, color = '#E8832A', onExport }: VAMCom
           </div>
 
           {/* Chart */}
-          <div className="relative border border-steel/20 rounded overflow-hidden bg-charcoal-light">
-            {/* Grid background */}
-            <div
-              className="absolute inset-0 opacity-[0.03]"
-              style={{
-                backgroundImage: `linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)`,
-                backgroundSize: '100% 40px'
-              }}
-            />
-
-            <svg viewBox={`0 0 ${50 + data.length * (barWidth + barGap)} 250`} className="w-full h-auto">
+          <div className="relative border border-steel/20 rounded overflow-x-auto bg-charcoal-light">
+            <svg
+              viewBox={`0 0 ${50 + data.length * (barWidth + barGap)} 250`}
+              style={{ minWidth: `${50 + data.length * (barWidth + barGap)}px`, height: '250px' }}
+            >
               {/* Y-axis left (VAM) */}
               {[0, 250, 500, 750, 1000].map((vam) => {
                 const y = 200 - (vam / maxVAM) * 180;
                 return (
-                  <g key={`vam-${vam}`}>
-                    <line x1="45" y1={y} x2={45 + data.length * (barWidth + barGap)} y2={y} stroke="#3A3F47" strokeWidth="0.5" opacity="0.2" />
-                    <text x="40" y={y + 3} textAnchor="end" className="font-mono text-[9px]" fill="#3DB2E0">
-                      {vam}
-                    </text>
-                  </g>
+                  <text key={`vam-${vam}`} x="40" y={y + 3} textAnchor="end" className="font-mono text-[9px]" fill="#3DB2E0">
+                    {vam}
+                  </text>
                 );
               })}
 
