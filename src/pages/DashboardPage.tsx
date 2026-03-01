@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useRef, useEffect, type ReactNode } from 'react';
-import { Bar, Line, Doughnut } from 'react-chartjs-2';
+import { Bar, Line, Doughnut, Chart } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -208,10 +208,10 @@ export function DashboardPage() {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (context: { dataIndex: number; dataset: { _rawPaces?: number[] }; parsed: { y: number } }) => {
-            const raw = context.dataset._rawPaces?.[context.dataIndex] ?? context.parsed.y;
-            const min = Math.floor(raw);
-            const sec = Math.round((raw - min) * 60);
+          label: (context: import('chart.js').TooltipItem<'bar'>) => {
+            const rawVal = (context.dataset as { _rawPaces?: number[] })._rawPaces?.[context.dataIndex] ?? context.parsed.y ?? 0;
+            const min = Math.floor(rawVal);
+            const sec = Math.round((rawVal - min) * 60);
             return `${min}:${sec.toString().padStart(2, '0')} min/km`;
           },
         },
@@ -681,7 +681,8 @@ export function DashboardPage() {
             </div>
             <div className="h-[200px]">
               {weeklyDistanceData && weeklyDistanceData.datasets?.length > 0 ? (
-                <Bar
+                <Chart
+                  type="bar"
                   data={{
                     labels: weeklyDistanceData.labels,
                     datasets: [

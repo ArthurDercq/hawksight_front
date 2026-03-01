@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context';
 import { Navbar, Footer } from '@/components/layout';
 import {
@@ -110,17 +110,35 @@ function AppRoutes() {
   );
 }
 
+function AppLayout() {
+  const { pathname } = useLocation();
+  const isLanding = pathname === '/';
+
+  if (isLanding) {
+    return (
+      <>
+        <Navbar />
+        <AppRoutes />
+      </>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-charcoal text-mist font-body flex flex-col">
+      <Navbar />
+      <main className="container mx-auto px-4 py-6 flex-1">
+        <AppRoutes />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="min-h-screen bg-charcoal text-mist font-body flex flex-col">
-          <Navbar />
-          <main className="container mx-auto px-4 py-6 flex-1">
-            <AppRoutes />
-          </main>
-          <Footer />
-        </div>
+        <AppLayout />
       </BrowserRouter>
     </AuthProvider>
   );

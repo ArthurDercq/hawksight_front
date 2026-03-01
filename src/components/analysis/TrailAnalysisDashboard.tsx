@@ -9,7 +9,6 @@ import type { TrailAnalysisResult } from '@/types/analysis';
 import { AidStationChart } from './AidStationChart';
 import { RunWalkScatter } from './RunWalkScatter';
 import { VAMComparisonChart } from './VAMComparisonChart';
-import { EfficiencyDriftChart } from './EfficiencyDriftChart';
 import { DecouplingChart } from './DecouplingChart';
 import { ForceProfileHeatmap } from './ForceProfileHeatmap';
 

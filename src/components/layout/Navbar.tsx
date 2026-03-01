@@ -69,6 +69,8 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const isLanding = location.pathname === '/';
+  const isLogin = location.pathname === '/login';
 
   const handleLogout = () => {
     logout();
@@ -84,7 +86,7 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-charcoal border-b border-steel/30">
+    <nav className={`${isLanding ? 'fixed top-0 w-full z-50 bg-transparent border-transparent' : 'sticky top-0 z-50 bg-charcoal border-b border-steel/30'} transition-colors duration-300`}>
       <div className="max-w-[1400px] mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -165,7 +167,7 @@ export function Navbar() {
                   </>
                 )}
               </div>
-            ) : (
+            ) : !isLanding && !isLogin && (
               <Link
                 to="/login"
                 className="px-4 py-2 bg-amber hover:bg-amber-light text-charcoal font-medium rounded-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(232,131,42,0.4)]"
