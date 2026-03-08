@@ -173,6 +173,15 @@ body::before {
   background-clip: text;
 }
 
+/* Override browser autofill background on inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px rgba(58, 63, 71, 0.5) inset;
+  -webkit-text-fill-color: #F2F2F2;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 /* Button hover lift */
 .btn-lift {
   @apply transition-all duration-300 ease-out;

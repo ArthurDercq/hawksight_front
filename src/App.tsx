@@ -113,6 +113,7 @@ function AppRoutes() {
 function AppLayout() {
   const { pathname } = useLocation();
   const isLanding = pathname === '/';
+  const isLogin = pathname === '/login';
 
   if (isLanding) {
     return (
@@ -120,6 +121,14 @@ function AppLayout() {
         <Navbar />
         <AppRoutes />
       </>
+    );
+  }
+
+  if (isLogin) {
+    return (
+      <div className="min-h-screen bg-charcoal text-mist font-body">
+        <AppRoutes />
+      </div>
     );
   }
 
