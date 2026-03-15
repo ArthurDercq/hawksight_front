@@ -214,7 +214,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
   const fetchWeeklyHours = useCallback(async () => {
     await swrFetch(
       `chart:weeklyHours:${globalOffset}`,
-      () => dashboardApi.getWeeklyHours(globalOffset) as Promise<WeeklyBarItem[]>,
+      () => dashboardApi.getWeeklyHours(globalOffset) as unknown as Promise<WeeklyBarItem[]>,
       applyWeeklyHours,
       setIsRefetchingWeeklyHours,
       'weekly hours',
@@ -238,7 +238,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
   const fetchWeeklyDistance = useCallback(async () => {
     await swrFetch(
       `chart:weeklyDistance:${distanceSport}:${globalOffset}`,
-      () => dashboardApi.getWeeklyDistance(distanceSport, globalOffset) as Promise<WeeklyBarItem[]>,
+      () => dashboardApi.getWeeklyDistance(distanceSport, globalOffset) as unknown as Promise<WeeklyBarItem[]>,
       applyWeeklyDistance,
       setIsRefetchingWeeklyDistance,
       'weekly distance',
@@ -280,7 +280,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
   const fetchRepartition = useCallback(async () => {
     await swrFetch(
       `chart:repartition:${repartitionSport}:${repartitionWeeks}`,
-      () => dashboardApi.getRepartition(repartitionSport, repartitionWeeks) as Promise<RepartitionResponse>,
+      () => dashboardApi.getRepartition(repartitionSport, repartitionWeeks) as unknown as Promise<RepartitionResponse>,
       (rawData) => {
         if (!isMounted.current) return;
         setRepartitionData({ labels: rawData.labels || [], datasets: [{ label: 'Activités', data: rawData.values || [] }] });
@@ -309,7 +309,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
   const fetchWeeklyPace = useCallback(async () => {
     await swrFetch(
       `chart:weeklyPace:${paceSport}:${globalOffset}`,
-      () => dashboardApi.getWeeklyPace(paceSport, globalOffset) as Promise<WeeklyPaceItem[]>,
+      () => dashboardApi.getWeeklyPace(paceSport, globalOffset) as unknown as Promise<WeeklyPaceItem[]>,
       applyWeeklyPace,
       setIsRefetchingWeeklyPace,
       'weekly pace',

@@ -111,7 +111,7 @@ function ScrollToEndContainer({ children }: { children: ReactNode }) {
 }
 
 export function DashboardPage() {
-  const { streak, lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, isRefetching, error, isSyncing, syncData } = useDashboard();
+  const { streak, lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
   const { isDemo, canSync } = usePermissions();
   const {
     dailyHoursData,
