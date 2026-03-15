@@ -1,5 +1,5 @@
 import { useMemo, useState, RefObject } from "react";
-import type { Activity, ActivityStream, SportType } from "@/types";
+import type { Activity, ActivityStream, SportType, ActivityExplorationRate } from "@/types";
 import { buildStaticMapUrl } from "@/services/mapbox/staticMap";
 
 // SVG Icons
@@ -16,10 +16,20 @@ const ActivitySvgIcon = () => (
   </svg>
 );
 
+const DownloadIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
 interface ActivityPosterProps {
   activity: Activity;
   streams: ActivityStream[];
   posterRef?: RefObject<HTMLDivElement>;
+  explorationRate?: ActivityExplorationRate | null;
+  onExportPNG?: () => void;
 }
 
 const SPORT_COLORS: Record<SportType, string> = {
@@ -121,7 +131,7 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterProps) {
+export function ActivityPoster({ activity, streams, posterRef, explorationRate, onExportPNG }: ActivityPosterProps) {
   const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
   const sportLabel = SPORT_LABELS[activity.sport_type] || activity.sport_type;
   const [mapImageError, setMapImageError] = useState(false);
@@ -225,6 +235,15 @@ export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterP
                 <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
                   HAWKSIGHT
                 </span>
+                {onExportPNG && (
+                  <button
+                    onClick={onExportPNG}
+                    className="text-[#3A3F47] hover:text-[#F2F2F2] transition-colors"
+                    title="Exporter en PNG"
+                  >
+                    <DownloadIcon />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -399,7 +418,7 @@ export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterP
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${explorationRate ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <div className="space-y-1">
               <div className="text-[#3A3F47] font-['Inter'] text-xs">Denivele</div>
               <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
@@ -414,6 +433,19 @@ export function ActivityPoster({ activity, streams, posterRef }: ActivityPosterP
                 {heartRate && <span className="text-xs text-[#F2F2F2]/40 ml-1">bpm</span>}
               </div>
             </div>
+            {explorationRate && (
+              <div className="space-y-1">
+                <div className="text-[#3A3F47] font-['Inter'] text-xs">Territoire</div>
+                <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
+                  {explorationRate.exploration_rate !== null
+                    ? `${explorationRate.exploration_rate.toFixed(0)}`
+                    : "--"}
+                  {explorationRate.exploration_rate !== null && (
+                    <span className="text-xs text-[#F2F2F2]/40 ml-1">%</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}

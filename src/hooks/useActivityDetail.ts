@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { activitiesApi } from '@/services/api';
-import type { Activity, ActivityStream } from '@/types';
+import { activitiesApi, explorationApi } from '@/services/api';
+import type { Activity, ActivityStream, ActivityExplorationRate } from '@/types';
 
 interface UseActivityDetailReturn {
   activity: Activity | null;
   streams: ActivityStream[];
+  explorationRate: ActivityExplorationRate | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -13,6 +14,7 @@ interface UseActivityDetailReturn {
 export function useActivityDetail(activityId: number | null): UseActivityDetailReturn {
   const [activity, setActivity] = useState<Activity | null>(null);
   const [streams, setStreams] = useState<ActivityStream[]>([]);
+  const [explorationRate, setExplorationRate] = useState<ActivityExplorationRate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,9 +28,13 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
     setError(null);
 
     try {
-      const data = await activitiesApi.getActivityDetail(activityId);
+      const [data, expRate] = await Promise.all([
+        activitiesApi.getActivityDetail(activityId),
+        explorationApi.getActivityExplorationRate(activityId).catch(() => null),
+      ]);
       setActivity(data.activity);
       setStreams(data.streams || []);
+      setExplorationRate(expRate);
     } catch (err) {
       console.error('Error fetching activity detail:', err);
       setError('Erreur lors du chargement des détails de l\'activité');
@@ -44,6 +50,7 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
   return {
     activity,
     streams,
+    explorationRate,
     isLoading,
     error,
     refetch: fetchActivityDetail,

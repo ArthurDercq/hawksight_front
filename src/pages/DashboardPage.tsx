@@ -111,7 +111,7 @@ function ScrollToEndContainer({ children }: { children: ReactNode }) {
 }
 
 export function DashboardPage() {
-  const { streak, lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
+  const { streak, lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, isRefetching, error, isSyncing, syncData } = useDashboard();
   const { isDemo, canSync } = usePermissions();
   const {
     dailyHoursData,
@@ -139,8 +139,15 @@ export function DashboardPage() {
     weeklyElevationAverage,
     globalOffset,
     setGlobalOffset,
+    isRefetchingDailyHours,
+    isRefetchingWeeklyHours,
+    isRefetchingWeeklyDistance,
+    isRefetchingRepartition,
+    isRefetchingWeeklyPace,
+    isRefetchingConquete,
   } = useDashboardCharts();
 
+  // Full loading screen only on first-ever load (no cached data at all)
   if (isLoading) {
     return (
       <div className="max-w-[1400px] mx-auto px-6">
@@ -468,8 +475,12 @@ export function DashboardPage() {
                   <p className="font-mono text-glacier font-semibold">{lastActivity.denivele_m} m</p>
                 </div>
                 <div className="bg-charcoal/50 rounded-lg p-2">
-                  <p className="text-xs text-mist/50 mb-1">Allure</p>
-                  <p className="font-mono text-moss font-semibold">{lastActivity.allure_min_per_km}</p>
+                  <p className="text-xs text-mist/50 mb-1">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
+                  <p className="font-mono text-moss font-semibold">
+                    {lastActivity.type === 'Bike'
+                      ? `${lastActivity.average_speed?.toFixed(1) ?? '--'} km/h`
+                      : formatPace(lastActivity.allure_min_per_km)}
+                  </p>
                 </div>
                 {lastActivity.bpm_moyen && lastActivity.bpm_moyen > 0 && (
                   <div className="bg-charcoal/50 rounded-lg p-2">
@@ -594,7 +605,7 @@ export function DashboardPage() {
                 </button>
               </div>
             </div>
-            <div className="h-[200px]">
+            <div className={`h-[200px] relative transition-opacity duration-300 ${isRefetchingDailyHours ? 'opacity-50' : 'opacity-100'}`}>
               {dailyHoursData ? (
                 <Bar
                   data={{
@@ -639,7 +650,7 @@ export function DashboardPage() {
                 </button>
               </div>
             </div>
-            <div className="h-[200px]">
+            <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingWeeklyHours ? 'opacity-50' : 'opacity-100'}`}>
               {weeklyHoursData && weeklyHoursData.datasets?.length > 0 ? (
                 <Line
                   data={{
@@ -679,7 +690,7 @@ export function DashboardPage() {
                 <option value="Run,Trail">Run & Trail</option>
               </select>
             </div>
-            <div className="h-[200px]">
+            <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingWeeklyDistance ? 'opacity-50' : 'opacity-100'}`}>
               {weeklyDistanceData && weeklyDistanceData.datasets?.length > 0 ? (
                 <Chart
                   type="bar"
@@ -760,7 +771,7 @@ export function DashboardPage() {
                 </select>
               </div>
             </div>
-            <div className="h-[200px]">
+            <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingRepartition ? 'opacity-50' : 'opacity-100'}`}>
               {repartitionData && repartitionData.datasets?.length > 0 ? (
                 <Doughnut
                   data={{
@@ -799,7 +810,7 @@ export function DashboardPage() {
                 <option value="Run,Trail">Run & Trail</option>
               </select>
             </div>
-            <div className="h-[200px]">
+            <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingWeeklyPace ? 'opacity-50' : 'opacity-100'}`}>
               {weeklyPaceData && weeklyPaceData.datasets?.length > 0 ? (
                 <Bar
                   data={{
@@ -828,7 +839,7 @@ export function DashboardPage() {
                 <span className="text-xs text-mist/60 font-mono">{conqueteAverage}</span>
               </div>
             </div>
-            <div className="h-[200px]">
+            <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingConquete ? 'opacity-50' : 'opacity-100'}`}>
               {conqueteData && conqueteData.datasets?.length > 0 ? (
                 <Bar
                   data={{
@@ -872,6 +883,18 @@ function formatActivityDate(dateString: string): string {
   const weekday = date.toLocaleDateString('fr-FR', { weekday: 'long' });
   const rest = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${rest}`;
+}
+
+// Normalise allure_min_per_km to "X:XX /km" format
+// Input can be "5.25" (decimal) or already "5:15" (hms-like)
+function formatPace(raw: string): string {
+  if (!raw || raw === '--') return '--';
+  if (raw.includes(':')) return `${raw}/km`;
+  const decimal = parseFloat(raw);
+  if (isNaN(decimal)) return raw;
+  const min = Math.floor(decimal);
+  const sec = Math.round((decimal - min) * 60);
+  return `${min}:${sec.toString().padStart(2, '0')}/km`;
 }
 
 function formatTime(seconds: number): string {

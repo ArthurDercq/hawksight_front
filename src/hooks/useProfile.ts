@@ -9,7 +9,7 @@ interface UseProfileReturn {
   refetch: () => void;
 }
 
-export function useProfile(userId: number = 1): UseProfileReturn {
+export function useProfile(): UseProfileReturn {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,15 +19,16 @@ export function useProfile(userId: number = 1): UseProfileReturn {
     setError(null);
 
     try {
-      const data = await profileApi.getProfile(userId);
+      const data = await profileApi.getProfile();
       setProfile(data);
-    } catch (err) {
-      console.error('Error fetching profile:', err);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: unknown }; message?: string };
+      console.error('Error fetching profile — status:', axiosErr?.response?.status, 'data:', axiosErr?.response?.data, 'msg:', axiosErr?.message);
       setError('Erreur lors du chargement du profil');
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     fetchProfile();

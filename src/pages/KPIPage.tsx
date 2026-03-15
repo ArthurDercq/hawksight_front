@@ -428,6 +428,17 @@ interface RecordItemProps {
   activityId?: number;
 }
 
+function formatRecordDate(date: string): string {
+  if (!date || date === '--/--/--') return date;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return date;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}-${mm}-${yy}`;
+}
+
+
 function RecordItem({ distance, time, date, activityId }: RecordItemProps) {
   const content = (
     <div className="relative px-4 py-3 group hover:bg-amber/10 transition-all">
@@ -438,7 +449,7 @@ function RecordItem({ distance, time, date, activityId }: RecordItemProps) {
         <span className="text-mist font-medium text-sm">{distance}</span>
         <div className="text-right">
           <p className="text-glacier font-mono font-semibold text-sm">{time}</p>
-          <p className="text-xs text-steel">{date}</p>
+          <p className="text-xs text-steel">{formatRecordDate(date)}</p>
         </div>
       </div>
     </div>

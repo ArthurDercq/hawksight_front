@@ -29,13 +29,24 @@ const SPORT_COLORS: Record<SportType, string> = {
   WeightTraining: "#3A3F47",
 };
 
-const HR_ZONES = [
-  { name: "Z1", label: "Recuperation", range: "50-60%", min: 98, max: 117, color: "#3DB2E0" },
-  { name: "Z2", label: "Endurance", range: "60-70%", min: 117, max: 137, color: "#4CAF50" },
-  { name: "Z3", label: "Tempo", range: "70-80%", min: 137, max: 156, color: "#FFC107" },
-  { name: "Z4", label: "Seuil", range: "80-90%", min: 156, max: 176, color: "#FF9800" },
-  { name: "Z5", label: "VO2max", range: "90-100%", min: 176, max: 195, color: "#E8832A" },
+const FC_MAX_KEY = 'hawksight:fc_max';
+const DEFAULT_FC_MAX = 190;
+
+const ZONE_DEFS = [
+  { name: "Z1", label: "Recuperation", range: "50-60%", pctMin: 0.50, pctMax: 0.60, color: "#3DB2E0" },
+  { name: "Z2", label: "Endurance",    range: "60-70%", pctMin: 0.60, pctMax: 0.70, color: "#4CAF50" },
+  { name: "Z3", label: "Tempo",        range: "70-80%", pctMin: 0.70, pctMax: 0.80, color: "#FFC107" },
+  { name: "Z4", label: "Seuil",        range: "80-90%", pctMin: 0.80, pctMax: 0.90, color: "#FF9800" },
+  { name: "Z5", label: "VO2max",       range: "90-100%",pctMin: 0.90, pctMax: 1.00, color: "#E8832A" },
 ];
+
+function getHRZones(fcMax: number) {
+  return ZONE_DEFS.map(z => ({
+    ...z,
+    min: Math.round(fcMax * z.pctMin),
+    max: Math.round(fcMax * z.pctMax),
+  }));
+}
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -46,6 +57,14 @@ const formatTime = (seconds: number) => {
 export function HRZonesChart({ activity, streams }: HRZonesChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
+
+  const fcMax = useMemo(() => {
+    const stored = localStorage.getItem(FC_MAX_KEY);
+    const parsed = stored ? parseInt(stored) : NaN;
+    return !isNaN(parsed) && parsed > 0 ? parsed : DEFAULT_FC_MAX;
+  }, []);
+
+  const HR_ZONES = useMemo(() => getHRZones(fcMax), [fcMax]);
 
   const hrZones = useMemo(() => {
     const hrData = streams.filter((s) => s.heartrate != null);
@@ -66,7 +85,7 @@ export function HRZonesChart({ activity, streams }: HRZonesChartProps) {
       percentage: (counts[i] / total) * 100,
       time: (counts[i] / total) * activity.moving_time,
     }));
-  }, [streams, activity.moving_time]);
+  }, [streams, activity.moving_time, HR_ZONES]);
 
   const exportChart = async () => {
     if (!chartRef.current) return;
@@ -225,9 +244,14 @@ export function HRZonesChart({ activity, streams }: HRZonesChartProps) {
               HR_ANALYSIS
             </span>
           </div>
-          <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
-            AVG: {activity.average_heartrate ? Math.round(activity.average_heartrate) : "--"} BPM
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+              FC MAX: {fcMax} BPM
+            </span>
+            <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+              AVG: {activity.average_heartrate ? Math.round(activity.average_heartrate) : "--"} BPM
+            </span>
+          </div>
         </div>
       </div>
     </div>

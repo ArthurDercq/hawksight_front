@@ -46,6 +46,7 @@ export interface LastActivity {
   duree_hms: string;
   denivele_m: number;
   allure_min_per_km: string;
+  average_speed?: number;
   bpm_moyen?: number;
   polyline_coords?: [number, number][];
 }

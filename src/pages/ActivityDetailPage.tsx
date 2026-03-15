@@ -1,7 +1,6 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState, useRef } from 'react';
-import { useActivityDetail, useActivities } from '@/hooks';
-import { ActivityMap } from '@/components/maps';
+import { useParams, Link } from 'react-router-dom';
+import { useRef } from 'react';
+import { useActivityDetail } from '@/hooks';
 import { ActivityPoster } from '@/components/activity';
 import {
   HRZonesChart,
@@ -14,21 +13,6 @@ const ArrowLeftIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="19" y1="12" x2="5" y2="12" />
     <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
-
-const DownloadIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="7 10 12 15 17 10" />
-    <line x1="12" y1="15" x2="12" y2="3" />
   </svg>
 );
 
@@ -52,21 +36,9 @@ const SPORT_LABELS: Record<SportType, string> = {
 
 export function ActivityDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const activityId = id ? parseInt(id, 10) : null;
-  const { activity, streams, isLoading, error } = useActivityDetail(activityId);
-  const { deleteActivity } = useActivities();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { activity, streams, explorationRate, isLoading, error } = useActivityDetail(activityId);
   const posterRef = useRef<HTMLDivElement>(null);
-
-  const handleDelete = async () => {
-    if (activityId) {
-      const success = await deleteActivity(activityId);
-      if (success) {
-        navigate('/activities');
-      }
-    }
-  };
 
   const handleExportPNG = async () => {
     if (!posterRef.current || !activity) return;
@@ -172,29 +144,13 @@ export function ActivityDetailPage() {
           </div>
           <p className="text-steel text-sm font-mono">{formatDate(activity.start_date)}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleExportPNG}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber/15 hover:bg-amber/25 text-amber rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/20"
-          >
-            <DownloadIcon />
-            Exporter PNG
-          </button>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/15 hover:bg-red-500/25 text-red-400 rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/20"
-          >
-            <TrashIcon />
-            Supprimer
-          </button>
-        </div>
       </div>
 
       {/* Main content: Poster left, HR Zones right (same height) */}
       {hasStreams && (
         <div className="flex flex-col lg:flex-row gap-6 mb-8 justify-center items-start">
           {/* Left: Poster */}
-          <ActivityPoster activity={activity} streams={streams} posterRef={posterRef} />
+          <ActivityPoster activity={activity} streams={streams} posterRef={posterRef} explorationRate={explorationRate} onExportPNG={handleExportPNG} />
 
           {/* Right: HR Zones */}
           <div className="w-full lg:w-[555px]">
@@ -218,65 +174,12 @@ export function ActivityDetailPage() {
         </div>
       )}
 
-      {/* Map */}
-      {hasStreams && (
-        <div className="card-glass rounded-lg p-6 mb-8 relative overflow-hidden">
-          <div className="absolute inset-0 grid-pattern pointer-events-none" />
-          <div className="flex items-center gap-3 mb-4 relative">
-            <div className="p-2 rounded-lg bg-glacier/10 border border-glacier/30">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            </div>
-            <h2 className="font-heading text-lg font-semibold text-mist">Parcours</h2>
-          </div>
-          <ActivityMap streams={streams} className="h-[400px] rounded-lg overflow-hidden relative" />
-        </div>
-      )}
-
       {!hasStreams && (
         <div className="card-glass rounded-lg p-12 text-center">
           <p className="text-mist/60">Pas de donnees de streams pour cette activite</p>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="card-glass rounded-lg p-6 max-w-md w-full relative overflow-hidden">
-            <div className="absolute inset-0 grid-pattern pointer-events-none" />
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-red-500/20 border border-red-500/30">
-                  <TrashIcon />
-                </div>
-                <h3 className="font-heading text-lg font-semibold text-mist">
-                  Confirmer la suppression
-                </h3>
-              </div>
-              <p className="text-mist/70 mb-6">
-                Etes-vous sur de vouloir supprimer l'activite "{activity.name}" ? Cette action est
-                irreversible.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 bg-steel/30 hover:bg-steel/50 text-mist rounded-lg transition-all hover:-translate-y-0.5"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/30"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

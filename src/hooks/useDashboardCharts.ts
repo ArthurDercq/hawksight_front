@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { dashboardApi, type ChartData } from '@/services/api';
 import { explorationApi, type ExplorationRateItem } from '@/services/api/exploration';
+import { cache } from '@/services/cache';
+
+const CHART_TTL = 5 * 60 * 1000; // 5 min
 
 // Raw API response types
 interface WeeklyBarItem {
@@ -20,7 +23,6 @@ interface RepartitionResponse {
   values: number[];
 }
 
-// Helper to format date as DD/MM
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr);
   const day = date.getDate().toString().padStart(2, '0');
@@ -29,282 +31,293 @@ function formatDateLabel(dateStr: string): string {
 }
 
 interface UseDashboardChartsReturn {
-  // Daily hours chart
   dailyHoursData: ChartData | null;
   weekOffset: number;
   setWeekOffset: (offset: number) => void;
   weekLabel: string;
   weekStats: { distance: number; elevation: number; time: string } | null;
 
-  // Weekly hours chart
   weeklyHoursData: ChartData | null;
   weeklyHoursAverage: string;
 
-  // Weekly distance chart
   weeklyDistanceData: ChartData | null;
   distanceSport: string;
   setDistanceSport: (sport: string) => void;
   weeklyDistanceAverage: string;
 
-  // Repartition chart
   repartitionData: ChartData | null;
   repartitionSport: string;
   setRepartitionSport: (sport: string) => void;
   repartitionWeeks: number;
   setRepartitionWeeks: (weeks: number) => void;
 
-  // Weekly pace chart
   weeklyPaceData: ChartData | null;
   paceSport: string;
   setPaceSport: (sport: string) => void;
   weeklyPaceAverage: string;
 
-  // Conquête chart
   conqueteData: ChartData | null;
   conqueteAverage: string;
 
-  // Weekly distance average D+
   weeklyElevationAverage: string;
 
-  // Global offset for weekly charts
   globalOffset: number;
   setGlobalOffset: (offset: number) => void;
 
   isLoading: boolean;
+  /** Per-chart refetching flags — use for overlay opacity, not for hiding data */
+  isRefetchingDailyHours: boolean;
+  isRefetchingWeeklyHours: boolean;
+  isRefetchingWeeklyDistance: boolean;
+  isRefetchingRepartition: boolean;
+  isRefetchingWeeklyPace: boolean;
+  isRefetchingConquete: boolean;
   error: string | null;
 }
 
 export function useDashboardCharts(): UseDashboardChartsReturn {
-  // Daily hours state
-  const [dailyHoursData, setDailyHoursData] = useState<ChartData | null>(null);
-  const [weekOffset, setWeekOffset] = useState(0);
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+
+  // ── Daily hours ────────────────────────────────────────────────────────────
+  const [dailyHoursData, setDailyHoursData] = useState<ChartData | null>(() =>
+    cache.get<ChartData>('chart:dailyHours:0')
+  );
   const [weekLabel, setWeekLabel] = useState('Semaine en cours');
   const [weekStats, setWeekStats] = useState<{ distance: number; elevation: number; time: string } | null>(null);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [isRefetchingDailyHours, setIsRefetchingDailyHours] = useState(false);
 
-  // Weekly hours state
-  const [weeklyHoursData, setWeeklyHoursData] = useState<ChartData | null>(null);
+  // ── Weekly hours ───────────────────────────────────────────────────────────
+  const [weeklyHoursData, setWeeklyHoursData] = useState<ChartData | null>(() =>
+    cache.get<ChartData>('chart:weeklyHours:0')
+  );
   const [weeklyHoursAverage, setWeeklyHoursAverage] = useState('-');
+  const [isRefetchingWeeklyHours, setIsRefetchingWeeklyHours] = useState(false);
 
-  // Weekly distance state
-  const [weeklyDistanceData, setWeeklyDistanceData] = useState<ChartData | null>(null);
+  // ── Weekly distance ────────────────────────────────────────────────────────
+  const [weeklyDistanceData, setWeeklyDistanceData] = useState<ChartData | null>(() =>
+    cache.get<ChartData>('chart:weeklyDistance:Run,Trail:0')
+  );
   const [distanceSport, setDistanceSport] = useState('Run,Trail');
   const [weeklyDistanceAverage, setWeeklyDistanceAverage] = useState('-');
+  const [weeklyElevationAverage, setWeeklyElevationAverage] = useState('-');
+  const [isRefetchingWeeklyDistance, setIsRefetchingWeeklyDistance] = useState(false);
 
-  // Repartition state
-  const [repartitionData, setRepartitionData] = useState<ChartData | null>(null);
+  // ── Repartition ────────────────────────────────────────────────────────────
+  const [repartitionData, setRepartitionData] = useState<ChartData | null>(() =>
+    cache.get<ChartData>('chart:repartition:Run,Trail:4')
+  );
   const [repartitionSport, setRepartitionSport] = useState('Run,Trail');
   const [repartitionWeeks, setRepartitionWeeks] = useState(4);
+  const [isRefetchingRepartition, setIsRefetchingRepartition] = useState(false);
 
-  // Weekly pace state
-  const [weeklyPaceData, setWeeklyPaceData] = useState<ChartData | null>(null);
+  // ── Weekly pace ────────────────────────────────────────────────────────────
+  const [weeklyPaceData, setWeeklyPaceData] = useState<ChartData | null>(() =>
+    cache.get<ChartData>('chart:weeklyPace:Run,Trail:0')
+  );
   const [paceSport, setPaceSport] = useState('Run,Trail');
   const [weeklyPaceAverage, setWeeklyPaceAverage] = useState('-');
+  const [isRefetchingWeeklyPace, setIsRefetchingWeeklyPace] = useState(false);
 
-  // Conquête state
-  const [conqueteData, setConqueteData] = useState<ChartData | null>(null);
+  // ── Conquête ───────────────────────────────────────────────────────────────
+  const [conqueteData, setConqueteData] = useState<ChartData | null>(() =>
+    cache.get<ChartData>('chart:conquete:0')
+  );
   const [conqueteAverage, setConqueteAverage] = useState('-');
+  const [isRefetchingConquete, setIsRefetchingConquete] = useState(false);
 
-  // Weekly elevation average
-  const [weeklyElevationAverage, setWeeklyElevationAverage] = useState('-');
-
-  // Global offset for weekly charts
+  // ── Global offset ──────────────────────────────────────────────────────────
   const [globalOffset, setGlobalOffset] = useState(0);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(
+    // Only show global loading if none of the charts have cached data
+    dailyHoursData === null &&
+    weeklyHoursData === null &&
+    weeklyDistanceData === null &&
+    repartitionData === null &&
+    weeklyPaceData === null
+  );
   const [error] = useState<string | null>(null);
 
-  // Fetch daily hours
+  // ── Generic SWR fetch helper ───────────────────────────────────────────────
+  // Pattern: show cached data immediately, always fetch fresh in background,
+  // call apply(freshData) when done. Never sets state to null.
+
+  const swrFetch = useCallback(async <T>(
+    key: string,
+    fetcher: () => Promise<T>,
+    apply: (data: T) => void,
+    setRefetching: (v: boolean) => void,
+    label: string,
+  ) => {
+    const cached = cache.get<T>(key);
+    if (cached !== null) apply(cached);
+    if (!isMounted.current) return;
+    setRefetching(true);
+    try {
+      const fresh = await cache.dedupe(key, fetcher, CHART_TTL);
+      if (isMounted.current) apply(fresh);
+    } catch (err) {
+      console.error(`Error fetching ${label}:`, err);
+    } finally {
+      if (isMounted.current) setRefetching(false);
+    }
+  }, []);
+
+  // ── Fetch helpers ──────────────────────────────────────────────────────────
+
   const fetchDailyHours = useCallback(async () => {
-    try {
-      const data = await dashboardApi.getDailyHours(weekOffset);
+    const key = `chart:dailyHours:${weekOffset}`;
+    await swrFetch(
+      key,
+      () => dashboardApi.getDailyHours(weekOffset),
+      (data) => {
+        if (!isMounted.current) return;
+        const datasetsInMinutes = (data.datasets || []).map((ds: { label: string; data: number[] }) => ({
+          ...ds,
+          data: ds.data.map((minutes: number) => Math.round(minutes)),
+        }));
+        const chartData: ChartData = {
+          labels: data.labels || ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+          datasets: datasetsInMinutes,
+          week_range: data.week_range,
+          stats: data.stats,
+        };
+        cache.set(key, chartData, CHART_TTL);
+        setDailyHoursData(chartData);
+        if (data.week_range) setWeekLabel(weekOffset === 0 ? 'Semaine en cours' : data.week_range);
+        if (data.stats) setWeekStats({ distance: data.stats.distance || 0, elevation: data.stats.elevation || 0, time: data.stats.time || '-' });
+      },
+      setIsRefetchingDailyHours,
+      'daily hours',
+    );
+  }, [weekOffset, swrFetch]);
 
-      // Ensure datasets array exists even if empty
-      // Backend already returns minutes, just round to integers
-      const datasetsInMinutes = (data.datasets || []).map((ds: { label: string; data: number[] }) => ({
-        ...ds,
-        data: ds.data.map((minutes: number) => Math.round(minutes)),
-      }));
-      const chartData: ChartData = {
-        labels: data.labels || ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-        datasets: datasetsInMinutes,
-        week_range: data.week_range,
-        stats: data.stats,
-      };
-      setDailyHoursData(chartData);
+  const applyWeeklyHours = useCallback((rawData: WeeklyBarItem[]) => {
+    if (!isMounted.current) return;
+    const totalWeeks = rawData.length;
+    const endIndex = totalWeeks - globalOffset;
+    const startIndex = Math.max(0, endIndex - 10);
+    const weekData = rawData.slice(startIndex, endIndex);
+    const labels = weekData.map(d => formatDateLabel(d.period));
+    const hours = weekData.map(d => (d.moving_time || 0) / 60);
+    const avgH = Math.floor(hours.reduce((s, h) => s + h, 0) / (hours.length || 1));
+    const avgM = Math.round((hours.reduce((s, h) => s + h, 0) / (hours.length || 1) - avgH) * 60);
+    setWeeklyHoursAverage(`${avgH}h${avgM.toString().padStart(2, '0')}/sem`);
+    setWeeklyHoursData({ labels, datasets: [{ label: 'Heures', data: hours }] });
+  }, [globalOffset]);
 
-      if (data.week_range) {
-        setWeekLabel(weekOffset === 0 ? 'Semaine en cours' : data.week_range);
-      }
-
-      if (data.stats) {
-        setWeekStats({
-          distance: data.stats.distance || 0,
-          elevation: data.stats.elevation || 0,
-          time: data.stats.time || '-',
-        });
-      }
-    } catch (err) {
-      console.error('Error fetching daily hours:', err);
-    }
-  }, [weekOffset]);
-
-  // Fetch weekly hours
   const fetchWeeklyHours = useCallback(async () => {
-    try {
-      const rawData = await dashboardApi.getWeeklyHours(globalOffset) as unknown as WeeklyBarItem[];
+    await swrFetch(
+      `chart:weeklyHours:${globalOffset}`,
+      () => dashboardApi.getWeeklyHours(globalOffset) as Promise<WeeklyBarItem[]>,
+      applyWeeklyHours,
+      setIsRefetchingWeeklyHours,
+      'weekly hours',
+    );
+  }, [globalOffset, swrFetch, applyWeeklyHours]);
 
-      // Take last 10 weeks
-      const totalWeeks = rawData.length;
-      const endIndex = totalWeeks - globalOffset;
-      const startIndex = Math.max(0, endIndex - 10);
-      const weekData = rawData.slice(startIndex, endIndex);
-
-      // Transform to Chart.js format
-      const labels = weekData.map(d => formatDateLabel(d.period));
-      const hours = weekData.map(d => (d.moving_time || 0) / 60); // Convert minutes to hours
-
-      // Calculate average
-      const totalHours = hours.reduce((sum, h) => sum + h, 0);
-      const averageHours = hours.length > 0 ? totalHours / hours.length : 0;
-      const avgH = Math.floor(averageHours);
-      const avgM = Math.round((averageHours - avgH) * 60);
-      setWeeklyHoursAverage(`${avgH}h${avgM.toString().padStart(2, '0')}/sem`);
-
-      setWeeklyHoursData({
-        labels,
-        datasets: [{ label: 'Heures', data: hours }],
-      });
-    } catch (err) {
-      console.error('Error fetching weekly hours:', err);
-    }
+  const applyWeeklyDistance = useCallback((rawData: WeeklyBarItem[]) => {
+    if (!isMounted.current) return;
+    const totalWeeks = rawData.length;
+    const endIndex = totalWeeks - globalOffset;
+    const startIndex = Math.max(0, endIndex - 10);
+    const weekData = rawData.slice(startIndex, endIndex);
+    const labels = weekData.map(d => formatDateLabel(d.period));
+    const distances = weekData.map(d => d.distance || 0);
+    const elevations = weekData.map(d => d.total_elevation_gain || 0);
+    setWeeklyDistanceAverage(`${(distances.reduce((s, d) => s + d, 0) / (distances.length || 1)).toFixed(1)} km/sem`);
+    setWeeklyElevationAverage(`${Math.round(elevations.reduce((s, e) => s + e, 0) / (elevations.length || 1))} m D+/sem`);
+    setWeeklyDistanceData({ labels, datasets: [{ label: 'Distance', data: distances }, { label: 'D+', data: elevations }] });
   }, [globalOffset]);
 
-  // Fetch weekly distance (with elevation overlay)
   const fetchWeeklyDistance = useCallback(async () => {
-    try {
-      const rawData = await dashboardApi.getWeeklyDistance(distanceSport, globalOffset) as unknown as WeeklyBarItem[];
+    await swrFetch(
+      `chart:weeklyDistance:${distanceSport}:${globalOffset}`,
+      () => dashboardApi.getWeeklyDistance(distanceSport, globalOffset) as Promise<WeeklyBarItem[]>,
+      applyWeeklyDistance,
+      setIsRefetchingWeeklyDistance,
+      'weekly distance',
+    );
+  }, [distanceSport, globalOffset, swrFetch, applyWeeklyDistance]);
 
-      // Take last 10 weeks
-      const totalWeeks = rawData.length;
-      const endIndex = totalWeeks - globalOffset;
-      const startIndex = Math.max(0, endIndex - 10);
-      const weekData = rawData.slice(startIndex, endIndex);
-
-      // Transform to Chart.js format
-      const labels = weekData.map(d => formatDateLabel(d.period));
-      const distances = weekData.map(d => d.distance || 0);
-      const elevations = weekData.map(d => d.total_elevation_gain || 0);
-
-      // Calculate averages
-      const totalDistance = distances.reduce((sum, d) => sum + d, 0);
-      const averageDistance = distances.length > 0 ? totalDistance / distances.length : 0;
-      setWeeklyDistanceAverage(`${averageDistance.toFixed(1)} km/sem`);
-
-      const totalElevation = elevations.reduce((sum, e) => sum + e, 0);
-      const averageElevation = elevations.length > 0 ? totalElevation / elevations.length : 0;
-      setWeeklyElevationAverage(`${Math.round(averageElevation)} m D+/sem`);
-
-      setWeeklyDistanceData({
-        labels,
-        datasets: [
-          { label: 'Distance', data: distances },
-          { label: 'D+', data: elevations },
-        ],
-      });
-    } catch (err) {
-      console.error('Error fetching weekly distance:', err);
-    }
-  }, [distanceSport, globalOffset]);
-
-  // Fetch conquête (exploration rates by week)
-  const fetchConquete = useCallback(async () => {
-    try {
-      const rawData: ExplorationRateItem[] = await explorationApi.getExplorationRates('week', 'all');
-
-      const totalWeeks = rawData.length;
-      const endIndex = totalWeeks - globalOffset;
-      const startIndex = Math.max(0, endIndex - 10);
-      const weekData = rawData.slice(startIndex, endIndex);
-
-      // Convert "YYYY-WNN" to "DD/MM" (Monday of that week)
-      const labels = weekData.map(d => {
-        const match = d.period_label.match(/^(\d{4})-W(\d{2})$/);
-        if (!match) return d.period_label;
-        const year = parseInt(match[1]);
-        const week = parseInt(match[2]);
-        // ISO week: Jan 4 is always in week 1
-        const jan4 = new Date(year, 0, 4);
-        const monday = new Date(jan4);
-        monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
-        return `${monday.getDate().toString().padStart(2, '0')}/${(monday.getMonth() + 1).toString().padStart(2, '0')}`;
-      });
-      const newCells = weekData.map(d => d.new_cells);
-
-      const totalNew = newCells.reduce((sum, v) => sum + v, 0);
-      const avg = newCells.length > 0 ? totalNew / newCells.length : 0;
-      setConqueteAverage(`${Math.round(avg)} territoires/sem`);
-
-      setConqueteData({
-        labels,
-        datasets: [{ label: 'Nouveaux territoires', data: newCells }],
-      });
-    } catch (err) {
-      console.error('Error fetching conquête:', err);
-    }
+  const applyConquete = useCallback((rawData: ExplorationRateItem[]) => {
+    if (!isMounted.current) return;
+    const totalWeeks = rawData.length;
+    const endIndex = totalWeeks - globalOffset;
+    const startIndex = Math.max(0, endIndex - 10);
+    const weekData = rawData.slice(startIndex, endIndex);
+    const labels = weekData.map(d => {
+      const match = d.period_label.match(/^(\d{4})-W(\d{2})$/);
+      if (!match) return d.period_label;
+      const year = parseInt(match[1]);
+      const week = parseInt(match[2]);
+      const jan4 = new Date(year, 0, 4);
+      const monday = new Date(jan4);
+      monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
+      return `${monday.getDate().toString().padStart(2, '0')}/${(monday.getMonth() + 1).toString().padStart(2, '0')}`;
+    });
+    const newCells = weekData.map(d => d.new_cells);
+    const avg = newCells.reduce((s, v) => s + v, 0) / (newCells.length || 1);
+    setConqueteAverage(`${Math.round(avg)} territoires/sem`);
+    setConqueteData({ labels, datasets: [{ label: 'Nouveaux territoires', data: newCells }] });
   }, [globalOffset]);
 
-  // Fetch repartition
+  const fetchConquete = useCallback(async () => {
+    await swrFetch(
+      `chart:conquete:${globalOffset}`,
+      () => explorationApi.getExplorationRates('week', 'all'),
+      applyConquete,
+      setIsRefetchingConquete,
+      'conquête',
+    );
+  }, [globalOffset, swrFetch, applyConquete]);
+
   const fetchRepartition = useCallback(async () => {
-    try {
-      const rawData = await dashboardApi.getRepartition(repartitionSport, repartitionWeeks) as unknown as RepartitionResponse;
+    await swrFetch(
+      `chart:repartition:${repartitionSport}:${repartitionWeeks}`,
+      () => dashboardApi.getRepartition(repartitionSport, repartitionWeeks) as Promise<RepartitionResponse>,
+      (rawData) => {
+        if (!isMounted.current) return;
+        setRepartitionData({ labels: rawData.labels || [], datasets: [{ label: 'Activités', data: rawData.values || [] }] });
+      },
+      setIsRefetchingRepartition,
+      'repartition',
+    );
+  }, [repartitionSport, repartitionWeeks, swrFetch]);
 
-      // API returns { labels: [...], values: [...] }
-      setRepartitionData({
-        labels: rawData.labels || [],
-        datasets: [{ label: 'Activités', data: rawData.values || [] }],
-      });
-    } catch (err) {
-      console.error('Error fetching repartition:', err);
-    }
-  }, [repartitionSport, repartitionWeeks]);
+  const applyWeeklyPace = useCallback((rawData: WeeklyPaceItem[]) => {
+    if (!isMounted.current) return;
+    const totalWeeks = rawData.length;
+    const endIndex = totalWeeks - globalOffset;
+    const startIndex = Math.max(0, endIndex - 10);
+    const weekData = rawData.slice(startIndex, endIndex);
+    const labels = weekData.map(d => formatDateLabel(d.period));
+    const paces = weekData.map(d => d.pace_min_km || 0);
+    const averagePace = paces.reduce((s, p) => s + p, 0) / (paces.length || 1);
+    const minutes = Math.floor(averagePace);
+    const seconds = Math.round((averagePace - minutes) * 60);
+    setWeeklyPaceAverage(`${minutes}:${seconds.toString().padStart(2, '0')} min/km`);
+    const maxPace = Math.ceil(Math.max(...paces, 8));
+    setWeeklyPaceData({ labels, datasets: [{ label: 'Allure', data: paces.map(p => maxPace - p), _rawPaces: paces } as never] });
+  }, [globalOffset]);
 
-  // Fetch weekly pace
   const fetchWeeklyPace = useCallback(async () => {
-    try {
-      const rawData = await dashboardApi.getWeeklyPace(paceSport, globalOffset) as unknown as WeeklyPaceItem[];
+    await swrFetch(
+      `chart:weeklyPace:${paceSport}:${globalOffset}`,
+      () => dashboardApi.getWeeklyPace(paceSport, globalOffset) as Promise<WeeklyPaceItem[]>,
+      applyWeeklyPace,
+      setIsRefetchingWeeklyPace,
+      'weekly pace',
+    );
+  }, [paceSport, globalOffset, swrFetch, applyWeeklyPace]);
 
-      // Take last 10 weeks
-      const totalWeeks = rawData.length;
-      const endIndex = totalWeeks - globalOffset;
-      const startIndex = Math.max(0, endIndex - 10);
-      const weekData = rawData.slice(startIndex, endIndex);
+  // ── Effects ────────────────────────────────────────────────────────────────
 
-      // Transform to Chart.js format
-      const labels = weekData.map(d => formatDateLabel(d.period));
-      const paces = weekData.map(d => d.pace_min_km || 0);
-
-      // Calculate average
-      const totalPace = paces.reduce((sum, p) => sum + p, 0);
-      const averagePace = paces.length > 0 ? totalPace / paces.length : 0;
-      const minutes = Math.floor(averagePace);
-      const seconds = Math.round((averagePace - minutes) * 60);
-      setWeeklyPaceAverage(`${minutes}:${seconds.toString().padStart(2, '0')} min/km`);
-
-      // Invert paces so fast (low) values = tall bars, slow (high) values = short bars
-      // maxPace is the ceiling reference (a bit above the slowest pace)
-      const maxPace = Math.ceil(Math.max(...paces, 8));
-      const invertedPaces = paces.map(p => maxPace - p);
-
-      setWeeklyPaceData({
-        labels,
-        datasets: [{ label: 'Allure', data: invertedPaces, _rawPaces: paces } as never],
-      });
-    } catch (err) {
-      console.error('Error fetching weekly pace:', err);
-    }
-  }, [paceSport, globalOffset]);
-
-  // Separate useEffects per chart - only refetch what changed
   useEffect(() => { fetchDailyHours(); }, [fetchDailyHours]);
   useEffect(() => { fetchWeeklyHours(); }, [fetchWeeklyHours]);
   useEffect(() => { fetchWeeklyDistance(); }, [fetchWeeklyDistance]);
@@ -312,9 +325,10 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
   useEffect(() => { fetchWeeklyPace(); }, [fetchWeeklyPace]);
   useEffect(() => { fetchConquete(); }, [fetchConquete]);
 
-  // Re-fetch all charts when activities are mutated (create/update/delete)
+  // Background refresh on activities-updated — invalidate all chart caches then refetch
   useEffect(() => {
     const handleActivitiesUpdated = () => {
+      cache.invalidateByPrefix('chart:');
       fetchDailyHours();
       fetchWeeklyHours();
       fetchWeeklyDistance();
@@ -326,7 +340,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
     return () => window.removeEventListener('activities-updated', handleActivitiesUpdated);
   }, [fetchDailyHours, fetchWeeklyHours, fetchWeeklyDistance, fetchRepartition, fetchWeeklyPace, fetchConquete]);
 
-  // Initial loading state - set to false once first data arrives
+  // Resolve global isLoading once any chart has data
   useEffect(() => {
     if (dailyHoursData || weeklyHoursData || weeklyDistanceData || repartitionData || weeklyPaceData) {
       setIsLoading(false);
@@ -360,6 +374,12 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
     globalOffset,
     setGlobalOffset,
     isLoading,
+    isRefetchingDailyHours,
+    isRefetchingWeeklyHours,
+    isRefetchingWeeklyDistance,
+    isRefetchingRepartition,
+    isRefetchingWeeklyPace,
+    isRefetchingConquete,
     error,
   };
 }

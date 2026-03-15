@@ -19,8 +19,8 @@ export function useActivities(): UseActivitiesReturn {
   const [error, setError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const fetchActivities = useCallback(async (cancelled?: { current: boolean }) => {
-    setIsLoading(true);
+  const fetchActivities = useCallback(async (cancelled?: { current: boolean }, silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
 
     try {
@@ -56,7 +56,7 @@ export function useActivities(): UseActivitiesReturn {
     setMutationError(null);
     try {
       await activitiesApi.createActivity(data);
-      await fetchActivities();
+      await fetchActivities(undefined, true);
       return true;
     } catch (err) {
       console.error('Error creating activity:', err);
@@ -76,7 +76,7 @@ export function useActivities(): UseActivitiesReturn {
     setMutationError(null);
     try {
       await activitiesApi.updateActivity(id, data, adjustStreams);
-      await fetchActivities();
+      await fetchActivities(undefined, true);
       return true;
     } catch (err) {
       console.error('Error updating activity:', err);
@@ -92,7 +92,7 @@ export function useActivities(): UseActivitiesReturn {
     setMutationError(null);
     try {
       await activitiesApi.deleteActivity(id);
-      await fetchActivities();
+      await fetchActivities(undefined, true);
       return true;
     } catch (err) {
       console.error('Error deleting activity:', err);
