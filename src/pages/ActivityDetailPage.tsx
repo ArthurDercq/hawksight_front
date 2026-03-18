@@ -6,6 +6,7 @@ import {
   HRZonesChart,
   PaceProfileChart,
   ElevationProfileChart,
+  HeartRateProfileChart,
 } from '@/components/charts';
 import type { SportType } from '@/types';
 
@@ -146,30 +147,71 @@ export function ActivityDetailPage() {
         </div>
       </div>
 
-      {/* Main content: Poster left, HR Zones right (same height) */}
+      {/* Main content: Poster left, Exploration + HR Zones right */}
       {hasStreams && (
-        <div className="flex flex-col lg:flex-row gap-6 mb-8 justify-center items-start">
-          {/* Left: Poster */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <ActivityPoster activity={activity} streams={streams} posterRef={posterRef} explorationRate={explorationRate} onExportPNG={handleExportPNG} />
-
-          {/* Right: HR Zones */}
-          <div className="w-full lg:w-[555px]">
+          <div className="flex flex-col gap-6">
+            {/* Exploration card */}
+            {explorationRate && (
+              <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#3DB2E0]/5 rounded-full blur-3xl" />
+                <div className="relative">
+                  <div className="flex items-start gap-3 pb-4 border-b border-[#3A3F47]/30 mb-6">
+                    <div className="p-2 border rounded" style={{ backgroundColor: `${sportColor}10`, borderColor: `${sportColor}30` }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={sportColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20A14.5 14.5 0 0 0 12 2" /><line x1="2" y1="12" x2="22" y2="12" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-heading text-[#F2F2F2]">Exploration</h3>
+                      <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">Territoire découvert lors de cette activité</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] uppercase tracking-wider">Taux</span>
+                      <span className="font-heading text-2xl" style={{ color: sportColor }}>
+                        {explorationRate.exploration_rate != null ? `${Math.round(explorationRate.exploration_rate)}%` : "--"}
+                      </span>
+                      <span className="text-[#3A3F47] font-['Inter'] text-xs">de nouveau territoire</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] uppercase tracking-wider">Conquis</span>
+                      <span className="font-heading text-2xl text-[#F2F2F2]">{explorationRate.new_cells}</span>
+                      <span className="text-[#3A3F47] font-['Inter'] text-xs">nouvelles zones</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] uppercase tracking-wider">Surface</span>
+                      <span className="font-heading text-2xl text-[#F2F2F2]">
+                        {(explorationRate.total_cells * 0.737).toFixed(1)}
+                      </span>
+                      <span className="text-[#3A3F47] font-['Inter'] text-xs">km² couverts</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <HRZonesChart activity={activity} streams={streams} />
           </div>
         </div>
       )}
 
-      {/* Second row: Elevation and Pace Profile side by side */}
+      {/* Second row: Elevation + HR (left col) and Pace Profile (right col) */}
       {hasStreams && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Left: Elevation */}
-          <ElevationProfileChart
-            streams={streams}
-            sportType={activity.sport_type}
-            totalElevationGain={activity.total_elevation_gain}
-          />
-
-          {/* Right: Pace Profile */}
+          {/* Left column: Elevation on top, HR below */}
+          <div className="flex flex-col gap-6">
+            <ElevationProfileChart
+              streams={streams}
+              sportType={activity.sport_type}
+              totalElevationGain={activity.total_elevation_gain}
+            />
+            {activity.has_heartrate && (
+              <HeartRateProfileChart activity={activity} streams={streams} />
+            )}
+          </div>
+          {/* Right column: Pace Profile */}
           <PaceProfileChart activity={activity} streams={streams} />
         </div>
       )}

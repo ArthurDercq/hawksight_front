@@ -154,16 +154,21 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
     setRefetching: (v: boolean) => void,
     label: string,
   ) => {
-    const cached = cache.get<T>(key);
-    if (cached !== null) apply(cached);
-    if (!isMounted.current) return;
-    setRefetching(true);
+    // Afficher les données stale immédiatement si en cache
+    const stale = cache.get<T>(key);
+    if (stale !== null && isMounted.current) {
+      apply(stale);
+      setRefetching(true);
+    }
+    // Toujours fetcher du frais (dédupliqué si in-flight) — force=true pour ignorer le TTL et avoir la data fraîche
     try {
-      const fresh = await cache.dedupe(key, fetcher, CHART_TTL);
-      if (isMounted.current) apply(fresh);
+      const data = await cache.dedupe(key, fetcher, CHART_TTL);
+      if (isMounted.current) {
+        apply(data);
+        setRefetching(false);
+      }
     } catch (err) {
       console.error(`Error fetching ${label}:`, err);
-    } finally {
       if (isMounted.current) setRefetching(false);
     }
   }, []);
@@ -187,7 +192,6 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
           week_range: data.week_range,
           stats: data.stats,
         };
-        cache.set(key, chartData, CHART_TTL);
         setDailyHoursData(chartData);
         if (data.week_range) setWeekLabel(weekOffset === 0 ? 'Semaine en cours' : data.week_range);
         if (data.stats) setWeekStats({ distance: data.stats.distance || 0, elevation: data.stats.elevation || 0, time: data.stats.time || '-' });

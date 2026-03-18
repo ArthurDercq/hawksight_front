@@ -7,7 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   currentUser: CurrentUser | null;
-  login: (username: string, password: string) => Promise<true | string>;
+  login: (username: string, password: string, rememberMe?: boolean) => Promise<true | string>;
   logout: () => void;
 }
 
@@ -49,9 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (username: string, password: string): Promise<true | string> => {
+  const login = useCallback(async (username: string, password: string, rememberMe = false): Promise<true | string> => {
     try {
-      const { access_token } = await authApi.login(username, password);
+      const { access_token } = await authApi.login(username, password, rememberMe);
       localStorage.setItem('eyesight_token', access_token);
       setToken(access_token);
       setCurrentUser(decodeUser(access_token));

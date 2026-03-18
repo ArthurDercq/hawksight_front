@@ -22,6 +22,20 @@ export interface PersonalRecord {
   activity_name: string;
 }
 
+export interface TrailRecord {
+  record_type: string;
+  metric_type: string;
+  value: number;
+  unit: string;
+  date: string;
+  activity_id: number;
+  activity_name: string;
+  activity_distance_km?: number;
+  time_formatted?: string;
+  value_formatted?: string;
+}
+
 export interface RecordsData {
   records: Record<string, PersonalRecord | null>;
+  trailRecords: Record<string, TrailRecord | null>;
 }

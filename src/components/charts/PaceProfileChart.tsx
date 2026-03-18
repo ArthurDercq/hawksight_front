@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useCallback } from "react";
 import type { Activity, ActivityStream, SportType } from "@/types";
 
 const TrendingUpIcon = ({ color }: { color: string }) => (
@@ -30,10 +30,37 @@ const SPORT_COLORS: Record<SportType, string> = {
   WeightTraining: "#3A3F47",
 };
 
+// SVG layout constants
+const SVG_W = 440;
+const SVG_H = 200;
+const MARGIN = { top: 10, right: 20, bottom: 24, left: 26 };
+const CHART_W = SVG_W - MARGIN.left - MARGIN.right;
+const CHART_H = SVG_H - MARGIN.top - MARGIN.bottom;
+
+function computeYTicks(min: number, max: number, count = 4): number[] {
+  const rawStep = (max - min) / (count - 1);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const step = Math.ceil(rawStep / magnitude) * magnitude;
+  const start = Math.floor(min / step) * step;
+  const ticks: number[] = [];
+  for (let i = 0; i < count + 2; i++) {
+    const v = start + i * step;
+    if (v >= min - step * 0.1 && v <= max + step * 0.1) ticks.push(v);
+  }
+  return ticks.slice(0, count);
+}
+
+function fmtPace(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;
+}
+
 export function PaceProfileChart({ activity, streams }: PaceProfileChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
   const isBike = activity.sport_type === "Bike";
+
+  const [hover, setHover] = useState<{ x: number; y: number; dist: number; value: number } | null>(null);
 
   const paceProfile = useMemo(() => {
     const validStreams = streams.filter(
@@ -41,39 +68,26 @@ export function PaceProfileChart({ activity, streams }: PaceProfileChartProps) {
     );
     if (validStreams.length < 2) return null;
 
-    // Sous-echantillonner a ~50 points
-    const step = Math.max(1, Math.floor(validStreams.length / 50));
+    const step = Math.max(1, Math.floor(validStreams.length / 80));
 
     return validStreams
       .filter((_, i) => i % step === 0)
       .map((s) => {
-        // velocity_smooth est en m/s
-        // Pour course: convertir en s/km (allure)
-        // Pour velo: convertir en km/h (vitesse)
-        const speedKmh = s.velocity_smooth! * 3.6; // m/s -> km/h
-        const paceSeconds = s.velocity_smooth! > 0 ? 1000 / s.velocity_smooth! : 0; // s/km
-
+        const speedKmh = s.velocity_smooth! * 3.6;
+        const paceSeconds = 1000 / s.velocity_smooth!;
         return {
           distance: s.distance_m! / 1000,
           paceSeconds,
           speedKmh,
-          paceDisplay: `${Math.floor(paceSeconds / 60)}:${Math.floor(paceSeconds % 60)
-            .toString()
-            .padStart(2, "0")}`,
         };
       });
   }, [streams]);
 
   const exportChart = async () => {
     if (!chartRef.current) return;
-
     try {
       const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(chartRef.current, {
-        backgroundColor: "#0B0C10",
-        scale: 3,
-      });
-
+      const canvas = await html2canvas(chartRef.current, { backgroundColor: "#0B0C10", scale: 3 });
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -89,219 +103,290 @@ export function PaceProfileChart({ activity, streams }: PaceProfileChartProps) {
     }
   };
 
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (!svgRef.current || !paceProfile) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      // Convert pixel X to SVG coordinate
+      const svgX = (mouseX / rect.width) * SVG_W;
+      const chartX = svgX - MARGIN.left;
+      if (chartX < 0 || chartX > CHART_W) { setHover(null); return; }
+
+      const totalDist = paceProfile[paceProfile.length - 1].distance;
+      const ratio = chartX / CHART_W;
+      const targetDist = ratio * totalDist;
+
+      // Find nearest point
+      let closest = paceProfile[0];
+      let minDiff = Math.abs(paceProfile[0].distance - targetDist);
+      for (const p of paceProfile) {
+        const diff = Math.abs(p.distance - targetDist);
+        if (diff < minDiff) { minDiff = diff; closest = p; }
+      }
+
+      const value = isBike ? closest.speedKmh : closest.paceSeconds;
+      const svgXSnapped = MARGIN.left + (closest.distance / totalDist) * CHART_W;
+      setHover({ x: svgXSnapped, y: 0, dist: closest.distance, value });
+    },
+    [paceProfile, isBike]
+  );
+
   if (!paceProfile || paceProfile.length < 2) {
     return (
       <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 text-center">
-        <p className="text-[#3A3F47] font-['Inter'] text-sm">
-          Pas de donnees de vitesse
-        </p>
+        <p className="text-[#3A3F47] font-['Inter'] text-sm">Pas de donnees de vitesse</p>
       </div>
     );
   }
 
-  // Calculer min/max pour le scaling
-  const values = isBike
-    ? paceProfile.map((p) => p.speedKmh)
-    : paceProfile.map((p) => p.paceSeconds);
+  const values = isBike ? paceProfile.map((p) => p.speedKmh) : paceProfile.map((p) => p.paceSeconds);
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
   const range = maxValue - minValue || 1;
+  const totalDistance = paceProfile[paceProfile.length - 1].distance;
 
-  const totalDistance = activity.distance_km || activity.distance / 1000 || 0;
   const avgPace = activity.speed_minutes_per_km_hms || "--";
   const avgSpeed = activity.average_speed?.toFixed(1) || "--";
+
+  const yTicks = computeYTicks(minValue, maxValue, 4);
+
+  const xTickCount = Math.min(5, Math.floor(totalDistance) + 1);
+  const xTickStep = totalDistance / Math.max(xTickCount - 1, 1);
+  const xTicks = Array.from({ length: xTickCount }, (_, i) => parseFloat((i * xTickStep).toFixed(1)));
+
+  const toX = (dist: number) => MARGIN.left + (dist / totalDistance) * CHART_W;
+  const toY = (val: number) => {
+    // bike: high = top; running: low paceSeconds = fast = top (inverted)
+    const normalized = isBike ? (val - minValue) / range : (maxValue - val) / range;
+    return MARGIN.top + CHART_H - normalized * CHART_H;
+  };
+
+  const pathData = paceProfile
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.distance).toFixed(1)} ${toY(isBike ? p.speedKmh : p.paceSeconds).toFixed(1)}`)
+    .join(" ");
+
+  const lastX = toX(paceProfile[paceProfile.length - 1].distance);
+  const areaData = pathData + ` L ${lastX.toFixed(1)} ${(MARGIN.top + CHART_H).toFixed(1)} L ${MARGIN.left} ${(MARGIN.top + CHART_H).toFixed(1)} Z`;
+
+  // Crosshair Y position
+  const hoverY = hover ? toY(hover.value) : null;
+  const hoverLabel = hover
+    ? isBike
+      ? `${hover.value.toFixed(1)} km/h`
+      : `${fmtPace(hover.value)} /km`
+    : null;
 
   return (
     <div
       ref={chartRef}
       className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden"
     >
-      {/* Background effects */}
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#3DB2E0]/5 rounded-full blur-3xl" />
 
       <div className="relative space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-[#3A3F47]/30">
           <div className="flex items-start gap-3">
-            <div
-              className="p-2 border rounded"
-              style={{
-                backgroundColor: `${color}10`,
-                borderColor: `${color}30`,
-              }}
-            >
+            <div className="p-2 border rounded" style={{ backgroundColor: `${color}10`, borderColor: `${color}30` }}>
               <TrendingUpIcon color={color} />
             </div>
             <div>
               <h3 className="font-heading text-[#F2F2F2]">Profil d'Allure</h3>
               <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
-                Evolution de la {isBike ? "vitesse" : "vitesse"} sur le parcours
+                Évolution de la {isBike ? "vitesse" : "vitesse"} sur le parcours
               </p>
             </div>
           </div>
-
-          <div className="flex gap-1">
-            <button
-              onClick={exportChart}
-              className="p-1.5 hover:bg-[#3A3F47]/20 rounded transition-all"
-            >
-              <DownloadIcon />
-            </button>
-          </div>
+          <button onClick={exportChart} className="p-1.5 hover:bg-[#3A3F47]/20 rounded transition-all">
+            <DownloadIcon />
+          </button>
         </div>
 
-        {/* Pace Chart */}
-        <div className="relative aspect-[2/1] border border-[#3A3F47]/20 rounded overflow-hidden bg-[#0B0C10]">
-          {/* Grid background */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `
-                linear-gradient(to right, #F2F2F2 1px, transparent 1px),
-                linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)
-              `,
-              backgroundSize: "40px 20px",
-            }}
-          />
-
-          {/* Y-axis labels */}
-          <div className="absolute left-2 top-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
-            {isBike ? "Rapide" : "Rapide"}
-          </div>
-          <div className="absolute left-2 bottom-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
-            {isBike ? "Lent" : "Lent"}
-          </div>
-
-          {/* X-axis labels */}
-          <div className="absolute bottom-2 left-12 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
-            0 km
-          </div>
-          <div className="absolute bottom-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
-            {totalDistance.toFixed(1)} km
-          </div>
-
-          {/* SVG Chart */}
-          <svg viewBox="0 0 400 200" className="w-full h-full">
+        {/* Chart */}
+        <div className="mt-6 aspect-[2.2]">
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+            className="w-full h-full"
+            preserveAspectRatio="xMidYMid meet"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setHover(null)}
+          >
             <defs>
-              <linearGradient
-                id={`paceGradient-${activity.id}`}
-                x1="0%"
-                y1="0%"
-                x2="0%"
-                y2="100%"
-              >
+              <linearGradient id={`paceGradient-${activity.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={color} stopOpacity="0.05" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.04" />
               </linearGradient>
               <filter id={`glow-${activity.id}`}>
-                <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
                 <feMerge>
                   <feMergeNode in="coloredBlur" />
                   <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
+              <clipPath id="paceClip">
+                <rect x={MARGIN.left} y={MARGIN.top} width={CHART_W} height={CHART_H} />
+              </clipPath>
             </defs>
 
-            {/* Grid lines */}
-            {[0, 25, 50, 75, 100].map((percent) => (
-              <line
-                key={`h-${percent}`}
-                x1="20"
-                y1={(percent / 100) * 180 + 10}
-                x2="390"
-                y2={(percent / 100) * 180 + 10}
-                stroke="#3A3F47"
-                strokeWidth="0.5"
-                opacity="0.2"
-              />
-            ))}
-
-            {/* Create path */}
-            {(() => {
-              const pathData = paceProfile
-                .map((point, i) => {
-                  const x = 20 + (i / (paceProfile.length - 1)) * 370;
-                  const value = isBike ? point.speedKmh : point.paceSeconds;
-                  // Pour l'allure (course), inverser car allure basse = rapide
-                  const normalizedValue = isBike
-                    ? (value - minValue) / range
-                    : (maxValue - value) / range;
-                  const y = 180 - normalizedValue * 160 + 10;
-                  return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
-                })
-                .join(" ");
-
-              const areaData = pathData + ` L 390 190 L 20 190 Z`;
-
+            {/* Y gridlines + labels */}
+            {yTicks.map((tick, i) => {
+              const y = toY(tick);
+              const isBottom = isBike ? i === 0 : i === yTicks.length - 1;
               return (
-                <>
-                  {/* Area under curve */}
-                  <path d={areaData} fill={`url(#paceGradient-${activity.id})`} />
-
-                  {/* Main line */}
-                  <path
-                    d={pathData}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    filter={`url(#glow-${activity.id})`}
+                <g key={tick}>
+                  <line
+                    x1={MARGIN.left}
+                    y1={y}
+                    x2={MARGIN.left + CHART_W}
+                    y2={y}
+                    stroke="#3A3F47"
+                    strokeWidth="0.5"
+                    strokeDasharray="3 4"
+                    opacity="0.4"
                   />
-
-                  {/* Data points every 10th */}
-                  {paceProfile
-                    .filter((_, i) => i % 10 === 0)
-                    .map((point, idx) => {
-                      const i = idx * 10;
-                      const x = 20 + (i / (paceProfile.length - 1)) * 370;
-                      const value = isBike ? point.speedKmh : point.paceSeconds;
-                      const normalizedValue = isBike
-                        ? (value - minValue) / range
-                        : (maxValue - value) / range;
-                      const y = 180 - normalizedValue * 160 + 10;
-
-                      return (
-                        <g key={i}>
-                          <circle cx={x} cy={y} r="3" fill={color} opacity="0.6" />
-                          <circle cx={x} cy={y} r="1.5" fill="#F2F2F2" />
-                        </g>
-                      );
-                    })}
-                </>
+                  {!isBottom && (
+                    <text
+                      x={MARGIN.left - 6}
+                      y={y}
+                      textAnchor="end"
+                      dominantBaseline="middle"
+                      fill="#3A3F47"
+                      fontSize="9"
+                      fontFamily="'JetBrains Mono', 'Courier New', monospace"
+                    >
+                      {isBike ? `${tick.toFixed(0)}` : fmtPace(tick)}
+                    </text>
+                  )}
+                </g>
               );
-            })()}
-          </svg>
+            })}
 
-          {/* Technical overlay corners */}
-          <div
-            className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 opacity-20"
-            style={{ borderColor: color }}
-          />
-          <div
-            className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 opacity-20"
-            style={{ borderColor: color }}
-          />
-          <div
-            className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 opacity-20"
-            style={{ borderColor: color }}
-          />
-          <div
-            className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 opacity-20"
-            style={{ borderColor: color }}
-          />
+            {/* Y unit label */}
+            <text
+              x={MARGIN.left - 6}
+              y={MARGIN.top - 2}
+              textAnchor="end"
+              fill="#3A3F47"
+              fontSize="8"
+              fontFamily="'JetBrains Mono', 'Courier New', monospace"
+              opacity="0.6"
+            >
+              {isBike ? "km/h" : "min/km"}
+            </text>
+
+            {/* X axis line */}
+            <line
+              x1={MARGIN.left}
+              y1={MARGIN.top + CHART_H}
+              x2={MARGIN.left + CHART_W}
+              y2={MARGIN.top + CHART_H}
+              stroke="#3A3F47"
+              strokeWidth="0.5"
+              opacity="0.4"
+            />
+
+            {/* X tick marks + labels */}
+            {xTicks.map((km) => {
+              const x = MARGIN.left + (km / totalDistance) * CHART_W;
+              return (
+                <g key={km}>
+                  <line
+                    x1={x} y1={MARGIN.top + CHART_H}
+                    x2={x} y2={MARGIN.top + CHART_H + 4}
+                    stroke="#3A3F47" strokeWidth="0.8" opacity="0.6"
+                  />
+                  <text
+                    x={x}
+                    y={MARGIN.top + CHART_H + 13}
+                    textAnchor="middle"
+                    fill="#3A3F47"
+                    fontSize="9"
+                    fontFamily="'JetBrains Mono', 'Courier New', monospace"
+                  >
+                    {km === 0 ? "" : `${km.toFixed(1)} km`}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Area + line */}
+            <g clipPath="url(#paceClip)">
+              <path d={areaData} fill={`url(#paceGradient-${activity.id})`} />
+              <path
+                d={pathData}
+                fill="none"
+                stroke={color}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter={`url(#glow-${activity.id})`}
+              />
+            </g>
+
+            {/* Y axis line */}
+            <line
+              x1={MARGIN.left} y1={MARGIN.top}
+              x2={MARGIN.left} y2={MARGIN.top + CHART_H}
+              stroke="#3A3F47" strokeWidth="0.5" opacity="0.4"
+            />
+
+            {/* Crosshair */}
+            {hover && hoverY !== null && (
+              <g>
+                {/* Vertical line */}
+                <line
+                  x1={hover.x} y1={MARGIN.top}
+                  x2={hover.x} y2={MARGIN.top + CHART_H}
+                  stroke="#F2F2F2"
+                  strokeWidth="0.8"
+                  strokeDasharray="3 3"
+                  opacity="0.4"
+                />
+                {/* Horizontal line */}
+                <line
+                  x1={MARGIN.left} y1={hoverY}
+                  x2={MARGIN.left + CHART_W} y2={hoverY}
+                  stroke="#F2F2F2"
+                  strokeWidth="0.8"
+                  strokeDasharray="3 3"
+                  opacity="0.25"
+                />
+                {/* Dot on curve */}
+                <circle cx={hover.x} cy={hoverY} r="4" fill={color} opacity="0.9" />
+                <circle cx={hover.x} cy={hoverY} r="2" fill="#F2F2F2" />
+
+                {/* Tooltip badge — flip side if near right edge */}
+                {(() => {
+                  const isRight = hover.x > SVG_W * 0.65;
+                  const bx = isRight ? hover.x - 84 : hover.x + 8;
+                  const by = Math.max(MARGIN.top + 2, Math.min(hoverY - 24, MARGIN.top + CHART_H - 26));
+                  return (
+                    <g>
+                      <rect x={bx} y={by} width="76" height="22" rx="3"
+                        fill="#0B0C10" stroke={color} strokeWidth="0.8" opacity="0.95" />
+                      <text x={bx + 38} y={by + 8} textAnchor="middle"
+                        fill={color} fontSize="9" fontFamily="'JetBrains Mono', 'Courier New', monospace">
+                        {hoverLabel}
+                      </text>
+                      <text x={bx + 38} y={by + 17} textAnchor="middle"
+                        fill="#3A3F47" fontSize="8" fontFamily="'JetBrains Mono', 'Courier New', monospace">
+                        {hover.dist.toFixed(2)} km
+                      </text>
+                    </g>
+                  );
+                })()}
+              </g>
+            )}
+          </svg>
         </div>
 
-        {/* Footer stats */}
+        {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-[#3A3F47]/30">
           <div className="flex items-center gap-2">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: color }}
-            />
-            <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
-              PACE_ANALYSIS
-            </span>
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+            <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">PACE_ANALYSIS</span>
           </div>
           <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
             AVG: {isBike ? `${avgSpeed} km/h` : `${avgPace} /km`}

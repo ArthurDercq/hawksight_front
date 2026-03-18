@@ -11,6 +11,7 @@ interface ActivityCardProps {
 export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) {
   const sportStyle = SPORT_COLORS[activity.sport_type] || SPORT_COLORS.Run;
   const isBike = activity.sport_type === 'Bike';
+  const isWeightTraining = activity.sport_type === 'WeightTraining';
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -44,19 +45,21 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-        <div>
-          <p className="text-xs text-mist/50">Distance</p>
-          <p className="font-mono text-sm text-amber">
-            {(activity.distance_km || activity.distance || 0).toFixed(1)} km
-          </p>
-        </div>
+        {!isWeightTraining && (
+          <div>
+            <p className="text-xs text-mist/50">Distance</p>
+            <p className="font-mono text-sm text-amber">
+              {(activity.distance_km || activity.distance || 0).toFixed(1)} km
+            </p>
+          </div>
+        )}
         <div>
           <p className="text-xs text-mist/50">Duree</p>
           <p className="font-mono text-sm text-mist">
             {activity.moving_time_hms || `${Math.round(activity.moving_time / 60)} min`}
           </p>
         </div>
-        {activity.total_elevation_gain !== undefined && activity.total_elevation_gain > 0 && (
+        {!isWeightTraining && activity.total_elevation_gain !== undefined && activity.total_elevation_gain > 0 && (
           <div>
             <p className="text-xs text-mist/50">D+</p>
             <p className="font-mono text-sm text-glacier">
@@ -64,13 +67,13 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             </p>
           </div>
         )}
-        {activity.speed_minutes_per_km_hms && (
+        {!isWeightTraining && activity.speed_minutes_per_km_hms && (
           <div>
             <p className="text-xs text-mist/50">{isBike ? 'Vitesse' : 'Allure'}</p>
             <p className="font-mono text-sm text-moss">
               {isBike
                 ? `${activity.average_speed?.toFixed(1) || '--'} km/h`
-                : activity.speed_minutes_per_km_hms}
+                : `${activity.speed_minutes_per_km_hms}/km`}
             </p>
           </div>
         )}

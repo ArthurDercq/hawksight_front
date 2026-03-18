@@ -394,11 +394,11 @@ export function DashboardPage() {
                 <p className="text-[10px] text-mist/40">territoires</p>
               </div>
               <div>
-                <p className="text-xs text-mist/50 mb-1">Total</p>
+                <p className="text-xs text-mist/50 mb-1">Belgique</p>
                 <p className="text-lg font-mono text-glacier font-semibold">
-                  {explorationStats.total_cells}
+                  {((explorationStats.total_cells / 41200) * 100).toFixed(2)}%
                 </p>
-                <p className="text-[10px] text-mist/40">cellules</p>
+                <p className="text-[10px] text-mist/40">exploré</p>
               </div>
               <div className="col-span-2">
                 <p className="text-xs text-mist/50 mb-1">Nouveauté</p>
@@ -408,7 +408,7 @@ export function DashboardPage() {
               </div>
             </div>
           ) : (
-            <p className="text-mist/60 text-sm">Chargement...</p>
+            <p className="text-mist/60 text-sm">Pas de données</p>
           )}
         </div>
       </div>
@@ -459,7 +459,6 @@ export function DashboardPage() {
                   <p className="font-medium text-mist">{lastActivity.name}</p>
                   <p className="text-sm text-mist/60">{formatActivityDate(lastActivity.date)}</p>
                 </div>
-                <span className="text-amber text-sm font-medium hover:text-amber-light transition-colors">Voir →</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-charcoal/50 rounded-lg p-2">
@@ -478,7 +477,7 @@ export function DashboardPage() {
                   <p className="text-xs text-mist/50 mb-1">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
                   <p className="font-mono text-moss font-semibold">
                     {lastActivity.type === 'Bike'
-                      ? `${lastActivity.average_speed?.toFixed(1) ?? '--'} km/h`
+                      ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'} km/h`
                       : formatPace(lastActivity.allure_min_per_km)}
                   </p>
                 </div>
@@ -525,39 +524,106 @@ export function DashboardPage() {
           </div>
           {recentActivities.length > 0 ? (
             <ScrollToEndContainer>
-              {[...recentActivities].reverse().map((activity) => (
-                <Link
-                  key={activity.id}
-                  to={`/activity/${activity.id}`}
-                  className="flex-shrink-0 w-[160px] snap-start group"
-                >
-                  <div className="bg-charcoal/50 rounded-lg border border-steel/20 overflow-hidden hover:border-glacier/40 transition-all hover:-translate-y-0.5">
-                    <div className="aspect-square bg-[#0B0C10] relative">
-                      {activity.polyline_coords && activity.polyline_coords.length > 0 ? (
-                        <svg viewBox="0 0 100 100" className="w-full h-full">
-                          <path
-                            d={polylineToSvgPath(activity.polyline_coords)}
-                            fill="none"
-                            stroke={SPORT_COLORS[activity.type || ''] || '#3DB2E0'}
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.8"
-                          />
-                        </svg>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-mist/20 text-xs">
-                          Pas de trace
+              {[...recentActivities].reverse().map((activity) => {
+                const color = SPORT_COLORS[activity.type || ''] || '#3DB2E0';
+                const isBikeActivity = activity.type === 'Bike';
+                const paceValue = isBikeActivity
+                  ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--')
+                  : formatPace(activity.allure_min_per_km);
+                const paceLabel = isBikeActivity ? 'vit.' : 'allure';
+                return (
+                  <Link
+                    key={activity.id}
+                    to={`/activity/${activity.id}`}
+                    className="flex-shrink-0 w-[220px] snap-start group"
+                  >
+                    <div
+                      className="relative rounded-lg overflow-hidden border transition-all duration-200 hover:-translate-y-0.5"
+                      style={{ borderColor: `${color}25`, backgroundColor: '#0B0C10' }}
+                    >
+                      {/* Polyline background */}
+                      <div className="aspect-[4/3] relative">
+                        {activity.polyline_coords && activity.polyline_coords.length > 0 ? (
+                          <>
+                            {/* Glow layer */}
+                            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
+                              <defs>
+                                <filter id={`glow-${activity.id}`}>
+                                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                                  <feMerge>
+                                    <feMergeNode in="coloredBlur" />
+                                    <feMergeNode in="SourceGraphic" />
+                                  </feMerge>
+                                </filter>
+                              </defs>
+                              <path
+                                d={polylineToSvgPath(activity.polyline_coords)}
+                                fill="none"
+                                stroke={color}
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                opacity="0.9"
+                                filter={`url(#glow-${activity.id})`}
+                              />
+                            </svg>
+                            {/* Gradient overlay bottom */}
+                            <div
+                              className="absolute inset-x-0 bottom-0 h-2/3"
+                              style={{ background: 'linear-gradient(to top, #0B0C10 0%, #0B0C1099 50%, transparent 100%)' }}
+                            />
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <span className="text-[10px] text-mist/20 font-mono">NO GPS</span>
+                          </div>
+                        )}
+
+                        {/* Sport badge top-left */}
+                        <div className="absolute top-2 left-2">
+                          <span
+                            className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+                            style={{ backgroundColor: `${color}22`, color, border: `1px solid ${color}40` }}
+                          >
+                            {activity.type || 'Sport'}
+                          </span>
                         </div>
-                      )}
+
+                        {/* Name + date over gradient */}
+                        <div className="absolute bottom-0 inset-x-0 px-3 pb-2">
+                          <p className="text-[11px] font-semibold text-[#F2F2F2] truncate leading-tight group-hover:text-white transition-colors">
+                            {activity.name}
+                          </p>
+                          <p className="text-[9px] text-mist/40 font-mono mt-0.5">{formatActivityDate(activity.date)}</p>
+                        </div>
+                      </div>
+
+                      {/* Metrics row */}
+                      <div
+                        className="flex items-center justify-between px-3 py-2 border-t gap-2"
+                        style={{ borderColor: `${color}15` }}
+                      >
+                        <div className="flex flex-col items-center flex-1">
+                          <span className="font-mono text-[10px] font-semibold" style={{ color }}>{activity.distance_km.toFixed(1)}</span>
+                          <span className="text-[8px] text-mist/30 font-mono uppercase tracking-wide">km</span>
+                        </div>
+                        <div className="w-px h-6 bg-steel/20" />
+                        <div className="flex flex-col items-center flex-1">
+                          <span className="font-mono text-[10px] font-semibold text-[#F2F2F2]">{activity.duree_hms}</span>
+                          <span className="text-[8px] text-mist/30 font-mono uppercase tracking-wide">durée</span>
+                        </div>
+                        <div className="w-px h-6 bg-steel/20" />
+                        <div className="flex flex-col items-center flex-1">
+                          <span className="font-mono text-[10px] font-semibold text-[#F2F2F2]">
+                            {paceValue}{isBikeActivity && <span className="text-[8px] font-normal text-mist/50 ml-0.5">km/h</span>}
+                          </span>
+                          <span className="text-[8px] text-mist/30 font-mono uppercase tracking-wide">{paceLabel}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-2">
-                      <p className="text-xs text-mist truncate group-hover:text-glacier transition-colors">{activity.name}</p>
-                      <p className="text-[10px] text-mist/40 font-mono">{formatActivityDate(activity.date)}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </ScrollToEndContainer>
           ) : (
             <p className="text-mist/60 text-center py-4">Aucune trace recente</p>
@@ -735,7 +801,35 @@ export function DashboardPage() {
                         ticks: { color: '#C4561A', callback: (v: number | string) => `${Number(v).toFixed(0)}m` },
                       },
                     },
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                        enabled: true,
+                        backgroundColor: '#0B0C10',
+                        borderColor: '#E8832A',
+                        borderWidth: 1,
+                        titleColor: '#F2F2F2',
+                        bodyColor: '#A0A8B0',
+                        titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                        bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                        padding: 10,
+                        cornerRadius: 4,
+                        displayColors: true,
+                        callbacks: {
+                          title: (items) => items[0]?.label ?? '',
+                          label: (ctx) => {
+                            if (ctx.datasetIndex === 0) return `  Distance : ${Number(ctx.raw).toFixed(1)} km`;
+                            if (ctx.datasetIndex === 1) return `  D+        : ${Math.round(Number(ctx.raw))} m`;
+                            return '';
+                          },
+                          labelColor: (ctx) => ({
+                            borderColor: ctx.datasetIndex === 0 ? '#E8832A' : '#C4561A',
+                            backgroundColor: ctx.datasetIndex === 0 ? '#E8832A' : '#C4561A',
+                            borderRadius: 2,
+                          }),
+                        },
+                      },
+                    },
                   }}
                 />
               ) : (

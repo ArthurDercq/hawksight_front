@@ -42,21 +42,21 @@ export function useKPI(): UseKPIReturn {
     return () => { isMounted.current = false; };
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (force = false) => {
     setError(null);
     const key = cacheKey(selectedYear);
-    const cached = cache.get<{ kpis: KPIData; records: RecordsData }>(key);
 
-    if (cached) {
-      // Apply cached data immediately, then background-refresh
-      if (cached.kpis) setKpis(cached.kpis);
-      if (cached.records) setRecords(cached.records);
-      setIsLoading(false);
+    if (force) {
+      cache.invalidate(key);
       setIsRefetching(true);
     } else {
-      // Only show full loading screen if we have NO data at all yet
-      setIsLoading(kpis === null && records === null);
-      if (kpis !== null || records !== null) setIsRefetching(true);
+      const stale = cache.get<{ kpis: KPIData; records: RecordsData }>(key);
+      if (stale) {
+        if (stale.kpis) setKpis(stale.kpis);
+        if (stale.records) setRecords(stale.records);
+        setIsLoading(false);
+        setIsRefetching(true);
+      }
     }
 
     try {
@@ -69,7 +69,6 @@ export function useKPI(): UseKPIReturn {
       }, KPI_TTL);
 
       if (!isMounted.current) return;
-      // Never set to null — only update if we got real data
       if (result.kpis) setKpis(result.kpis);
       if (result.records) setRecords(result.records);
     } catch (err) {
@@ -88,9 +87,8 @@ export function useKPI(): UseKPIReturn {
   }, [fetchData]);
 
   const refetch = useCallback(() => {
-    cache.invalidate(cacheKey(selectedYear));
-    fetchData();
-  }, [fetchData, selectedYear]);
+    fetchData(true);
+  }, [fetchData]);
 
   return {
     kpis,

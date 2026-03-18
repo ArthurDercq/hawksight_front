@@ -97,6 +97,7 @@ async function fetchAllDashboardData(): Promise<DashboardSnapshot> {
   const monthActivities = normalizeActivities(monthActivitiesRaw);
   const prevMonthActivities = normalizeActivities(prevMonthActivitiesRaw);
 
+
   return {
     kpis: kpiData,
     streak: streakData,
@@ -148,7 +149,8 @@ export function useDashboard(): UseDashboardReturn {
     if (snap.recentActivities.length > 0) setRecentActivities(snap.recentActivities);
     if (snap.weeklySummary !== null) setWeeklySummary(snap.weeklySummary);
     if (snap.monthlySummary !== null) setMonthlySummary(snap.monthlySummary);
-    if (snap.explorationStats !== null) setExplorationStats(snap.explorationStats);
+    // Toujours mettre à jour explorationStats si défini (même à null explicite)
+    setExplorationStats(snap.explorationStats);
   }, []);
 
   const fetchDashboardData = useCallback(async (invalidateFirst = false) => {
@@ -156,23 +158,21 @@ export function useDashboard(): UseDashboardReturn {
 
     if (invalidateFirst) {
       cache.invalidate(CACHE_KEY);
-      // We already have data in React states — never show full loading screen on invalidation
       setIsRefetching(true);
     } else {
-      // Apply stale cache immediately (SWR step 1)
+      // Appliquer les stales immédiatement
       const stale = cache.get<DashboardSnapshot>(CACHE_KEY);
       if (stale) {
         applySnapshot(stale);
         setIsLoading(false);
         setIsRefetching(true);
-      } else {
-        setIsLoading(true);
       }
     }
 
-    // Always fetch fresh in background (SWR step 2) — deduped
+    // Toujours fetcher du frais (dédupliqué si in-flight)
     try {
       const fresh = await cache.dedupe(CACHE_KEY, fetchAllDashboardData, CACHE_TTL);
+      if (!isMounted.current) return;
       applySnapshot(fresh);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);

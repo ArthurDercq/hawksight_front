@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useProfile, useKPI } from '@/hooks';
+import { useAuth } from '@/context';
 import { explorationApi, activitiesApi, apiClient } from '@/services/api';
 import { formatRelativeTime, formatMembershipDuration } from '@/services/utils/formatters';
 
@@ -75,6 +77,203 @@ function formatNumber(n: number): string {
   return new Intl.NumberFormat('fr-FR').format(Math.round(n));
 }
 
+// ─── Trail Profile Radar ──────────────────────────────────────────────────────
+
+const TRAIL_AXES = [
+  { key: 'verticalPower',   label: 'Vertical Power',    desc: 'VAM & puissance en montée' },
+  { key: 'enduranceClimb',  label: 'Endurance Climb',   desc: 'Capacité sur les longues montées' },
+  { key: 'steepEfficiency', label: 'Steep Efficiency',  desc: 'Efficacité sur pente forte' },
+  { key: 'verticalVolume',  label: 'Vertical Volume',   desc: 'Volume de D+ accumulé' },
+  { key: 'descentMastery',  label: 'Descent Mastery',   desc: 'Maîtrise technique en descente' },
+];
+
+// Placeholder scores 0–1
+const MOCK_SCORES: Record<string, number> = {
+  verticalPower:   0.72,
+  enduranceClimb:  0.58,
+  steepEfficiency: 0.45,
+  verticalVolume:  0.83,
+  descentMastery:  0.61,
+};
+
+function RadarChart({ scores }: { scores: Record<string, number> }) {
+  const SIZE = 320;
+  const CX = SIZE / 2;
+  const CY = SIZE / 2;
+  const R = 110;
+  const n = TRAIL_AXES.length;
+  const color = '#C96A1A';
+
+  const angleOf = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
+
+  const point = (i: number, r: number) => ({
+    x: CX + r * Math.cos(angleOf(i)),
+    y: CY + r * Math.sin(angleOf(i)),
+  });
+
+  // Gridlines at 25%, 50%, 75%, 100%
+  const gridLevels = [0.25, 0.5, 0.75, 1];
+
+  const gridPolygon = (ratio: number) =>
+    Array.from({ length: n }, (_, i) => {
+      const p = point(i, R * ratio);
+      return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    }).join(' ');
+
+  const dataPolygon = TRAIL_AXES.map((ax, i) => {
+    const p = point(i, R * (scores[ax.key] ?? 0));
+    return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+  }).join(' ');
+
+  return (
+    <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+      <defs>
+        <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.05" />
+        </radialGradient>
+        <filter id="radarGlow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+          <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+
+      {/* Grid */}
+      {gridLevels.map((ratio) => (
+        <polygon
+          key={ratio}
+          points={gridPolygon(ratio)}
+          fill="none"
+          stroke="#3A3F47"
+          strokeWidth={ratio === 1 ? 0.8 : 0.5}
+          opacity={ratio === 1 ? 0.5 : 0.25}
+        />
+      ))}
+
+      {/* Axis lines */}
+      {TRAIL_AXES.map((_, i) => {
+        const outer = point(i, R);
+        return (
+          <line
+            key={i}
+            x1={CX} y1={CY}
+            x2={outer.x.toFixed(1)} y2={outer.y.toFixed(1)}
+            stroke="#3A3F47" strokeWidth="0.5" opacity="0.35"
+          />
+        );
+      })}
+
+      {/* Data polygon */}
+      <polygon
+        points={dataPolygon}
+        fill="url(#radarFill)"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        filter="url(#radarGlow)"
+        opacity="0.95"
+      />
+
+      {/* Data dots */}
+      {TRAIL_AXES.map((ax, i) => {
+        const p = point(i, R * (scores[ax.key] ?? 0));
+        return (
+          <g key={ax.key}>
+            <circle cx={p.x} cy={p.y} r="4" fill={color} opacity="0.9" />
+            <circle cx={p.x} cy={p.y} r="2" fill="#F2F2F2" />
+          </g>
+        );
+      })}
+
+      {/* Axis labels */}
+      {TRAIL_AXES.map((ax, i) => {
+        const labelR = R + 22;
+        const p = point(i, labelR);
+        const anchor = p.x < CX - 5 ? 'end' : p.x > CX + 5 ? 'start' : 'middle';
+        return (
+          <text
+            key={ax.key}
+            x={p.x.toFixed(1)} y={p.y.toFixed(1)}
+            textAnchor={anchor}
+            dominantBaseline="middle"
+            fill="#F2F2F2"
+            fontSize="9"
+            fontFamily="'JetBrains Mono', monospace"
+            opacity="0.85"
+          >
+            {ax.label.toUpperCase()}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+function TrailProfileCard() {
+  const scores = MOCK_SCORES;
+
+  return (
+    <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-48 h-48 bg-[#C96A1A]/5 rounded-full blur-3xl" />
+
+      <div className="relative">
+        {/* Header */}
+        <div className="flex items-start gap-3 pb-4 border-b border-[#3A3F47]/30 mb-6">
+          <div className="p-2 border rounded" style={{ backgroundColor: '#C96A1A10', borderColor: '#C96A1A30' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C96A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-heading text-[#F2F2F2]">Profil Traileur</h3>
+            <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">Analyse de tes compétences trail</p>
+          </div>
+          <span className="ml-auto text-[9px] font-mono text-[#3A3F47] border border-[#3A3F47]/30 px-2 py-0.5 rounded">
+            BÊTA
+          </span>
+        </div>
+
+        {/* Content: radar + legend */}
+        <div className="flex flex-col sm:flex-row items-center gap-8">
+          {/* Radar */}
+          <div className="flex-shrink-0">
+            <RadarChart scores={scores} />
+          </div>
+
+          {/* Legend / scores */}
+          <div className="flex-1 space-y-3">
+            {TRAIL_AXES.map((ax) => {
+              const score = scores[ax.key] ?? 0;
+              return (
+                <div key={ax.key}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[#F2F2F2] font-['JetBrains_Mono'] text-[10px] uppercase tracking-wide">
+                      {ax.label}
+                    </span>
+                    <span className="text-[#C96A1A] font-['JetBrains_Mono'] text-[11px] font-semibold">
+                      {Math.round(score * 100)}
+                    </span>
+                  </div>
+                  <div className="h-1 bg-[#3A3F47]/30 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${score * 100}%`,
+                        background: `linear-gradient(to right, #C96A1A, #E8832A)`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[#3A3F47] font-['Inter'] text-[10px] mt-0.5">{ax.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface StatCardProps {
@@ -127,6 +326,8 @@ function DetailRow({ label, value }: DetailRowProps) {
 export function ProfilePage() {
   const { profile, isLoading, error } = useProfile();
   const { kpis } = useKPI();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
   const [explorationKm2, setExplorationKm2] = useState<number | null>(null);
@@ -253,17 +454,31 @@ export function ProfilePage() {
                 )}
               </div>
 
-              {/* HAWKSIGHT monogram top right */}
-              <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-                <div className="flex gap-0.5">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="w-1 h-1 rounded-full bg-amber" style={{ opacity: 1 - i * 0.3 }} />
-                  ))}
+              {/* HAWKSIGHT monogram + logout top right */}
+              <div className="hidden sm:flex flex-col items-end gap-3 flex-shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-0.5">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-amber" style={{ opacity: 1 - i * 0.3 }} />
+                    ))}
+                  </div>
+                  <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">HAWKSIGHT</span>
                 </div>
-                <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">HAWKSIGHT</span>
+                <button
+                  onClick={() => { logout(); navigate('/'); }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#3A3F47] hover:text-red-400 hover:bg-red-500/10 border border-[#3A3F47]/20 hover:border-red-500/30 transition-all text-[11px] font-mono"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Déconnexion
+                </button>
               </div>
             </div>
           </div>
+
+          {/* Trail Profile radar */}
+          <TrailProfileCard />
 
           {/* Stat cards */}
           <div className="grid grid-cols-1 gap-4">

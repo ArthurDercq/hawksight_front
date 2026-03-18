@@ -8,3 +8,4 @@ export { PowerChart } from './PowerChart';
 export { HRZonesChart } from './HRZonesChart';
 export { PaceProfileChart } from './PaceProfileChart';
 export { ElevationProfileChart } from './ElevationProfileChart';
+export { HeartRateProfileChart } from './HeartRateProfileChart';

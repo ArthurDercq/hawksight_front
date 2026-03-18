@@ -64,7 +64,7 @@ export function HomePage() {
 
           <motion.button
             onClick={handleCTA}
-            className="group relative px-10 py-4 bg-[#E8832A] text-[#0B0C10] font-heading font-bold text-lg rounded-lg overflow-hidden transition-all hover:shadow-[0_0_30px_#E8832A80] hover:scale-105"
+            className="group relative px-10 py-4 bg-[#E8832A] text-[#0B0C10] font-heading font-bold text-lg rounded-md overflow-hidden transition-all hover:shadow-[0_0_30px_#E8832A80] hover:scale-105"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
@@ -297,7 +297,7 @@ export function HomePage() {
 
             <motion.button
               onClick={handleCTA}
-              className="group relative px-14 py-5 bg-[#E8832A] text-[#0B0C10] font-heading font-bold text-lg rounded-lg overflow-hidden transition-all hover:shadow-[0_0_40px_#E8832A80]"
+              className="group relative px-14 py-5 bg-[#E8832A] text-[#0B0C10] font-heading font-bold text-lg rounded-md overflow-hidden transition-all hover:shadow-[0_0_40px_#E8832A80]"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

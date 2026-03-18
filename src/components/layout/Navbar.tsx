@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context';
 import { Logo } from '@/components/ui';
 
@@ -42,13 +41,6 @@ const GlobeIcon = () => (
   </svg>
 );
 
-const SettingsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-);
-
 const UserIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -56,26 +48,12 @@ const UserIcon = () => (
   </svg>
 );
 
-const LogoutIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-);
 
 export function Navbar() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const isLanding = location.pathname === '/';
   const isLogin = location.pathname === '/login';
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   const navItems = [
     { path: '/activities', label: 'Activités', icon: <ActivityIcon /> },
@@ -130,43 +108,13 @@ export function Navbar() {
           {/* User Menu */}
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-mist/60 hover:text-mist hover:bg-steel/20 transition-all duration-200"
-                >
-                  <SettingsIcon />
-                  <span className="hidden sm:block text-sm">Parametres</span>
-                </button>
-
-                {dropdownOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setDropdownOpen(false)}
-                    />
-                    <div
-                      className="absolute right-0 top-[calc(100%+0.75rem)] w-48 bg-steel/95 backdrop-blur-[12px] border border-white/10 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.4)] z-20 p-2"
-                    >
-                      <Link
-                        to="/profile"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-mist/80 hover:text-amber hover:bg-amber/10 rounded-lg transition-all duration-200"
-                      >
-                        <UserIcon />
-                        Profil
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-mist/80 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200"
-                      >
-                        <LogoutIcon />
-                        Deconnexion
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-mist/60 hover:text-mist hover:bg-steel/20 transition-all duration-200"
+              >
+                <UserIcon />
+                <span className="hidden sm:block text-sm">Profil</span>
+              </Link>
             ) : !isLanding && !isLogin && (
               <Link
                 to="/login"

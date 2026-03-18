@@ -171,7 +171,7 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
   const duration = activity.moving_time_hms ?? formatDuration(activity.moving_time);
   const isBike = activity.sport_type === "Bike";
   const pace = isBike
-    ? (activity.average_speed?.toFixed(1) ?? "--")
+    ? (activity.average_speed != null ? activity.average_speed.toFixed(1) : "--")
     : (activity.speed_minutes_per_km_hms ?? "--");
   const paceLabel = isBike ? "Vitesse moy." : "Allure moy.";
   const paceUnit = isBike ? "km/h" : "/km";

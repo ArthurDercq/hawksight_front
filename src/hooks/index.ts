@@ -1,3 +1,4 @@
+export { useQuery } from './useQuery';
 export { useProfile } from './useProfile';
 export { usePermissions } from './usePermissions';
 export { useActivities } from './useActivities';
