@@ -1,5 +1,3 @@
-/* Import Google Fonts - must be first */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -75,29 +73,6 @@ body::before {
    UTILITY CLASSES
    ============================================ */
 
-/* Hover lift effect */
-.hover-lift {
-  @apply transition-all duration-300 ease-out;
-}
-
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-/* Glow effects */
-.glow-amber {
-  box-shadow: 0 4px 12px rgba(232, 131, 42, 0.4);
-}
-
-.glow-glacier {
-  box-shadow: 0 4px 12px rgba(61, 178, 224, 0.4);
-}
-
-.glow-moss {
-  box-shadow: 0 4px 12px rgba(109, 170, 117, 0.4);
-}
-
 /* Grid pattern overlay */
 .grid-pattern {
   background-image:
@@ -105,15 +80,6 @@ body::before {
     linear-gradient(to bottom, #F2F2F2 1px, transparent 1px);
   background-size: 16px 16px;
   opacity: 0.03;
-}
-
-/* Records card futuristic grid pattern */
-.records-grid-pattern {
-  background-image:
-    linear-gradient(to right, #E8832A 1px, transparent 1px),
-    linear-gradient(to bottom, #E8832A 1px, transparent 1px);
-  background-size: 20px 20px;
-  opacity: 0.08;
 }
 
 /* Card base styles */
@@ -151,28 +117,6 @@ body::before {
   backdrop-filter: blur(10px);
 }
 
-/* Pulse animation for live indicators */
-@keyframes pulse-live {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.pulse-live {
-  animation: pulse-live 2s ease-in-out infinite;
-}
-
-/* Typography helpers */
-.text-gradient-amber {
-  background: linear-gradient(135deg, #E8832A, #ff9942);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 /* Override browser autofill background on inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
@@ -180,14 +124,4 @@ input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0px 1000px rgba(58, 63, 71, 0.5) inset;
   -webkit-text-fill-color: #F2F2F2;
   transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Button hover lift */
-.btn-lift {
-  @apply transition-all duration-300 ease-out;
-}
-
-.btn-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(232, 131, 42, 0.4);
 }

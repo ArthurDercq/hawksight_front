@@ -1,18 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from '@/context';
 import { Navbar, Footer } from '@/components/layout';
-import {
-  HomePage,
-  LoginPage,
-  DashboardPage,
-  ActivitiesPage,
-  ActivityDetailPage,
-  KPIPage,
-  CalendarPage,
-  ProfilePage,
-  PerformancePage,
-  ExplorationPage,
-} from '@/pages';
+import { Spinner } from '@/components/ui/Spinner';
+
+const HomePage = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
+const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const ActivitiesPage = lazy(() => import('@/pages/ActivitiesPage').then(m => ({ default: m.ActivitiesPage })));
+const ActivityDetailPage = lazy(() => import('@/pages/ActivityDetailPage').then(m => ({ default: m.ActivityDetailPage })));
+const KPIPage = lazy(() => import('@/pages/KPIPage').then(m => ({ default: m.KPIPage })));
+const CalendarPage = lazy(() => import('@/pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const PerformancePage = lazy(() => import('@/pages/PerformancePage').then(m => ({ default: m.PerformancePage })));
+const ExplorationPage = lazy(() => import('@/pages/ExplorationPage').then(m => ({ default: m.ExplorationPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -20,10 +21,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-charcoal flex items-center justify-center">
-        <div className="text-center">
-          <span className="text-5xl animate-pulse">🦅</span>
-          <p className="text-mist/60 mt-4">Chargement...</p>
-        </div>
+        <Spinner message="Chargement..." />
       </div>
     );
   }
@@ -33,6 +31,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<Spinner />}>
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<HomePage />} />
@@ -107,6 +106,7 @@ function AppRoutes() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 

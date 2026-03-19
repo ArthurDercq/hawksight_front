@@ -1,7 +1,5 @@
 import { useMemo, useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useKPI } from '@/hooks';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
@@ -12,9 +10,9 @@ const ActivityGridPosters = lazy(() =>
 const ElevationGridPosters = lazy(() =>
   import('@/components/activity/ElevationGridPosters').then(m => ({ default: m.ElevationGridPosters }))
 );
-
-// Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
+const HRZonesDoughnut = lazy(() =>
+  import('@/components/charts/KPIHRZonesDoughnut').then(m => ({ default: m.KPIHRZonesDoughnut }))
+);
 
 // SVG Icons for metrics
 const RunIcon = ({ color }: { color: string }) => (
@@ -264,36 +262,9 @@ export function KPIPage() {
                   {/* Chart container */}
                   <div className="h-[220px] flex items-center justify-center">
                     <div className="relative w-[180px] h-[180px]">
-                      <Doughnut
-                        data={chartData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: true,
-                          cutout: '65%',
-                          plugins: {
-                            legend: {
-                              display: false,
-                            },
-                            tooltip: {
-                              backgroundColor: 'rgba(11, 12, 16, 0.95)',
-                              titleColor: '#F2F2F2',
-                              bodyColor: '#F2F2F2',
-                              titleFont: { family: 'Poppins' },
-                              bodyFont: { family: 'JetBrains Mono' },
-                              borderColor: 'rgba(61, 178, 224, 0.3)',
-                              borderWidth: 1,
-                              padding: 12,
-                              callbacks: {
-                                label: (context) => {
-                                  const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                                  const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                  return ` ${context.label}: ${context.parsed} activites (${percentage}%)`;
-                                },
-                              },
-                            },
-                          },
-                        }}
-                      />
+                      <Suspense fallback={<div className="w-full h-full rounded-full bg-steel/10 animate-pulse" />}>
+                        <HRZonesDoughnut chartData={chartData} />
+                      </Suspense>
                       {/* Center total */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <span className="text-2xl font-bold font-mono text-[#F2F2F2]">
