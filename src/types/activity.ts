@@ -14,8 +14,9 @@ export interface Activity {
   max_heartrate?: number;
   average_cadence?: number;
   speed_minutes_per_km_hms?: string;
-  average_speed?: number; // Vitesse moyenne en km/h
+  average_speed?: number;
   has_heartrate?: boolean;
+  race?: { id: string; name: string; type: string } | null;
 }
 
 export interface ActivityStream {
@@ -49,6 +50,7 @@ export interface LastActivity {
   vitesse_kmh?: number;
   bpm_moyen?: number;
   polyline_coords?: [number, number][];
+  race?: { id: string; name: string; type: string } | null;
 }
 
 export interface ActivityFormData {

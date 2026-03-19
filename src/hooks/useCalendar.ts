@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { activitiesApi } from '@/services/api';
-import type { Activity } from '@/types';
+import type { Activity, TrainingEvent } from '@/types';
 
 interface UseCalendarReturn {
   currentDate: Date;
@@ -89,6 +89,7 @@ export interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   activities: Activity[];
+  events: TrainingEvent[];
 }
 
 export interface CalendarWeek {
@@ -101,10 +102,16 @@ export interface CalendarWeek {
   };
 }
 
+export function getEventsForDate(events: TrainingEvent[], date: Date): TrainingEvent[] {
+  const dateKey = formatDateKey(date);
+  return events.filter(e => e.date.slice(0, 10) === dateKey);
+}
+
 export function generateCalendarWeeks(
   year: number,
   month: number,
-  activities: Activity[]
+  activities: Activity[],
+  events: TrainingEvent[] = []
 ): CalendarWeek[] {
   const weeks: CalendarWeek[] = [];
   const today = new Date();
@@ -135,12 +142,14 @@ export function generateCalendarWeeks(
 
     for (let i = 0; i < 7; i++) {
       const dayActivities = getActivitiesForDate(activities, currentDate);
+      const dayEvents = getEventsForDate(events, currentDate);
 
       week.days.push({
         date: new Date(currentDate),
         isCurrentMonth: currentDate.getMonth() === month,
         isToday: currentDate.getTime() === today.getTime(),
         activities: dayActivities,
+        events: dayEvents,
       });
 
       // Calculate week stats

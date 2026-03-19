@@ -58,10 +58,11 @@ export const dashboardApi = {
     return apiClient.fetchWithCache<LastActivity[]>('/activities/recent', { params: { n } });
   },
 
-  async getActivitiesForPeriod(startDate: string, endDate: string): Promise<Activity[] | { activities: Activity[] }> {
-    return apiClient.fetchWithCache<Activity[] | { activities: Activity[] }>('/activities/filter_activities', {
+  async getActivitiesForPeriod(startDate: string, endDate: string): Promise<Activity[]> {
+    const res = await apiClient.fetchWithCache<{ activities: Activity[] } | Activity[]>('/activities/filter_activities', {
       params: { start_date: startDate, end_date: endDate },
     });
+    return Array.isArray(res) ? res : res.activities;
   },
 
   // Chart endpoints for analytics

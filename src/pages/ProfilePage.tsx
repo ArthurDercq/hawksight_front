@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useProfile, useKPI } from '@/hooks';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useProfile, useKPI, useEvents } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
+import { EventModal } from '@/components/ui/EventModal';
 import { useAuth } from '@/context';
-import { explorationApi, activitiesApi, apiClient } from '@/services/api';
+import type { TrainingEvent } from '@/types';
+import { activitiesApi, apiClient } from '@/services/api';
 import { formatRelativeTime, formatMembershipDuration } from '@/services/utils/formatters';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -17,13 +19,6 @@ const UserIcon = () => (
 
 
 
-const GlobeIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="2" y1="12" x2="22" y2="12" />
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </svg>
-);
 
 const SyncIcon = ({ spinning }: { spinning?: boolean }) => (
   <svg
@@ -72,11 +67,6 @@ const SPORT_TAGS: Record<string, { label: string; color: string; emoji: string }
   total_km_swim:  { label: 'Natation',color: '#6DAA75', emoji: '🏊' },
 };
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-function formatNumber(n: number): string {
-  return new Intl.NumberFormat('fr-FR').format(Math.round(n));
-}
 
 // ─── Trail Profile Radar ──────────────────────────────────────────────────────
 
@@ -277,37 +267,6 @@ function TrailProfileCard() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  unit?: string;
-  color: string;
-}
-
-function StatCard({ icon, label, value, unit, color }: StatCardProps) {
-  return (
-    <div className="card-glass rounded-lg p-5 relative overflow-hidden group hover:-translate-y-0.5 transition-all">
-      <div
-        className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-10 pointer-events-none"
-        style={{ backgroundColor: color }}
-      />
-      <div className="relative">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="p-1.5 rounded-lg border" style={{ backgroundColor: `${color}15`, borderColor: `${color}30`, color }}>
-            {icon}
-          </div>
-          <span className="text-xs text-mist/50 font-['Inter'] uppercase tracking-wider">{label}</span>
-        </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold font-mono" style={{ color }}>{value}</span>
-          {unit && <span className="text-xs text-mist/30 font-mono">{unit}</span>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface DetailRowProps {
   label: string;
   value: React.ReactNode;
@@ -327,15 +286,12 @@ function DetailRow({ label, value }: DetailRowProps) {
 export function ProfilePage() {
   const { profile, isLoading, error } = useProfile();
   const { kpis } = useKPI();
+  const { events, upcomingEvents, pastEvents, createEvent, deleteEvent, markCompleted } = useEvents();
+  const [eventModalOpen, setEventModalOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
-  const [explorationKm2, setExplorationKm2] = useState<number | null>(null);
-
-  useEffect(() => {
-    explorationApi.getStats().then(s => setExplorationKm2(s.surface_km2)).catch(() => null);
-  }, []);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -475,17 +431,6 @@ export function ProfilePage() {
           {/* Trail Profile radar */}
           <TrailProfileCard />
 
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 gap-4">
-            <StatCard
-              icon={<GlobeIcon />}
-              label="Territoire conquis"
-              value={explorationKm2 !== null ? formatNumber(explorationKm2) : '—'}
-              unit="km²"
-              color="#7B6BC8"
-            />
-          </div>
-
           {/* Account details */}
           <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
                   <div className="relative">
@@ -513,6 +458,55 @@ export function ProfilePage() {
 
         {/* ── RIGHT COLUMN ── */}
         <div className="space-y-4">
+
+          {/* Events card */}
+          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[#7B6BC8]/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#3A3F47]/30">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-[#7B6BC8]/10 border border-[#7B6BC8]/30 text-[#A89BE8]">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                    </svg>
+                  </div>
+                  <h3 className="font-heading font-semibold text-mist text-sm">Mes événements</h3>
+                </div>
+                <button
+                  onClick={() => setEventModalOpen(true)}
+                  className="text-xs text-amber hover:text-amber/80 font-medium transition-colors"
+                >
+                  + Ajouter
+                </button>
+              </div>
+
+              {events.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-mist/30 text-sm mb-3">Aucun événement planifié</p>
+                  <button
+                    onClick={() => setEventModalOpen(true)}
+                    className="text-xs text-amber hover:text-amber/80 font-medium transition-colors"
+                  >
+                    + Ajouter mon premier événement
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingEvents.map(event => (
+                    <EventRow key={event.id} event={event} onDelete={deleteEvent} onComplete={markCompleted} />
+                  ))}
+                  {pastEvents.length > 0 && (
+                    <>
+                      <div className="text-[10px] text-mist/30 font-mono uppercase tracking-wider pt-2 pb-1">Passés</div>
+                      {pastEvents.map(event => (
+                        <EventRow key={event.id} event={event} past onDelete={deleteEvent} onComplete={markCompleted} />
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Sync card */}
           <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-5 relative overflow-hidden">
@@ -613,6 +607,70 @@ export function ProfilePage() {
 
         </div>
       </div>
+
+      <EventModal
+        open={eventModalOpen}
+        onClose={() => setEventModalOpen(false)}
+        onSubmit={createEvent}
+      />
+    </div>
+  );
+}
+
+// ─── EventRow sub-component ───────────────────────────────────────────────────
+
+interface EventRowProps {
+  event: TrainingEvent;
+  past?: boolean;
+  onDelete: (id: string) => Promise<boolean>;
+  onComplete: (id: string, done: boolean) => Promise<boolean>;
+}
+
+function EventRow({ event, past, onDelete, onComplete }: EventRowProps) {
+  const dateStr = new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${past ? 'border-[#3A3F47]/15 bg-charcoal/20 opacity-60' : 'border-[#3A3F47]/30 bg-charcoal/40 hover:border-[#7B6BC8]/30'}`}>
+      <button
+        onClick={() => onComplete(event.id, !event.is_completed)}
+        className={`flex-shrink-0 w-4 h-4 rounded border transition-colors ${event.is_completed ? 'bg-[#7B6BC8] border-[#7B6BC8]' : 'border-[#3A3F47] hover:border-[#7B6BC8]'}`}
+        title={event.is_completed ? 'Marquer non complété' : 'Marquer complété'}
+      >
+        {event.is_completed && (
+          <svg className="w-full h-full text-white p-0.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="2 6 5 9 10 3" />
+          </svg>
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs font-medium truncate ${event.is_completed ? 'line-through text-mist/40' : 'text-mist'}`}>{event.name}</p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="text-[9px] font-mono text-mist/30">{dateStr}</span>
+          {event.distance_km && <span className="text-[9px] font-mono text-mist/30">· {event.distance_km} km</span>}
+        </div>
+      </div>
+      <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded flex-shrink-0"
+        style={{ backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
+        {event.type}
+      </span>
+      {event.activity_id && (
+        <Link
+          to={`/activity/${event.activity_id}`}
+          className="flex-shrink-0 text-mist/30 hover:text-amber transition-colors"
+          title="Voir l'activité liée"
+          onClick={e => e.stopPropagation()}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </Link>
+      )}
+      <button
+        onClick={() => onDelete(event.id)}
+        className="flex-shrink-0 text-mist/20 hover:text-red-400 transition-colors text-sm leading-none"
+        title="Supprimer"
+      >
+        ×
+      </button>
     </div>
   );
 }

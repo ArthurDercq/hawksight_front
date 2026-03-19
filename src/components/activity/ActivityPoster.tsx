@@ -216,6 +216,12 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
                   <p className="text-[#3A3F47] font-['Inter'] text-sm mt-1">
                     {formatDate(activity.start_date)} • {sportLabel}
                   </p>
+                  {activity.race && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded mt-1.5"
+                      style={{ backgroundColor: 'rgba(123,107,200,0.2)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.4)' }}>
+                      🏁 {activity.race.name}
+                    </span>
+                  )}
                 </div>
               </div>
 

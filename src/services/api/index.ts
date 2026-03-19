@@ -6,3 +6,4 @@ export { kpiApi } from './kpi';
 export { dashboardApi, formatDateForAPI, getWeekBoundaries, getMonthBoundaries } from './dashboard';
 export type { ChartData, ChartDataset } from './dashboard';
 export { explorationApi } from './exploration';
+export { eventsApi } from './events';

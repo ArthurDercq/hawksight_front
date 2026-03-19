@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
-import React, { lazy, Suspense, useRef, useEffect, type ReactNode } from 'react';
+import React, { lazy, Suspense, useRef, useEffect, useState, type ReactNode } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
-import { useDashboard, useDashboardCharts, usePermissions, useInView } from '@/hooks';
+import { useDashboard, useDashboardCharts, usePermissions, useInView, useEvents } from '@/hooks';
 import { DemoBanner } from '@/components/ui/DemoBanner';
+import { EventModal } from '@/components/ui/EventModal';
 
 const DashboardChartsSection = lazy(() =>
   import('./DashboardChartsSection').then(m => ({ default: m.DashboardChartsSection }))
@@ -74,8 +75,27 @@ function ChartsPlaceholder(props: React.ComponentProps<typeof DashboardChartsSec
   );
 }
 
+function getDaysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+const EVENT_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
+  Trail: { bg: 'rgba(30,106,143,0.2)', color: '#3DB2E0' },
+  Run: { bg: 'rgba(61,178,224,0.15)', color: '#3DB2E0' },
+  Bike: { bg: 'rgba(123,107,200,0.2)', color: '#7B6BC8' },
+  Ultra: { bg: 'rgba(232,131,42,0.15)', color: '#E8832A' },
+  Swim: { bg: 'rgba(139,146,160,0.2)', color: '#8B92A0' },
+  Hike: { bg: 'rgba(109,170,117,0.2)', color: '#6DAA75' },
+  Other: { bg: 'rgba(58,63,71,0.4)', color: '#8B92A0' },
+};
+
 export function DashboardPage() {
-  const { streak, lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
+  const { lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
+  const { nextEvent, createEvent } = useEvents();
+  const [eventModalOpen, setEventModalOpen] = useState(false);
   const { isDemo, canSync } = usePermissions();
   const {
     dailyHoursData,
@@ -239,24 +259,47 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Streak */}
+        {/* Prochain événement */}
         <div className="card-streak rounded-lg p-4 flex flex-col gap-3">
-          <h2 className="font-heading font-semibold text-mist">Série</h2>
-          {streak && streak.streak_weeks > 0 ? (
+          <h2 className="font-heading font-semibold text-mist">Prochain événement</h2>
+          {nextEvent ? (
             <>
               <div className="flex-1 flex items-center gap-4 bg-charcoal/30 rounded-lg p-3">
-                <span className="text-4xl font-bold text-amber font-mono">{streak.streak_weeks}</span>
+                <span className="text-4xl font-bold text-amber font-mono">{getDaysUntil(nextEvent.date)}</span>
                 <div>
-                  <p className="text-sm font-semibold text-mist">semaines</p>
-                  <p className="text-xs text-mist/50">consécutives</p>
+                  <p className="text-sm font-semibold text-mist">jours</p>
+                  <p className="text-xs text-mist/50">restants</p>
                 </div>
               </div>
-              <div className="flex-1 flex items-center justify-center bg-charcoal/30 rounded-lg p-3">
-                <p className="text-xs text-mist/30">— à venir —</p>
+              <div className="flex-1 flex flex-col justify-center bg-charcoal/30 rounded-lg p-3 gap-1.5">
+                <p className="text-sm font-semibold text-mist truncate">{nextEvent.name}</p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded"
+                    style={{
+                      backgroundColor: EVENT_TYPE_COLORS[nextEvent.type]?.bg ?? 'rgba(58,63,71,0.4)',
+                      color: EVENT_TYPE_COLORS[nextEvent.type]?.color ?? '#8B92A0',
+                      border: `1px solid ${EVENT_TYPE_COLORS[nextEvent.type]?.color ?? '#8B92A0'}40`,
+                    }}
+                  >
+                    {nextEvent.type}
+                  </span>
+                  {nextEvent.distance_km && (
+                    <span className="text-xs text-mist/50 font-mono">{nextEvent.distance_km} km</span>
+                  )}
+                </div>
               </div>
             </>
           ) : (
-            <p className="text-mist/60 text-center">Pas de série en cours</p>
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <p className="text-mist/40 text-sm text-center">Aucun événement planifié</p>
+              <button
+                onClick={() => setEventModalOpen(true)}
+                className="text-xs text-amber hover:text-amber/80 font-medium transition-colors"
+              >
+                + Ajouter un événement
+              </button>
+            </div>
           )}
         </div>
 
@@ -336,7 +379,15 @@ export function DashboardPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="font-medium text-mist">{lastActivity.name}</p>
-                  <p className="text-sm text-mist/60">{formatActivityDate(lastActivity.date)}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-sm text-mist/60">{formatActivityDate(lastActivity.date)}</p>
+                    {lastActivity.race && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
+                        🏁 {lastActivity.race.name}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -528,6 +579,11 @@ export function DashboardPage() {
         isRefetchingWeeklyPace={isRefetchingWeeklyPace} isRefetchingConquete={isRefetchingConquete}
       />
 
+      <EventModal
+        open={eventModalOpen}
+        onClose={() => setEventModalOpen(false)}
+        onSubmit={createEvent}
+      />
     </div>
   );
 }

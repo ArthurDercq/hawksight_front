@@ -3,7 +3,8 @@ import type { Activity, ActivityDetail, ActivityFormData } from '@/types';
 
 export const activitiesApi = {
   async getActivities(): Promise<Activity[]> {
-    return apiClient.fetchWithCache<Activity[]>('/activities/activities');
+    const res = await apiClient.fetchWithCache<{ activities: Activity[] } | Activity[]>('/activities/activities');
+    return Array.isArray(res) ? res : res.activities;
   },
 
   async getActivity(id: number): Promise<Activity> {
@@ -49,13 +50,14 @@ export const activitiesApi = {
   },
 
   async filterActivities(startDate: string, endDate: string, sportType?: string): Promise<Activity[]> {
-    return apiClient.fetchWithCache<Activity[]>('/activities/filter_activities', {
+    const res = await apiClient.fetchWithCache<{ activities: Activity[] } | Activity[]>('/activities/filter_activities', {
       params: {
         start_date: startDate,
         end_date: endDate,
         ...(sportType && { sport_type: sportType }),
       },
     });
+    return Array.isArray(res) ? res : res.activities;
   },
 
   async syncActivities(): Promise<void> {

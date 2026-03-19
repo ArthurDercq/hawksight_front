@@ -33,7 +33,15 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
           >
             {activity.name}
           </Link>
-          <p className="text-sm text-mist/60">{formatDate(activity.start_date)}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-sm text-mist/60">{formatDate(activity.start_date)}</p>
+            {activity.race && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
+                🏁 {activity.race.name}
+              </span>
+            )}
+          </div>
         </div>
         <span
           className="px-2 py-1 text-xs font-medium rounded ml-2 shrink-0"
