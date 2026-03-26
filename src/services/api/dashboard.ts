@@ -73,14 +73,14 @@ export const dashboardApi = {
   },
 
   async getWeeklyHours(offset: number = 0): Promise<ChartData> {
-    const weeks = 11 + Math.abs(offset);
+    const weeks = 12 + Math.abs(offset);
     return apiClient.fetchWithCache<ChartData>('/plot/weekly_bar', {
       params: { value_col: 'moving_time', weeks },
     });
   },
 
   async getWeeklyDistance(sport: string = 'Run,Trail', offset: number = 0): Promise<ChartData> {
-    const weeks = 11 + Math.abs(offset);
+    const weeks = 12 + Math.abs(offset);
     const sportTypes = sport.split(',');
     const params = new URLSearchParams();
     params.append('value_col', 'distance');
@@ -100,7 +100,7 @@ export const dashboardApi = {
   },
 
   async getWeeklyPace(sport: string = 'Run,Trail', offset: number = 0): Promise<ChartData> {
-    const weeks = 11 + Math.abs(offset);
+    const weeks = 12 + Math.abs(offset);
     const sportTypes = sport.split(',');
     const params = new URLSearchParams();
     params.append('weeks', weeks.toString());

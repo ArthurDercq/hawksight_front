@@ -301,13 +301,14 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
     const startIndex = Math.max(0, endIndex - 10);
     const weekData = rawData.slice(startIndex, endIndex);
     const labels = weekData.map(d => formatDateLabel(d.period));
-    const paces = weekData.map(d => d.pace_min_km || 0);
-    const averagePace = paces.reduce((s, p) => s + p, 0) / (paces.length || 1);
+    const paces = weekData.map(d => d.pace_min_km || null);
+    const speeds = paces.map(p => p !== null && p > 0 ? 60 / p : null);
+    const validPaces = paces.filter((p): p is number => p !== null && p > 0);
+    const averagePace = validPaces.length ? validPaces.reduce((s, p) => s + p, 0) / validPaces.length : 0;
     const minutes = Math.floor(averagePace);
     const seconds = Math.round((averagePace - minutes) * 60);
     setWeeklyPaceAverage(`${minutes}:${seconds.toString().padStart(2, '0')} min/km`);
-    const maxPace = Math.ceil(Math.max(...paces, 8));
-    setWeeklyPaceData({ labels, datasets: [{ label: 'Allure', data: paces.map(p => maxPace - p), _rawPaces: paces } as never] });
+    setWeeklyPaceData({ labels, datasets: [{ label: 'Allure', data: speeds, _rawPaces: paces } as never] });
   }, [globalOffset]);
 
   const fetchWeeklyPace = useCallback(async () => {

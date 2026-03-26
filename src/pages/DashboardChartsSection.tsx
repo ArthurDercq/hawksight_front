@@ -106,19 +106,43 @@ export function DashboardChartsSection({
     plugins: { legend: { display: false } },
   };
 
+  // km/h axis — simple ordinal, labels converted back to min/km for display
+  const speedData = (weeklyPaceData?.datasets?.[0]?.data ?? []) as (number | null)[];
+  const validSpeeds = speedData.filter((s): s is number => s !== null && s > 0);
+  const maxSpeed = validSpeeds.length ? Math.ceil(Math.max(...validSpeeds)) : 12;
+  const fmtSpeedAsPace = (kmh: number) => { const p = 60 / kmh; const m = Math.floor(p); const s = Math.round((p - m) * 60); return `${m}:${s.toString().padStart(2, '0')}`; };
+
   const paceChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
-      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        min: 0,
+        max: maxSpeed,
+        afterBuildTicks: (axis: { ticks: { value: number }[] }) => {
+          axis.ticks = [{ value: maxSpeed / 2 }, { value: maxSpeed }];
+        },
+        ticks: {
+          color: 'rgba(242,242,242,0.5)',
+          font: { size: 10 },
+          callback: (value: number | string) => {
+            const v = Number(value);
+            if (Math.abs(v - maxSpeed) < 0.01) return fmtSpeedAsPace(maxSpeed);
+            if (Math.abs(v - maxSpeed / 2) < 0.01) return fmtSpeedAsPace(maxSpeed / 2);
+            return null;
+          },
+        },
+      },
     },
     plugins: {
       legend: { display: false },
       tooltip: {
         callbacks: {
           label: (context: import('chart.js').TooltipItem<'bar'>) => {
-            const rawVal = (context.dataset as { _rawPaces?: number[] })._rawPaces?.[context.dataIndex] ?? context.parsed.y ?? 0;
+            const rawVal = (context.dataset as { _rawPaces?: (number | null)[] })._rawPaces?.[context.dataIndex] ?? null;
+            if (!rawVal) return '';
             const min = Math.floor(rawVal);
             const sec = Math.round((rawVal - min) * 60);
             return `${min}:${sec.toString().padStart(2, '0')} min/km`;
