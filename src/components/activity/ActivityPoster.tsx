@@ -25,6 +25,7 @@ const DownloadIcon = () => (
 );
 
 interface ActivityPosterProps {
+  race?: { id: string; name: string; type: string } | null;
   activity: Activity;
   streams: ActivityStream[];
   posterRef?: RefObject<HTMLDivElement>;
@@ -131,7 +132,7 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function ActivityPoster({ activity, streams, posterRef, explorationRate, onExportPNG }: ActivityPosterProps) {
+export function ActivityPoster({ activity, streams, posterRef, explorationRate, onExportPNG, race }: ActivityPosterProps) {
   const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
   const sportLabel = SPORT_LABELS[activity.sport_type] || activity.sport_type;
   const [mapImageError, setMapImageError] = useState(false);
@@ -216,10 +217,10 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
                   <p className="text-[#3A3F47] font-['Inter'] text-sm mt-1">
                     {formatDate(activity.start_date)} • {sportLabel}
                   </p>
-                  {activity.race && (
+                  {(race ?? activity.race) && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded mt-1.5"
                       style={{ backgroundColor: 'rgba(123,107,200,0.2)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.4)' }}>
-                      🏁 {activity.race.name}
+                      🏁 {(race ?? activity.race)!.name}
                     </span>
                   )}
                 </div>

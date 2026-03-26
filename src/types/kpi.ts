@@ -23,6 +23,7 @@ export interface PersonalRecord {
 }
 
 export interface TrailRecord {
+  id: string;
   record_type: string;
   metric_type: string;
   value: number;
@@ -33,9 +34,10 @@ export interface TrailRecord {
   activity_distance_km?: number;
   time_formatted?: string;
   value_formatted?: string;
+  is_excluded: boolean;
 }
 
 export interface RecordsData {
   records: Record<string, PersonalRecord | null>;
-  trailRecords: Record<string, TrailRecord | null>;
+  trailRecords: Record<string, TrailRecord[]>;
 }

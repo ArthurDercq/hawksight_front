@@ -1,8 +1,10 @@
-import { useMemo, useState, lazy, Suspense } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useKPI } from '@/hooks';
+import { kpiApi } from '@/services/api';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
+import type { TrailRecord } from '@/types';
 
 const ActivityGridPosters = lazy(() =>
   import('@/components/activity/ActivityGridPosters').then(m => ({ default: m.ActivityGridPosters }))
@@ -129,7 +131,7 @@ const formatNumber = (num: number): string => {
 };
 
 export function KPIPage() {
-  const { kpis, records, selectedYear, setSelectedYear, isLoading, error } = useKPI();
+  const { kpis, records, selectedYear, setSelectedYear, isLoading, error, refetch } = useKPI();
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -179,6 +181,17 @@ export function KPIPage() {
   const recordsMap = records?.records || {};
   const trailRecordsMap = records?.trailRecords || {};
   const [recordsMode, setRecordsMode] = useState<'run' | 'trail'>('run');
+  const [excludedOverrides, setExcludedOverrides] = useState<Record<string, boolean>>({});
+
+  const handleToggleExclude = useCallback(async (id: string, excluded: boolean) => {
+    setExcludedOverrides(prev => ({ ...prev, [id]: excluded }));
+    try {
+      await kpiApi.excludeRecord(id, excluded);
+      refetch();
+    } catch {
+      setExcludedOverrides(prev => ({ ...prev, [id]: !excluded }));
+    }
+  }, [refetch]);
 
   return (
     <PageStateWrapper
@@ -410,7 +423,10 @@ export function KPIPage() {
                             <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: `${color}99` }}>{group}</span>
                           </div>
                           {groupItems.map(({ key, label }) => {
-                            const record = trailRecordsMap[key];
+                            const raw = trailRecordsMap[key];
+                            const candidates = Array.isArray(raw) ? raw : (raw ? [raw as unknown as TrailRecord] : []);
+                            const record = candidates[0] ?? null;
+                            const isExcluded = record ? (excludedOverrides[record.id] ?? record.is_excluded) : false;
                             const rawFormatted = record?.time_formatted ?? record?.value_formatted ?? (record ? `${Math.round(record.value)}` : null);
                             const displayValue = rawFormatted ? rawFormatted.replace(/[a-zA-Z\/]+$/, '').trim() : '—';
                             const unit = record?.metric_type === 'time' ? '' :
@@ -424,6 +440,10 @@ export function KPIPage() {
                                 date={record?.date}
                                 activityId={record?.activity_id}
                                 color={color}
+                                recordId={record?.id}
+                                isExcluded={isExcluded}
+                                onExclude={record && !isExcluded ? () => handleToggleExclude(record.id, true) : undefined}
+                                onReactivate={record && isExcluded ? () => handleToggleExclude(record.id, false) : undefined}
                               />
                             );
                           })}
@@ -516,28 +536,65 @@ interface TrailRecordItemProps {
   date?: string;
   activityId?: number;
   color?: string;
+  recordId?: string;
+  onExclude?: () => void;
 }
 
-function TrailRecordItem({ label, value, unit, date, activityId, color = '#C96A1A' }: TrailRecordItemProps) {
-  const content = (
+function TrailRecordItem({ label, value, unit, date, activityId, color = '#C96A1A', recordId, onExclude }: TrailRecordItemProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  const inner = (
     <div className="relative px-4 py-2.5 group hover:bg-white/5 transition-all">
       <div className="absolute left-0 top-0 bottom-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(to bottom, ${color}, ${color}60)` }} />
       <div className="flex items-center justify-between pl-2">
-        <span className="text-mist/80 text-sm">{label}</span>
-        <div className="text-right">
-          <p className="font-mono font-semibold text-sm" style={{ color }}>
-            {value}{unit && value !== '—' ? <span className="text-xs ml-1" style={{ color: `${color}80` }}>{unit}</span> : null}
-          </p>
-          {date && <p className="text-xs text-steel">{formatRecordDate(date)}</p>}
+        <span className="text-sm text-mist/80">{label}</span>
+        <div className="flex items-center gap-2">
+          <div className="text-right">
+            <p className="font-mono font-semibold text-sm" style={{ color }}>
+              {value}{unit && value !== '—' ? <span className="text-xs ml-1" style={{ color: `${color}80` }}>{unit}</span> : null}
+            </p>
+            {date && <p className="text-xs text-steel">{formatRecordDate(date)}</p>}
+          </div>
+          {recordId && onExclude && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(v => !v); }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 flex items-center justify-center rounded text-steel hover:text-mist hover:bg-white/10"
+                title="Options"
+              >
+                <span className="text-xs leading-none tracking-tighter">···</span>
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 bg-[#1A1D23] border border-[#3A3F47]/50 rounded-lg shadow-xl min-w-[160px] py-1">
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onExclude(); }}
+                    className="w-full text-left px-3 py-2 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    Exclure ce record
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 
   if (activityId) {
-    return <Link to={`/activity/${activityId}`} className="block">{content}</Link>;
+    return <Link to={`/activity/${activityId}`} className="block">{inner}</Link>;
   }
-  return content;
+  return inner;
 }
 
 interface MetricCardProps {

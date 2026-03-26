@@ -40,14 +40,26 @@ export const kpiApi = {
     return response.kpis;
   },
 
+  async excludeRecord(recordId: string, excluded: boolean): Promise<void> {
+    await apiClient.put(`/kpi/records/${recordId}/exclude`, null, { params: { excluded } });
+    apiClient.clearCache(/\/kpi\/records/);
+  },
+
   async getRecords(): Promise<RecordsData> {
     const response = await apiClient.fetchWithCache<RecordsResponse>('/kpi/records', undefined, 600000);
     const raw = response.records;
 
+    // Helper — prend le premier element si la valeur est un tableau
+    const first = (v: unknown): TrailRecord | null => {
+      if (!v) return null;
+      if (Array.isArray(v)) return (v[0] as TrailRecord) ?? null;
+      return v as TrailRecord;
+    };
+
     // Distance records — map nouveau format vers PersonalRecord
     const transformedRecords: Record<string, PersonalRecord | null> = {};
     for (const [apiKey, displayKey] of Object.entries(RECORD_KEY_MAP)) {
-      const r = raw[apiKey] as TrailRecord | null;
+      const r = first(raw[apiKey]);
       if (!r) { transformedRecords[displayKey] = null; continue; }
       transformedRecords[displayKey] = {
         distance: displayKey,
@@ -58,10 +70,16 @@ export const kpiApi = {
       };
     }
 
-    // Trail records
-    const trailRecords: Record<string, TrailRecord | null> = {};
+    // Trail records — stocker le tableau complet (top-3)
+    const all = (v: unknown): TrailRecord[] => {
+      if (!v) return [];
+      if (Array.isArray(v)) return v as TrailRecord[];
+      return [v as TrailRecord];
+    };
+
+    const trailRecords: Record<string, TrailRecord[]> = {};
     for (const key of TRAIL_RECORD_KEYS) {
-      trailRecords[key] = (raw[key] as TrailRecord) || null;
+      trailRecords[key] = all(raw[key]);
     }
 
     return { records: transformedRecords, trailRecords };

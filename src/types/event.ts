@@ -25,4 +25,5 @@ export interface EventFormData {
   elevation_m?: number;
   location?: string;
   goal_type?: GoalType;
+  activity_id?: number | null;
 }

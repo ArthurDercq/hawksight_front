@@ -1,2 +1,4 @@
 export { ActivityCard } from './ActivityCard';
 export { ActivityPoster } from './ActivityPoster';
+export { ActivityModal } from './ActivityModal';
+export { TrailStatsCard } from './TrailStatsCard';

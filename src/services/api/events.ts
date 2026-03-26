@@ -32,4 +32,16 @@ export const eventsApi = {
     window.dispatchEvent(new Event('events-updated'));
     return response.data;
   },
+
+  async linkActivity(eventId: string, activityId: number): Promise<TrainingEvent> {
+    const response = await apiClient.put<TrainingEvent>(`/events/${eventId}/link`, { activity_id: Math.round(activityId) });
+    apiClient.clearCache(/\/events/);
+    return response.data;
+  },
+
+  async unlinkActivity(eventId: string): Promise<TrainingEvent> {
+    const response = await apiClient.put<TrainingEvent>(`/events/${eventId}/link`, { activity_id: null });
+    apiClient.clearCache(/\/events/);
+    return response.data;
+  },
 };
