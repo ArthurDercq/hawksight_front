@@ -48,16 +48,16 @@ export function TrailStatsCard({ trailStats: t, sportColor }: Props) {
       <div className="relative space-y-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#3A3F47]/30">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 border rounded" style={{ backgroundColor: `${sportColor}10`, borderColor: `${sportColor}30` }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={sportColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3L4 15l8-4 8 4-4-12" /><line x1="12" y1="11" x2="12" y2="21" />
-              </svg>
-            </div>
-            <span className="font-heading text-sm text-[#F2F2F2]">Analyse Trail</span>
+        <div className="flex items-start gap-3 pb-4 border-b border-[#3A3F47]/30">
+          <div className="p-2 border rounded" style={{ backgroundColor: `${sportColor}10`, borderColor: `${sportColor}30` }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={sportColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 3L4 15l8-4 8 4-4-12" /><line x1="12" y1="11" x2="12" y2="21" />
+            </svg>
           </div>
-          <span className="font-['JetBrains_Mono'] text-[10px] text-[#3A3F47]">GAP {t.avg_gap_pace_formatted} · {t.avg_gap_kmh.toFixed(1)} km/h</span>
+          <div>
+            <h3 className="font-heading text-[#F2F2F2]">Analyse Trail</h3>
+            <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">GAP {t.avg_gap_pace_formatted} · {t.avg_gap_kmh.toFixed(1)} km/h</p>
+          </div>
         </div>
 
         {/* Run/Walk bar */}

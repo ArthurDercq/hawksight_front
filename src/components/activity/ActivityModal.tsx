@@ -21,8 +21,8 @@ export function ActivityModal({ activity, onClose, onSave }: ActivityModalProps)
     start_date: activity?.start_date
       ? new Date(activity.start_date).toISOString().slice(0, 16)
       : new Date().toISOString().slice(0, 16),
-    distance: activity?.distance ?? 0,
-    moving_time: activity?.moving_time ? activity.moving_time / 60 : 0,
+    distance: activity?.distance ? Math.round(activity.distance * 100) / 100 : 0,
+    moving_time: activity?.moving_time ?? 0,
     total_elevation_gain: activity?.total_elevation_gain || 0,
     average_heartrate: activity?.average_heartrate || undefined,
     max_heartrate: activity?.max_heartrate || undefined,
@@ -37,7 +37,7 @@ export function ActivityModal({ activity, onClose, onSave }: ActivityModalProps)
     setIsSubmitting(true);
     const apiData: ActivityFormData = {
       ...formData,
-      moving_time: formData.moving_time * 60,
+      moving_time: durationHours * 60 + durationMins,
     };
     const success = await onSave(apiData);
     if (!success) setIsSubmitting(false);

@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { ExplorationGeoJSON, ExplorationStats, ActivityExplorationRate, SportFilter } from '@/types';
+import type { ExplorationGeoJSON, ExplorationStats, ActivityExplorationRate, SportFilter, TerritoryLargest, TerritoryUnexplored } from '@/types';
 
 interface ExplorationParams {
   sport?: SportFilter;
@@ -56,6 +56,18 @@ export const explorationApi = {
     const params: Record<string, string | number> = { period, sport };
     if (year) params.year = year;
     const response = await apiClient.get<ExplorationRateItem[]>('/exploration/rates', { params });
+    return response.data;
+  },
+
+  async getLargestTerritories(topN: number = 3, sport?: SportFilter): Promise<TerritoryLargest[]> {
+    const params: Record<string, string | number> = { top_n: topN };
+    if (sport && sport !== 'all') params.sport = sport;
+    const response = await apiClient.get<TerritoryLargest[]>('/exploration/territories/largest', { params });
+    return response.data;
+  },
+
+  async getUnexploredZones(topN: number = 10): Promise<TerritoryUnexplored[]> {
+    const response = await apiClient.get<TerritoryUnexplored[]>('/exploration/territories/unexplored', { params: { top_n: topN } });
     return response.data;
   },
 };

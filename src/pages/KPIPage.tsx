@@ -180,7 +180,7 @@ export function KPIPage() {
   // Build records map from API data
   const recordsMap = records?.records || {};
   const trailRecordsMap = records?.trailRecords || {};
-  const [recordsMode, setRecordsMode] = useState<'run' | 'trail'>('run');
+  const [recordsMode, setRecordsMode] = useState<'run' | 'trail'>('trail');
   const [excludedOverrides, setExcludedOverrides] = useState<Record<string, boolean>>({});
 
   const handleToggleExclude = useCallback(async (id: string, excluded: boolean) => {
@@ -425,8 +425,7 @@ export function KPIPage() {
                           {groupItems.map(({ key, label }) => {
                             const raw = trailRecordsMap[key];
                             const candidates = Array.isArray(raw) ? raw : (raw ? [raw as unknown as TrailRecord] : []);
-                            const record = candidates[0] ?? null;
-                            const isExcluded = record ? (excludedOverrides[record.id] ?? record.is_excluded) : false;
+                            const record = candidates.find(r => !(excludedOverrides[r.id] ?? r.is_excluded)) ?? null;
                             const rawFormatted = record?.time_formatted ?? record?.value_formatted ?? (record ? `${Math.round(record.value)}` : null);
                             const displayValue = rawFormatted ? rawFormatted.replace(/[a-zA-Z\/]+$/, '').trim() : '—';
                             const unit = record?.metric_type === 'time' ? '' :
@@ -441,9 +440,7 @@ export function KPIPage() {
                                 activityId={record?.activity_id}
                                 color={color}
                                 recordId={record?.id}
-                                isExcluded={isExcluded}
-                                onExclude={record && !isExcluded ? () => handleToggleExclude(record.id, true) : undefined}
-                                onReactivate={record && isExcluded ? () => handleToggleExclude(record.id, false) : undefined}
+                                onExclude={record ? () => handleToggleExclude(record.id, true) : undefined}
                               />
                             );
                           })}
@@ -578,7 +575,7 @@ function TrailRecordItem({ label, value, unit, date, activityId, color = '#C96A1
                 <div className="absolute right-0 top-full mt-1 z-30 bg-[#1A1D23] border border-[#3A3F47]/50 rounded-lg shadow-xl min-w-[160px] py-1">
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onExclude(); }}
-                    className="w-full text-left px-3 py-2 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    className="w-full text-left px-3 py-2 text-xs text-red-400/50 hover:text-white hover:bg-red-500 transition-colors rounded-lg"
                   >
                     Exclure ce record
                   </button>

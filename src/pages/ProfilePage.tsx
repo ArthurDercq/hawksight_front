@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useProfile, useKPI, useEvents } from '@/hooks';
+import { useProfile, useKPI, useEvents, useTrailProfile } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
 import { EventModal } from '@/components/ui/EventModal';
 import { useAuth } from '@/context';
-import type { TrainingEvent } from '@/types';
-import { activitiesApi, apiClient } from '@/services/api';
+import type { TrainingEvent, TrailAxisScores, TrailReferenceProfile } from '@/types';
+import { activitiesApi } from '@/services/api';
 import { formatRelativeTime, formatMembershipDuration } from '@/services/utils/formatters';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -70,40 +70,34 @@ const SPORT_TAGS: Record<string, { label: string; color: string; emoji: string }
 
 // ─── Trail Profile Radar ──────────────────────────────────────────────────────
 
-const TRAIL_AXES = [
-  { key: 'verticalPower',   label: 'Vertical Power',    desc: 'VAM & puissance en montée' },
-  { key: 'enduranceClimb',  label: 'Endurance Climb',   desc: 'Capacité sur les longues montées' },
-  { key: 'steepEfficiency', label: 'Steep Efficiency',  desc: 'Efficacité sur pente forte' },
-  { key: 'verticalVolume',  label: 'Vertical Volume',   desc: 'Volume de D+ accumulé' },
-  { key: 'descentMastery',  label: 'Descent Mastery',   desc: 'Maîtrise technique en descente' },
+const TRAIL_COLOR = '#C96A1A';
+
+const TRAIL_AXES: { key: keyof TrailAxisScores; label: string; desc: string }[] = [
+  { key: 'engine',    label: 'Engine',    desc: 'VAM & vitesse en montée' },
+  { key: 'climbing',  label: 'Climbing',  desc: 'Puissance kg sur longues montées' },
+  { key: 'endurance', label: 'Endurance', desc: 'Capacité à maintenir l\'effort' },
+  { key: 'technical', label: 'Technical', desc: 'Efficacité descente & pente forte' },
+  { key: 'volume',    label: 'Volume',    desc: 'D+ accumulé mensuel' },
+  { key: 'legacy',    label: 'Legacy',    desc: 'Historique & expérience totale' },
 ];
 
-// Placeholder scores 0–1
-const MOCK_SCORES: Record<string, number> = {
-  verticalPower:   0.72,
-  enduranceClimb:  0.58,
-  steepEfficiency: 0.45,
-  verticalVolume:  0.83,
-  descentMastery:  0.61,
-};
-
-function RadarChart({ scores }: { scores: Record<string, number> }) {
-  const SIZE = 320;
+function RadarChart({ scores, referenceScores, color = TRAIL_COLOR }: {
+  scores: TrailAxisScores;
+  referenceScores?: TrailAxisScores | null;
+  color?: string;
+}) {
+  const SIZE = 280;
   const CX = SIZE / 2;
   const CY = SIZE / 2;
-  const R = 110;
-  const n = TRAIL_AXES.length;
-  const color = '#C96A1A';
+  const R = 95;
+  const axes = TRAIL_AXES.filter(ax => scores[ax.key] != null || ax.key !== 'legacy' || scores.legacy != null);
+  const n = axes.length;
 
   const angleOf = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
-
   const point = (i: number, r: number) => ({
     x: CX + r * Math.cos(angleOf(i)),
     y: CY + r * Math.sin(angleOf(i)),
   });
-
-  // Gridlines at 25%, 50%, 75%, 100%
-  const gridLevels = [0.25, 0.5, 0.75, 1];
 
   const gridPolygon = (ratio: number) =>
     Array.from({ length: n }, (_, i) => {
@@ -111,17 +105,22 @@ function RadarChart({ scores }: { scores: Record<string, number> }) {
       return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
     }).join(' ');
 
-  const dataPolygon = TRAIL_AXES.map((ax, i) => {
-    const p = point(i, R * (scores[ax.key] ?? 0));
-    return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-  }).join(' ');
+  const dataPolygon = (s: TrailAxisScores) =>
+    axes.map((ax, i) => {
+      const p = point(i, R * Math.max(0, Math.min(1, (s[ax.key] ?? 0) / 100)));
+      return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    }).join(' ');
 
   return (
     <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
       <defs>
         <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
           <stop offset="100%" stopColor={color} stopOpacity="0.05" />
+        </radialGradient>
+        <radialGradient id="radarFillRef" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#3DB2E0" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#3DB2E0" stopOpacity="0.02" />
         </radialGradient>
         <filter id="radarGlow">
           <feGaussianBlur stdDeviation="2" result="coloredBlur" />
@@ -129,45 +128,29 @@ function RadarChart({ scores }: { scores: Record<string, number> }) {
         </filter>
       </defs>
 
-      {/* Grid */}
-      {gridLevels.map((ratio) => (
-        <polygon
-          key={ratio}
-          points={gridPolygon(ratio)}
-          fill="none"
-          stroke="#3A3F47"
-          strokeWidth={ratio === 1 ? 0.8 : 0.5}
-          opacity={ratio === 1 ? 0.5 : 0.25}
-        />
+      {[0.25, 0.5, 0.75, 1].map((ratio) => (
+        <polygon key={ratio} points={gridPolygon(ratio)} fill="none"
+          stroke="#3A3F47" strokeWidth={ratio === 1 ? 0.8 : 0.5} opacity={ratio === 1 ? 0.5 : 0.2} />
       ))}
 
-      {/* Axis lines */}
-      {TRAIL_AXES.map((_, i) => {
+      {axes.map((_, i) => {
         const outer = point(i, R);
-        return (
-          <line
-            key={i}
-            x1={CX} y1={CY}
-            x2={outer.x.toFixed(1)} y2={outer.y.toFixed(1)}
-            stroke="#3A3F47" strokeWidth="0.5" opacity="0.35"
-          />
-        );
+        return <line key={i} x1={CX} y1={CY} x2={outer.x.toFixed(1)} y2={outer.y.toFixed(1)}
+          stroke="#3A3F47" strokeWidth="0.5" opacity="0.3" />;
       })}
 
-      {/* Data polygon */}
-      <polygon
-        points={dataPolygon}
-        fill="url(#radarFill)"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        filter="url(#radarGlow)"
-        opacity="0.95"
-      />
+      {referenceScores && (
+        <polygon points={dataPolygon(referenceScores)} fill="url(#radarFillRef)"
+          stroke="#3DB2E0" strokeWidth="1" strokeLinejoin="round" strokeDasharray="3 2" opacity="0.7" />
+      )}
 
-      {/* Data dots */}
-      {TRAIL_AXES.map((ax, i) => {
-        const p = point(i, R * (scores[ax.key] ?? 0));
+      <polygon points={dataPolygon(scores)} fill="url(#radarFill)"
+        stroke={color} strokeWidth="1.5" strokeLinejoin="round"
+        filter="url(#radarGlow)" opacity="0.95" />
+
+      {axes.map((ax, i) => {
+        const val = Math.max(0, Math.min(1, (scores[ax.key] ?? 0) / 100));
+        const p = point(i, R * val);
         return (
           <g key={ax.key}>
             <circle cx={p.x} cy={p.y} r="4" fill={color} opacity="0.9" />
@@ -176,22 +159,14 @@ function RadarChart({ scores }: { scores: Record<string, number> }) {
         );
       })}
 
-      {/* Axis labels */}
-      {TRAIL_AXES.map((ax, i) => {
-        const labelR = R + 22;
+      {axes.map((ax, i) => {
+        const labelR = R + 20;
         const p = point(i, labelR);
         const anchor = p.x < CX - 5 ? 'end' : p.x > CX + 5 ? 'start' : 'middle';
         return (
-          <text
-            key={ax.key}
-            x={p.x.toFixed(1)} y={p.y.toFixed(1)}
-            textAnchor={anchor}
-            dominantBaseline="middle"
-            fill="#F2F2F2"
-            fontSize="9"
-            fontFamily="'JetBrains Mono', monospace"
-            opacity="0.85"
-          >
+          <text key={ax.key} x={p.x.toFixed(1)} y={p.y.toFixed(1)}
+            textAnchor={anchor} dominantBaseline="middle"
+            fill="#F2F2F2" fontSize="8.5" fontFamily="'JetBrains Mono', monospace" opacity="0.8">
             {ax.label.toUpperCase()}
           </text>
         );
@@ -201,7 +176,12 @@ function RadarChart({ scores }: { scores: Record<string, number> }) {
 }
 
 function TrailProfileCard() {
-  const scores = MOCK_SCORES;
+  const { profile, history, references, isLoading, isComputing, error, compute } = useTrailProfile();
+  const [selectedRef, setSelectedRef] = useState<TrailReferenceProfile | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const color = TRAIL_COLOR;
+  const score100 = profile ? Math.round(profile.trail_score_final) : null;
 
   return (
     <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
@@ -211,55 +191,220 @@ function TrailProfileCard() {
         {/* Header */}
         <div className="flex items-start gap-3 pb-4 border-b border-[#3A3F47]/30 mb-6">
           <div className="p-2 border rounded" style={{ backgroundColor: '#C96A1A10', borderColor: '#C96A1A30' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C96A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
           </div>
-          <div>
+          <div className="flex-1">
             <h3 className="font-heading text-[#F2F2F2]">Profil Traileur</h3>
             <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">Analyse de tes compétences trail</p>
           </div>
-          <span className="ml-auto text-[9px] font-mono text-[#3A3F47] border border-[#3A3F47]/30 px-2 py-0.5 rounded">
-            BÊTA
-          </span>
+          <button
+            onClick={compute}
+            disabled={isComputing}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-mono border transition-all disabled:opacity-50"
+            style={{ color: color, borderColor: `${color}40`, backgroundColor: `${color}10` }}
+            title="Recalculer le profil"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round" className={isComputing ? 'animate-spin' : ''}>
+              <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+            {isComputing ? 'Calcul...' : 'Recalculer'}
+          </button>
         </div>
 
-        {/* Content: radar + legend */}
-        <div className="flex flex-col sm:flex-row items-center gap-8">
-          {/* Radar */}
-          <div className="flex-shrink-0">
-            <RadarChart scores={scores} />
+        {/* Error */}
+        {error && !isLoading && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+            <p className="text-red-400 text-xs font-mono">{error}</p>
           </div>
+        )}
 
-          {/* Legend / scores */}
-          <div className="flex-1 space-y-3">
-            {TRAIL_AXES.map((ax) => {
-              const score = scores[ax.key] ?? 0;
-              return (
-                <div key={ax.key}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[#F2F2F2] font-['JetBrains_Mono'] text-[10px] uppercase tracking-wide">
-                      {ax.label}
-                    </span>
-                    <span className="text-[#C96A1A] font-['JetBrains_Mono'] text-[11px] font-semibold">
-                      {Math.round(score * 100)}
-                    </span>
-                  </div>
-                  <div className="h-1 bg-[#3A3F47]/30 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${score * 100}%`,
-                        background: `linear-gradient(to right, #C96A1A, #E8832A)`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-[#3A3F47] font-['Inter'] text-[10px] mt-0.5">{ax.desc}</p>
+        {/* Loading */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner message="Chargement du profil trail..." fullPage={false} />
+          </div>
+        ) : !profile ? (
+          <div className="text-center py-10">
+            <p className="text-[#3A3F47] text-sm font-mono mb-4">Aucun profil calculé</p>
+            <button
+              onClick={compute}
+              disabled={isComputing}
+              className="px-4 py-2 rounded-lg text-sm font-mono border transition-all disabled:opacity-50"
+              style={{ color: color, borderColor: `${color}40`, backgroundColor: `${color}10` }}
+            >
+              {isComputing ? 'Calcul en cours...' : 'Calculer mon profil'}
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Score global card */}
+            <div className="mb-6 rounded-lg p-4 flex items-center gap-5 relative overflow-hidden"
+              style={{ backgroundColor: `${color}08`, border: `1px solid ${color}25` }}>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-transparent" />
+              {/* Gros score */}
+              <div className="relative flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-full border-2"
+                style={{ borderColor: `${color}50`, backgroundColor: `${color}10` }}>
+                <span className="font-mono font-bold text-3xl leading-none" style={{ color }}>
+                  {score100}
+                </span>
+                <span className="text-[9px] font-mono text-[#3A3F47] uppercase tracking-wider mt-0.5">/100</span>
+              </div>
+              {/* Infos droite */}
+              <div className="relative flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-mono text-[#3A3F47] uppercase tracking-wider">Profil dominant</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+                <div className="font-heading text-xl font-semibold" style={{ color }}>
+                  {profile.dominant_profile}
+                </div>
+                {/* Barre de score */}
+                <div className="mt-2 h-1.5 bg-[#3A3F47]/20 rounded-full overflow-hidden w-full">
+                  <div className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${score100}%`, background: `linear-gradient(to right, ${color}, #E8832A)` }} />
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[9px] font-mono text-[#3A3F47]">0</span>
+                  {profile.data_freshness_factor < 0.7 && (
+                    <span className="text-[9px] font-mono text-yellow-500/60">données anciennes</span>
+                  )}
+                  <span className="text-[9px] font-mono text-[#3A3F47]">100</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reference selector */}
+            {references.length > 0 && (
+              <div className="mb-4 flex flex-wrap items-center gap-1.5">
+                <span className="text-[9px] font-mono text-[#3A3F47] uppercase tracking-wider mr-1">Comparer à</span>
+                <button
+                  onClick={() => setSelectedRef(null)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all ${!selectedRef ? 'text-mist border-steel/50' : 'text-[#3A3F47] border-[#3A3F47]/20 hover:border-steel/30'}`}
+                >
+                  Personne
+                </button>
+                {references.map(ref => (
+                  <button
+                    key={ref.slug}
+                    onClick={() => setSelectedRef(selectedRef?.slug === ref.slug ? null : ref)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all ${selectedRef?.slug === ref.slug ? 'text-[#3DB2E0] border-[#3DB2E0]/50 bg-[#3DB2E0]/10' : 'text-[#3A3F47] border-[#3A3F47]/20 hover:border-[#3DB2E0]/30 hover:text-[#3DB2E0]/70'}`}
+                  >
+                    {ref.name.split(' ')[0]}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Radar + bars */}
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="flex-shrink-0">
+                <RadarChart
+                  scores={profile.axis_scores}
+                  referenceScores={selectedRef?.axis_scores ?? null}
+                  color={color}
+                />
+                {selectedRef && (
+                  <div className="flex items-center justify-center gap-3 mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-px" style={{ background: color }} />
+                      <span className="text-[9px] font-mono text-[#3A3F47]">Toi</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-px border-t border-dashed border-[#3DB2E0]" />
+                      <span className="text-[9px] font-mono text-[#3A3F47]">{selectedRef.name.split(' ')[0]}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 w-full space-y-3">
+                {TRAIL_AXES.filter(ax => profile.axis_scores[ax.key] != null).map((ax) => {
+                  const score = profile.axis_scores[ax.key] ?? 0;
+                  const refScore = selectedRef?.axis_scores[ax.key];
+                  return (
+                    <div key={ax.key}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[#F2F2F2] font-['JetBrains_Mono'] text-[10px] uppercase tracking-wide">
+                          {ax.label}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {refScore != null && (
+                            <span className="text-[#3DB2E0] font-['JetBrains_Mono'] text-[10px]">
+                              {Math.round(refScore)}
+                            </span>
+                          )}
+                          <span className="font-['JetBrains_Mono'] text-[11px] font-semibold" style={{ color }}>
+                            {Math.round(score)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-[#3A3F47]/20 rounded-full overflow-hidden relative">
+                        {refScore != null && (
+                          <div className="absolute h-full rounded-full opacity-40"
+                            style={{ width: `${refScore}%`, background: '#3DB2E0' }} />
+                        )}
+                        <div className="absolute h-full rounded-full transition-all duration-700"
+                          style={{ width: `${score}%`, background: `linear-gradient(to right, ${color}, #E8832A)` }} />
+                      </div>
+                      <p className="text-[#3A3F47] font-['Inter'] text-[10px] mt-0.5">{ax.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* History toggle */}
+            {history.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-[#3A3F47]/20">
+                <button
+                  onClick={() => setShowHistory(v => !v)}
+                  className="flex items-center gap-2 text-[10px] font-mono text-[#3A3F47] hover:text-mist/60 transition-colors"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    className={`transition-transform ${showHistory ? 'rotate-90' : ''}`}>
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                  HISTORIQUE ({history.length} semaines)
+                </button>
+
+                {showHistory && (
+                  <div className="mt-3 space-y-1 max-h-48 overflow-y-auto pr-1">
+                    {[...history].reverse().map(snap => (
+                      <div key={snap.snapshot_date}
+                        className="flex items-center justify-between px-3 py-1.5 rounded bg-[#3A3F47]/10 hover:bg-[#3A3F47]/15 transition-colors">
+                        <span className="text-[10px] font-mono text-[#3A3F47]">{snap.week_label}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[9px] font-mono text-[#3A3F47]/60">
+                            {snap.dominant_profile}
+                          </span>
+                          <span className="text-[11px] font-mono font-semibold" style={{ color }}>
+                            {Math.round(snap.trail_score_final)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Footer meta */}
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-[9px] font-mono text-[#3A3F47]/40">
+                v{profile.model_version} · calculé {profile.computed_at ? new Date(profile.computed_at).toLocaleDateString('fr-FR') : '—'}
+              </span>
+              {profile.imbalance_penalty > 0.05 && (
+                <span className="text-[9px] font-mono text-yellow-500/50">
+                  pénalité déséquilibre −{Math.round(profile.imbalance_penalty)}pts
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -297,10 +442,7 @@ export function ProfilePage() {
     setIsSyncing(true);
     setSyncDone(false);
     try {
-      await activitiesApi.syncActivities();
-      await activitiesApi.syncStreams();
-      apiClient.clearCache();
-      window.dispatchEvent(new Event('activities-updated'));
+      await activitiesApi.syncAll();
       setSyncDone(true);
       setTimeout(() => setSyncDone(false), 3000);
     } catch (e) {

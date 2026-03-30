@@ -7,3 +7,4 @@ export { dashboardApi, formatDateForAPI, getWeekBoundaries, getMonthBoundaries }
 export type { ChartData, ChartDataset } from './dashboard';
 export { explorationApi } from './exploration';
 export { eventsApi } from './events';
+export { trailApi } from './trail';

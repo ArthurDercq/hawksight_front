@@ -5,7 +5,6 @@ import {
   getWeekBoundaries,
   getMonthBoundaries,
   activitiesApi,
-  apiClient,
   explorationApi,
 } from '@/services/api';
 import { cache } from '@/services/cache';
@@ -202,10 +201,9 @@ export function useDashboard(): UseDashboardReturn {
   const syncData = useCallback(async () => {
     setIsSyncing(true);
     try {
-      await activitiesApi.syncActivities();
-      await activitiesApi.syncStreams();
-      apiClient.clearCache();
-      // Full cache invalidation after sync, then background refresh
+      await activitiesApi.syncAll();
+      // syncAll() dispatch 'activities-updated' qui déclenche le refresh des graphiques
+      // On force aussi le refresh des données du dashboard
       await fetchDashboardData(true);
     } catch (err) {
       console.error('Error syncing data:', err);

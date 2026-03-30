@@ -3,3 +3,4 @@ export * from './user';
 export * from './kpi';
 export * from './exploration';
 export * from './event';
+export * from './trail';

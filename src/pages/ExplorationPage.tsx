@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { useExploration } from '@/hooks';
+import { useExploration, useTerritories } from '@/hooks';
 import { ExplorationMap } from '@/components/maps';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Spinner } from '@/components/ui/Spinner';
-import type { SportFilter } from '@/types';
+import type { SportFilter, TerritoryLargest, TerritoryUnexplored } from '@/types';
 
 // Globe icon
 const GlobeIcon = () => (
@@ -27,7 +27,9 @@ const GlobeIcon = () => (
 const SPORT_FILTERS: { value: SportFilter; label: string; color: string }[] = [
   { value: 'all', label: 'Tout', color: '#A020F0' },
   { value: 'run', label: 'Course', color: '#E8832A' },
+  { value: 'trail', label: 'Trail', color: '#C96A1A' },
   { value: 'bike', label: 'Velo', color: '#3DB2E0' },
+  { value: 'other', label: 'Autres', color: '#6DAA75' },
 ];
 
 // Format number with French locale
@@ -40,12 +42,15 @@ export function ExplorationPage() {
     data,
     stats,
     isLoading,
+    isFetching,
     error,
     sportFilter,
     setSportFilter,
     selectedYear,
     setSelectedYear,
   } = useExploration();
+
+  const { largest, unexplored, isLoading: territoriesLoading, isComputing } = useTerritories();
 
   const currentYear = new Date().getFullYear();
   const years = useMemo(
@@ -82,6 +87,11 @@ export function ExplorationPage() {
         <SectionTitle icon={<GlobeIcon />} title="Exploration du Monde" />
 
         <div className="flex items-center gap-4">
+          {/* Fetching indicator */}
+          {isFetching && (
+            <div className="w-4 h-4 rounded-full border-2 border-glacier border-t-transparent animate-spin" />
+          )}
+
           {/* Sport Filter Buttons */}
           <div className="flex items-center gap-2">
             {SPORT_FILTERS.map((filter) => (
@@ -175,32 +185,89 @@ export function ExplorationPage() {
         </div>
       )}
 
-      {/* Legend */}
-      {data && data.features.length > 0 && (
-        <div className="mt-4 flex items-center justify-center gap-6">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-4 h-4 rounded"
-              style={{ backgroundColor: '#E8832A' }}
-            />
-            <span className="text-sm text-steel">Course / Trail</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
-              className="w-4 h-4 rounded"
-              style={{ backgroundColor: '#3DB2E0' }}
-            />
-            <span className="text-sm text-steel">Velo</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
-              className="w-4 h-4 rounded"
-              style={{ backgroundColor: '#A020F0' }}
-            />
-            <span className="text-sm text-steel">Les deux</span>
-          </div>
+      {/* Territories computing state */}
+      {isComputing && (
+        <div className="mt-8 flex items-center gap-3 text-sm text-steel">
+          <div className="w-4 h-4 rounded-full border-2 border-glacier border-t-transparent animate-spin shrink-0" />
+          Calcul des territoires en cours...
         </div>
       )}
+
+      {/* Territories sections */}
+      {!territoriesLoading && !isComputing && (largest.length > 0 || unexplored.length > 0) && (
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Largest continuous territories */}
+          {largest.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-mist/70 uppercase tracking-wider mb-3">
+                Tes plus grands territoires
+              </h3>
+              <div className="flex flex-col gap-3">
+                {largest.map((t) => (
+                  <LargestTerritoryCard key={t.rank} territory={t} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Unexplored zones to conquer */}
+          {unexplored.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-mist/70 uppercase tracking-wider mb-3">
+                Zones a conquerir
+              </h3>
+              <div className="flex flex-col gap-3">
+                {unexplored.map((t) => (
+                  <UnexploredTerritoryCard key={t.rank} territory={t} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+function LargestTerritoryCard({ territory: t }: { territory: TerritoryLargest }) {
+  const location = [t.city, t.region, t.country].filter(Boolean).join(', ');
+  return (
+    <div className="bg-charcoal border border-steel/20 rounded-lg p-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <span className="text-xl font-bold font-mono text-steel/40">#{t.rank}</span>
+        <div>
+          <p className="text-sm font-medium text-mist">{location || 'Zone inconnue'}</p>
+          <p className="text-xs text-steel mt-0.5">{t.cells_count} cellules</p>
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-lg font-semibold font-mono text-glacier">
+          {formatNumber(t.surface_km2)}
+        </p>
+        <p className="text-xs text-steel">km²</p>
+      </div>
+    </div>
+  );
+}
+
+function UnexploredTerritoryCard({ territory: t }: { territory: TerritoryUnexplored }) {
+  const location = [t.city, t.region, t.country].filter(Boolean).join(', ');
+  return (
+    <div className="bg-charcoal border border-amber-500/20 rounded-lg p-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <span className="text-xl font-bold font-mono text-steel/40">#{t.rank}</span>
+        <div>
+          <p className="text-sm font-medium text-mist">{location || 'Zone inconnue'}</p>
+          <p className="text-xs text-steel mt-0.5">{t.cells_count} cellules</p>
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-lg font-semibold font-mono text-amber-400">
+          {t.distance_from_home_km.toFixed(1)} km
+        </p>
+        <p className="text-xs text-steel">{formatNumber(t.surface_km2)} km²</p>
+      </div>
     </div>
   );
 }

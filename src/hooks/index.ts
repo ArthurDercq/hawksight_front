@@ -11,3 +11,5 @@ export { useDashboardCharts } from './useDashboardCharts';
 export { useExploration } from './useExploration';
 export { useInView } from './useInView';
 export { useEvents } from './useEvents';
+export { useTrailProfile } from './useTrailProfile';
+export { useTerritories } from './useTerritories';

@@ -4,7 +4,7 @@
 
 export interface ExplorationCellProperties {
   h3_id: string;
-  sports: ('run' | 'bike')[];
+  sports: ('run' | 'trail' | 'bike' | string)[];
   activity_count: number;
   first_seen: string | null;
   last_seen: string | null;
@@ -43,4 +43,28 @@ export interface ActivityExplorationRate {
   label: string;
 }
 
-export type SportFilter = 'run' | 'bike' | 'all';
+export type SportFilter = 'run' | 'trail' | 'bike' | 'other' | 'all';
+
+export interface TerritoryLargest {
+  rank: number;
+  cells_count: number;
+  surface_km2: number;
+  center_lat: number;
+  center_lon: number;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+}
+
+export interface TerritoryUnexplored {
+  rank: number;
+  cells_count: number;
+  surface_km2: number;
+  center_lat: number;
+  center_lon: number;
+  distance_from_home_km: number;
+  nearest_explored_cell: string;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+}

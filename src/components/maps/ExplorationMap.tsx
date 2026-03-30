@@ -64,10 +64,10 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
     );
 
     map.on('load', () => {
-      // Add GeoJSON source
+      // Add GeoJSON source (initial data — will be updated via filteredData effect)
       map.addSource(SOURCE_ID, {
         type: 'geojson',
-        data: data as unknown as GeoJSON.FeatureCollection,
+        data: { type: 'FeatureCollection', features: [] } as GeoJSON.FeatureCollection,
       });
 
       // Glow layer (subtle background, visible at high zoom)
@@ -128,7 +128,7 @@ export function ExplorationMap({ data, className = '' }: ExplorationMapProps) {
       // Heatmap layer (smooth overlay that hides hexagonal edges)
       map.addSource(HEATMAP_SOURCE, {
         type: 'geojson',
-        data: polygonsToCentroidPoints(data),
+        data: { type: 'FeatureCollection', features: [] } as GeoJSON.FeatureCollection,
       });
 
       map.addLayer({
