@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 2 — Summit Dashboard</title>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Pro Display', -apple-system, sans-serif; background: #0B0C10; color: #F2F2F2; display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── NAVBAR LARGE ── */
+  .nav {
+    width: 196px;
+    background: #080910;
+    border-right: 1px solid rgba(58,63,71,0.4);
+    display: flex; flex-direction: column;
+    padding: 20px 14px; gap: 3px; flex-shrink: 0;
+    position: relative; overflow: hidden;
+  }
+  .nav-topo {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 420px; pointer-events: none; z-index: 0;
+    mask-image: linear-gradient(to top, black 0%, black 50%, transparent 90%);
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 50%, transparent 90%);
+  }
+  .nav > *:not(.nav-topo) { position: relative; z-index: 1; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; padding: 0 6px; }
+  .nav-brand-name { font-size: 14px; font-weight: 700; color: #F2F2F2; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; }
+  .nav-section { font-size: 9px; color: rgba(58,63,71,0.8); text-transform: uppercase; letter-spacing: 2px; padding: 12px 6px 5px; font-family: 'JetBrains Mono', monospace; }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 10px; border-radius: 6px; cursor: pointer;
+    color: #3A3F47; font-size: 12px; font-weight: 500;
+    transition: all 0.15s; position: relative;
+  }
+  .nav-item:hover { background: rgba(58,63,71,0.2); color: rgba(242,242,242,0.6); }
+  .nav-item.active {
+    background: rgba(232,131,42,0.08);
+    color: #E8832A;
+    border: 1px solid rgba(232,131,42,0.15);
+  }
+  .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+  .nav-spacer { flex: 1; }
+  .nav-user { display: flex; align-items: center; gap: 9px; padding: 10px; margin-top: 8px; }
+  .nav-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #E8832A, #A020F0); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .nav-user-name { font-size: 11px; color: rgba(242,242,242,0.7); font-weight: 500; }
+  .nav-user-role { font-size: 9px; color: #3A3F47; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── MAIN ── */
+  .main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+
+  /* ── CORNER BRACKETS ── */
+  .cb { position: relative; }
+  .cb .br { position: absolute; width: 14px; height: 14px; }
+  .cb .br-tl { top:0;left:0;border-top:2px solid;border-left:2px solid;border-radius:8px 0 0 0; }
+  .cb .br-tr { top:0;right:0;border-top:2px solid;border-right:2px solid;border-radius:0 8px 0 0; }
+  .cb .br-bl { bottom:0;left:0;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 8px; }
+  .cb .br-br { bottom:0;right:0;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 8px 0; }
+  .cb.amber .br { border-color: rgba(232,131,42,0.45); }
+  .cb.glacier .br { border-color: rgba(61,178,224,0.45); }
+  .cb.purple .br { border-color: rgba(160,32,240,0.45); }
+
+  /* ── TOP ROW : Score + Map ── */
+  .top-row { display: grid; grid-template-columns: 280px 1fr; gap: 12px; }
+
+  /* ── CLICKABLE CARDS ── */
+  .card-link {
+    display: block; text-decoration: none; color: inherit;
+    cursor: pointer; height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-link:hover { transform: scale(1.015); }
+  .card-link:hover .score-card {
+    border-color: rgba(232,131,42,0.55);
+    box-shadow: 0 0 24px rgba(232,131,42,0.08);
+  }
+  .card-link .card-link-hint {
+    position: absolute; bottom: 14px; right: 14px;
+    font-size: 8px; color: rgba(242,242,242,0.2);
+    font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px;
+    transition: color 0.2s ease;
+  }
+  .card-link:hover .card-link-hint { color: rgba(242,242,242,0.5); }
+
+  .score-card {
+    background: #0B0C10; border: 1px solid rgba(58,63,71,0.3);
+    border-radius: 8px; padding: 20px;
+    position: relative; overflow: hidden; height: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .score-card::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse at top left, rgba(232,131,42,0.06) 0%, transparent 65%); pointer-events:none; }
+  .score-eyebrow { font-size: 9px; color: rgba(232,131,42,0.6); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; display:flex;align-items:center;gap:6px; }
+  .score-eyebrow::before { content:''; width:12px; height:1px; background: #E8832A; }
+  .score-big { font-size: 84px; font-weight: 800; line-height: 0.95; color: #E8832A; font-variant-numeric: tabular-nums; }
+  .grad-sep { height: 1px; background: linear-gradient(90deg, #E8832A, #3DB2E0, transparent); width: 100px; margin: 10px 0; }
+  .score-sub { font-size: 11px; color: rgba(242,242,242,0.35); font-family: 'JetBrains Mono', monospace; }
+  .score-sub strong { color: #6DAA75; }
+  .score-rank { position: absolute; bottom: 20px; right: 20px; text-align: right; }
+  .score-rank-val { font-size: 26px; font-weight: 700; color: rgba(242,242,242,0.5); font-variant-numeric: tabular-nums; }
+  .score-rank-label { font-size: 9px; color: #3A3F47; text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; }
+
+  .map-card {
+    background: #060c18; border: 1px solid rgba(58,63,71,0.3);
+    border-radius: 8px; overflow: hidden; position: relative; min-height: 280px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: default;
+  }
+  .card-link:hover .map-card {
+    border-color: rgba(58,63,71,0.3) !important;
+    box-shadow: none !important;
+  }
+  .map-grid-bg {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(61,178,224,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(61,178,224,0.025) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .map-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(6,12,24,0.6) 0%, transparent 50%); pointer-events: none; }
+  .map-label { position: absolute; top: 14px; left: 16px; font-size: 9px; color: #3A3F47; text-transform: uppercase; letter-spacing: 2px; font-family: 'JetBrains Mono', monospace; }
+  .map-stats { position: absolute; bottom: 14px; left: 16px; display: flex; gap: 20px; }
+  .map-stat-val { font-size: 26px; font-weight: 700; color: #3DB2E0; font-variant-numeric: tabular-nums; }
+  .map-stat-label { font-size: 9px; color: #3A3F47; text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+  .map-br-tl { position:absolute;top:0;left:0;width:14px;height:14px;border-top:2px solid rgba(61,178,224,0.35);border-left:2px solid rgba(61,178,224,0.35);border-radius:8px 0 0 0; }
+  .map-br-br { position:absolute;bottom:0;right:0;width:14px;height:14px;border-bottom:2px solid rgba(61,178,224,0.35);border-right:2px solid rgba(61,178,224,0.35);border-radius:0 0 8px 0; }
+
+  /* ── STATS HEBDO/MENSUEL/EVENT ── */
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .card-weekly {
+    background: linear-gradient(135deg, rgba(232,131,42,0.12) 0%, rgba(61,178,224,0.12) 100%);
+    border: 1px solid rgba(232,131,42,0.35);
+    border-radius: 8px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .card-monthly {
+    background: linear-gradient(135deg, rgba(61,178,224,0.12) 0%, rgba(109,170,117,0.12) 100%);
+    border: 1px solid rgba(61,178,224,0.35);
+    border-radius: 8px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .card-weekly .br { position:absolute;width:14px;height:14px; }
+  .card-weekly .br-tl { top:0;left:0;border-top:2px solid rgba(232,131,42,0.5);border-left:2px solid rgba(232,131,42,0.5); }
+  .card-weekly .br-tr { top:0;right:0;border-top:2px solid rgba(232,131,42,0.5);border-right:2px solid rgba(232,131,42,0.5); }
+  .card-weekly .br-bl { bottom:0;left:0;border-bottom:2px solid rgba(61,178,224,0.4);border-left:2px solid rgba(61,178,224,0.4); }
+  .card-weekly .br-br { bottom:0;right:0;border-bottom:2px solid rgba(61,178,224,0.4);border-right:2px solid rgba(61,178,224,0.4); }
+  .card-monthly .br { position:absolute;width:14px;height:14px; }
+  .card-monthly .br-tl { top:0;left:0;border-top:2px solid rgba(61,178,224,0.5);border-left:2px solid rgba(61,178,224,0.5); }
+  .card-monthly .br-tr { top:0;right:0;border-top:2px solid rgba(61,178,224,0.5);border-right:2px solid rgba(61,178,224,0.5); }
+  .card-monthly .br-bl { bottom:0;left:0;border-bottom:2px solid rgba(109,170,117,0.4);border-left:2px solid rgba(109,170,117,0.4); }
+  .card-monthly .br-br { bottom:0;right:0;border-bottom:2px solid rgba(109,170,117,0.4);border-right:2px solid rgba(109,170,117,0.4); }
+
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .card-title { font-size: 12px; font-weight: 600; color: #F2F2F2; }
+  .trend-up { font-size: 11px; color: #6DAA75; font-family: 'JetBrains Mono', monospace; }
+  .trend-down { font-size: 11px; color: #fc8181; font-family: 'JetBrains Mono', monospace; }
+
+  .sg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sg3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .sl { font-size: 9px; color: rgba(242,242,242,0.35); margin-bottom: 3px; font-family: 'JetBrains Mono', monospace; }
+  .sv { font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .c-a { color: #E8832A; } .c-g { color: #3DB2E0; } .c-m { color: #6DAA75; } .c-w { color: #F2F2F2; }
+
+  .pb-wrap { margin-top: 12px; }
+  .pb-hd { display: flex; justify-content: space-between; font-size: 9px; color: rgba(242,242,242,0.3); margin-bottom: 5px; font-family: 'JetBrains Mono', monospace; }
+  .pb-bg { height: 3px; background: rgba(58,63,71,0.35); border-radius: 2px; overflow: hidden; }
+  .pb-fill { height: 100%; background: linear-gradient(90deg, #3DB2E0, #6DAA75); }
+
+  /* ── BOTTOM ── */
+  .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .plain-card { background: #0B0C10; border: 1px solid rgba(58,63,71,0.3); border-radius: 8px; padding: 16px; position: relative; overflow: hidden; }
+  .plain-card .br { position: absolute; width: 14px; height: 14px; }
+  .plain-card.amber .br { border-color: rgba(232,131,42,0.4); }
+  .plain-card.amber .br-tl { top:0;left:0;border-top:2px solid;border-left:2px solid;border-radius:8px 0 0 0; }
+  .plain-card.amber .br-tr { top:0;right:0;border-top:2px solid;border-right:2px solid;border-radius:0 8px 0 0; }
+  .plain-card.amber .br-bl { bottom:0;left:0;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 8px; }
+  .plain-card.amber .br-br { bottom:0;right:0;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 8px 0; }
+  .plain-card.purple .br { border-color: rgba(160,32,240,0.4); }
+  .plain-card.purple .br-tl { top:0;left:0;border-top:2px solid;border-left:2px solid;border-radius:8px 0 0 0; }
+  .plain-card.purple .br-tr { top:0;right:0;border-top:2px solid;border-right:2px solid;border-radius:0 8px 0 0; }
+  .plain-card.purple .br-bl { bottom:0;left:0;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 8px; }
+  .plain-card.purple .br-br { bottom:0;right:0;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 8px 0; }
+
+  .act-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(58,63,71,0.2); text-decoration: none; color: inherit; transition: background 0.15s; border-radius: 4px; margin: 0 -6px; padding-left: 6px; padding-right: 6px; }
+  .act-row:last-child { border-bottom: none; }
+  .act-row:hover { background: rgba(58,63,71,0.15); }
+  .act-featured { cursor: pointer; transition: background 0.15s; }
+  .act-featured:hover { background: rgba(232,131,42,0.11); }
+  .act-bar { width: 3px; border-radius: 2px; flex-shrink: 0; }
+  .act-bar.trail { background: #C96A1A; }
+  .act-bar.run { background: #E8832A; }
+  .act-name { font-size: 12px; font-weight: 500; color: #F2F2F2; }
+  .act-meta { font-size: 9px; color: #3A3F47; margin-top: 1px; font-family: 'JetBrains Mono', monospace; }
+  .act-num { margin-left: auto; display: flex; gap: 14px; }
+  .act-v { font-size: 11px; font-weight: 600; color: rgba(242,242,242,0.6); text-align: right; font-family: 'JetBrains Mono', monospace; }
+  .act-u { font-size: 9px; color: #3A3F47; }
+
+  /* ── LAST ACTIVITY FEATURED ── */
+  .act-featured {
+    background: rgba(232,131,42,0.07);
+    border: 1px solid rgba(232,131,42,0.25);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .act-featured-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .act-featured-bar { width: 3px; height: 36px; border-radius: 2px; background: #C96A1A; flex-shrink: 0; }
+  .act-featured-tag { font-size: 8px; color: rgba(232,131,42,0.7); text-transform: uppercase; letter-spacing: 2px; font-family: 'JetBrains Mono', monospace; margin-bottom: 2px; }
+  .act-featured-name { font-size: 13px; font-weight: 600; color: #F2F2F2; }
+  .act-featured-meta { font-size: 9px; color: #3A3F47; font-family: 'JetBrains Mono', monospace; }
+  .act-featured-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .act-featured-stat .sl { font-size: 8px; color: rgba(242,242,242,0.3); margin-bottom: 2px; }
+  .act-featured-stat .sv { font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  .ev-tag { font-size: 9px; color: #3DB2E0; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; }
+  .ev-stripe { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #E8832A, #3DB2E0, transparent); }
+  .ev-name { font-size: 16px; font-weight: 700; color: #F2F2F2; margin-bottom: 3px; }
+  .ev-where { font-size: 10px; color: #3A3F47; margin-bottom: 14px; font-family: 'JetBrains Mono', monospace; }
+  .ev-row { display: flex; gap: 18px; margin-bottom: 14px; }
+  .ev-val { font-size: 22px; font-weight: 700; color: #3DB2E0; }
+  .ev-unit { font-size: 9px; color: #3A3F47; font-family: 'JetBrains Mono', monospace; }
+  .ev-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(61,178,224,0.08); border: 1px solid rgba(61,178,224,0.2); border-radius: 4px; padding: 5px 10px; font-size: 10px; color: #3DB2E0; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── SNIPPET RECORDS INLINE ── */
+  .rec-inline-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(58,63,71,0.18); }
+  .rec-inline-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .rec-inline-label { font-size: 9px; color: rgba(242,242,242,0.3); text-transform: uppercase; letter-spacing: 1.5px; font-family: 'JetBrains Mono', monospace; }
+  .rec-inline-val { font-size: 14px; font-weight: 700; color: #E8832A; font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+  .rec-inline-unit { font-size: 9px; color: rgba(232,131,42,0.55); margin-left: 2px; }
+  .rec-inline-date { font-size: 9px; color: #3A3F47; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── RECORDS TRAIL ── */
+  .rec-card {
+    background: linear-gradient(135deg, rgba(232,131,42,0.06) 0%, rgba(200,106,26,0.06) 100%);
+    border: 1px solid rgba(232,131,42,0.3);
+    border-radius: 8px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .rec-card .br { position: absolute; width: 14px; height: 14px; }
+  .rec-card .br-tl { top:0;left:0;border-top:2px solid rgba(232,131,42,0.5);border-left:2px solid rgba(232,131,42,0.5);border-radius:8px 0 0 0; }
+  .rec-card .br-tr { top:0;right:0;border-top:2px solid rgba(232,131,42,0.5);border-right:2px solid rgba(232,131,42,0.5);border-radius:0 8px 0 0; }
+  .rec-card .br-bl { bottom:0;left:0;border-bottom:2px solid rgba(200,106,26,0.35);border-left:2px solid rgba(200,106,26,0.35);border-radius:0 0 0 8px; }
+  .rec-card .br-br { bottom:0;right:0;border-bottom:2px solid rgba(200,106,26,0.35);border-right:2px solid rgba(200,106,26,0.35);border-radius:0 0 8px 0; }
+  .rec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .rec-title { font-size: 12px; font-weight: 600; color: #F2F2F2; }
+  .rec-link { font-size: 9px; color: #3DB2E0; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+  .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rec-item { background: rgba(58,63,71,0.12); border: 1px solid rgba(58,63,71,0.25); border-radius: 6px; padding: 10px 12px; }
+  .rec-label { font-size: 9px; color: rgba(242,242,242,0.3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+  .rec-val { font-size: 18px; font-weight: 700; color: #E8832A; font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+  .rec-unit { font-size: 10px; color: rgba(232,131,42,0.6); margin-left: 2px; }
+  .rec-date { font-size: 9px; color: #3A3F47; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .rec-item.full { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+  .rec-item.full .rec-val { font-size: 15px; }
+
+  /* ── CHARTS ── */
+  .charts-section {
+    display: flex; flex-direction: column; gap: 18px;
+    border-top: 1px solid rgba(61,178,224,0.2);
+    margin-top: 8px;
+    padding-top: 28px;
+    position: relative;
+  }
+  .charts-section::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 0;
+    width: 120px; height: 1px;
+    background: linear-gradient(90deg, #3DB2E0, transparent);
+  }
+  .charts-section-title { display: flex; align-items: flex-start; gap: 14px; }
+  .charts-section-icon { position: relative; padding: 7px; background: rgba(61,178,224,0.1); border: 1px solid rgba(61,178,224,0.3); border-radius: 8px; flex-shrink: 0; color: #3DB2E0; }
+  .charts-section-icon::after { content:''; position:absolute; inset:0; background: rgba(61,178,224,0.2); filter: blur(12px); border-radius: 8px; }
+  .charts-section-icon svg { position: relative; display: block; }
+  .charts-section-text h2 { font-size: 15px; font-weight: 600; color: #F2F2F2; margin: 0; }
+  .charts-section-underline { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+  .charts-section-underline-line { width: 64px; height: 1px; background: linear-gradient(90deg, #3DB2E0, transparent); }
+  .charts-section-underline-dot { width: 4px; height: 4px; border-radius: 50%; background: #3DB2E0; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .chart-card { background: #0B0C10; border: 1px solid rgba(58,63,71,0.3); border-radius: 8px; padding: 20px; position: relative; overflow: hidden; }
+  .chart-card .br { position: absolute; width: 14px; height: 14px; }
+  .chart-card.glacier .br-tl { top:0;left:0;border-top:2px solid rgba(61,178,224,0.4);border-left:2px solid rgba(61,178,224,0.4);border-radius:8px 0 0 0; }
+  .chart-card.glacier .br-br { bottom:0;right:0;border-bottom:2px solid rgba(61,178,224,0.3);border-right:2px solid rgba(61,178,224,0.3);border-radius:0 0 8px 0; }
+  .chart-card.amber .br-tl { top:0;left:0;border-top:2px solid rgba(232,131,42,0.4);border-left:2px solid rgba(232,131,42,0.4);border-radius:8px 0 0 0; }
+  .chart-card.amber .br-br { bottom:0;right:0;border-bottom:2px solid rgba(232,131,42,0.3);border-right:2px solid rgba(232,131,42,0.3);border-radius:0 0 8px 0; }
+  .chart-card.moss .br-tl { top:0;left:0;border-top:2px solid rgba(109,170,117,0.4);border-left:2px solid rgba(109,170,117,0.4);border-radius:8px 0 0 0; }
+  .chart-card.moss .br-br { bottom:0;right:0;border-bottom:2px solid rgba(109,170,117,0.3);border-right:2px solid rgba(109,170,117,0.3);border-radius:0 0 8px 0; }
+  .chart-title { font-size: 10px; font-weight: 600; color: rgba(242,242,242,0.7); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .chart-subtitle { font-size: 9px; color: #3A3F47; font-family: 'JetBrains Mono', monospace; }
+  .chart-area { width: 100%; height: 200px; }
+  .mapboxgl-ctrl-logo { display: none !important; }
+  .mapboxgl-ctrl-attrib { display: none !important; }
+
+  /* ── SPARKLINE ── */
+  .sparkline-wrap { display: flex; align-items: flex-end; gap: 2px; height: 28px; margin-top: 6px; }
+  .spark-bar { flex: 1; border-radius: 1px; opacity: 0.7; transition: opacity 0.15s; }
+  .spark-bar:hover { opacity: 1; }
+
+  /* ── EVENT BADGE ── */
+  .ev-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(232,131,42,0.12); border: 1px solid rgba(232,131,42,0.4);
+    border-radius: 4px; padding: 3px 8px;
+    font-size: 9px; font-weight: 700; color: #E8832A;
+    font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1px;
+    animation: pulse-badge 2s ease-in-out infinite;
+  }
+  .ev-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #E8832A; animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-badge { 0%,100% { box-shadow: 0 0 0 0 rgba(232,131,42,0.3); } 50% { box-shadow: 0 0 0 4px rgba(232,131,42,0); } }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR LARGE -->
+<nav class="nav">
+  <div class="nav-brand">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="28" height="28">
+      <path d="M8 72 L28 40 L44 56 L58 30 L80 72" fill="none" stroke="#F2F2F2" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M20 72 L36 48 L46 60 L60 38" fill="none" stroke="#F2F2F2" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+      <polyline points="24,60 35,48 46,56 58,42 70,54" fill="none" stroke="#E8832A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="nav-brand-name">HAWKSIGHT</div>
+  </div>
+  <div class="nav-section">Principal</div>
+  <div class="nav-item active">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Activités
+  </div>
+  <div class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    Exploration
+  </div>
+  <div class="nav-section">Objectifs</div>
+  <div class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Calendrier
+  </div>
+  <div class="nav-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 3-6 4 10"/><path d="M3 21h18"/></svg>
+    Trails
+  </div>
+
+  <!-- Hex grid decorative — pointy-top, R=13, dx=22.5, dy=20, 20 rows, Y in 0-420 -->
+  <svg class="nav-topo" viewBox="0 0 196 420" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <polygon id="h" points="0,-13 11.3,-6.5 11.3,6.5 0,13 -11.3,6.5 -11.3,-6.5"/>
+    </defs>
+    <!-- xs pairs  : 11 34 57 79 102 124 147 169 192 -->
+    <!-- xs impairs:  0 22 45 68  90 113 135 158 181 -->
+    <!-- R0 y=407 -->
+    <use href="#h" transform="translate(11,407)"  stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(34,407)"  stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(57,407)"  stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(79,407)"  stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(102,407)" stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(124,407)" stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(147,407)" stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(169,407)" stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(192,407)" stroke="rgba(180,190,200,0.28)" stroke-width="0.6" fill="none"/>
+    <!-- R1 y=387 -->
+    <use href="#h" transform="translate(0,387)"   stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(22,387)"  stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(45,387)"  stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(68,387)"  stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(90,387)"  stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(113,387)" stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(135,387)" stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(158,387)" stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(181,387)" stroke="rgba(180,190,200,0.25)" stroke-width="0.6" fill="none"/>
+    <!-- R2 y=367 -->
+    <use href="#h" transform="translate(11,367)"  stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(34,367)"  stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(57,367)"  stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(79,367)"  stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(102,367)" stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(124,367)" stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(147,367)" stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(169,367)" stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(192,367)" stroke="rgba(180,190,200,0.22)" stroke-width="0.6" fill="none"/>
+    <!-- R3 y=347 -->
+    <use href="#h" transform="translate(0,347)"   stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(22,347)"  stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(45,347)"  stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(68,347)"  stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(90,347)"  stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(113,347)" stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(135,347)" stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(158,347)" stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(181,347)" stroke="rgba(180,190,200,0.19)" stroke-width="0.6" fill="none"/>
+    <!-- R4 y=327 -->
+    <use href="#h" transform="translate(11,327)"  stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(34,327)"  stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(57,327)"  stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(79,327)"  stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(102,327)" stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(124,327)" stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(147,327)" stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(169,327)" stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(192,327)" stroke="rgba(180,190,200,0.16)" stroke-width="0.6" fill="none"/>
+    <!-- R5 y=307 -->
+    <use href="#h" transform="translate(0,307)"   stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(22,307)"  stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(45,307)"  stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(68,307)"  stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(90,307)"  stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(113,307)" stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(135,307)" stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(158,307)" stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(181,307)" stroke="rgba(180,190,200,0.13)" stroke-width="0.6" fill="none"/>
+    <!-- R6 y=287 -->
+    <use href="#h" transform="translate(11,287)"  stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(34,287)"  stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(57,287)"  stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(79,287)"  stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(102,287)" stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(124,287)" stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(147,287)" stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(169,287)" stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(192,287)" stroke="rgba(180,190,200,0.10)" stroke-width="0.6" fill="none"/>
+    <!-- R7 y=267 -->
+    <use href="#h" transform="translate(0,267)"   stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(22,267)"  stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(45,267)"  stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(68,267)"  stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(90,267)"  stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(113,267)" stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(135,267)" stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(158,267)" stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(181,267)" stroke="rgba(180,190,200,0.08)" stroke-width="0.6" fill="none"/>
+    <!-- R8 y=247 -->
+    <use href="#h" transform="translate(11,247)"  stroke="rgba(180,190,200,0.06)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(57,247)"  stroke="rgba(180,190,200,0.06)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(102,247)" stroke="rgba(180,190,200,0.06)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(147,247)" stroke="rgba(180,190,200,0.06)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(192,247)" stroke="rgba(180,190,200,0.06)" stroke-width="0.6" fill="none"/>
+    <!-- R9 y=227 -->
+    <use href="#h" transform="translate(0,227)"   stroke="rgba(180,190,200,0.04)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(68,227)"  stroke="rgba(180,190,200,0.04)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(135,227)" stroke="rgba(180,190,200,0.04)" stroke-width="0.6" fill="none"/>
+    <!-- R10 y=207 -->
+    <use href="#h" transform="translate(34,207)"  stroke="rgba(180,190,200,0.02)" stroke-width="0.6" fill="none"/>
+    <use href="#h" transform="translate(113,207)" stroke="rgba(180,190,200,0.02)" stroke-width="0.6" fill="none"/>
+  </svg>
+
+  <div style="height:1px;background:rgba(58,63,71,0.25);margin:8px 6px;position:relative;z-index:1"></div>
+  <div class="nav-user" style="cursor:pointer">
+    <div><div class="nav-user-name">Arthur R.</div><div class="nav-user-role">TRAIL RUNNER</div></div>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- TOP : Score + Map -->
+  <div class="top-row">
+    <a href="#profil" class="card-link">
+      <div class="score-card cb amber">
+        <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+        <div class="score-eyebrow">Trail Score</div>
+        <div class="score-big" style="position:relative;display:inline-block">58<span style="position:absolute;bottom:6px;right:-28px;font-size:13px;font-weight:400;color:rgba(232,131,42,0.4)">/100</span></div>
+        <div class="grad-sep"></div>
+        <div class="score-sub"><strong>↑ +12 pts</strong> · vs semaine dernière</div>
+        <div class="score-rank">
+          <div class="score-rank-val" style="font-size:13px;color:#6DAA75;letter-spacing:0.5px">Endurant</div>
+          <div class="score-rank-label">Profil dominant</div>
+        </div>
+      </div>
+    </a>
+
+    <div class="map-card" style="overflow:hidden">
+      <!-- Mapbox map -->
+      <div id="exploration-map" style="position:absolute;inset:0;width:100%;height:100%"></div>
+      <!-- Overlay gradient pour lisibilité des stats -->
+      <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(6,12,24,0.85) 0%, transparent 45%);pointer-events:none;z-index:1"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to right, rgba(6,12,24,0.4) 0%, transparent 30%);pointer-events:none;z-index:1"></div>
+      <div class="map-br-tl" style="z-index:2"></div>
+      <div class="map-br-br" style="z-index:2"></div>
+      <div class="map-label" style="z-index:2">Zones explorées</div>
+      <div class="map-stats" style="z-index:2">
+        <div><div class="map-stat-val">312</div><div class="map-stat-label">cellules</div></div>
+        <div><div class="map-stat-val">230 km²</div><div class="map-stat-label">surface</div></div>
+        <div><div class="map-stat-val">+3</div><div class="map-stat-label">nouvelles</div></div>
+      </div>
+      <a href="#exploration" style="position:absolute;bottom:14px;right:14px;z-index:2;font-size:8px;color:rgba(61,178,224,0.5);font-family:'JetBrains Mono',monospace;text-decoration:none;text-transform:uppercase;letter-spacing:1.5px;transition:color 0.15s" onmouseover="this.style.color='rgba(61,178,224,0.9)'" onmouseout="this.style.color='rgba(61,178,224,0.5)'">Voir exploration →</a>
+    </div>
+  </div>
+
+  <!-- LIGNE 1 : Semaine + Mois + Prochain événement -->
+  <div class="stats-row">
+    <div class="card-weekly">
+      <div class="card-header"><div class="card-title">Cette semaine</div><div class="trend-up">↑ 14%</div></div>
+      <div class="sg2">
+        <div><div class="sl">Distance</div><div class="sv c-a">68.4 km</div></div>
+        <div><div class="sl">Temps</div><div class="sv c-w">7h42</div></div>
+        <div><div class="sl">Dénivelé</div><div class="sv c-g">2 840 m</div></div>
+        <div><div class="sl">Sessions</div><div class="sv c-m">4</div></div>
+      </div>
+    </div>
+    <div class="card-monthly">
+      <div class="card-header"><div class="card-title">Mars 2026</div><div class="trend-up">↑ 8%</div></div>
+      <div class="sg3">
+        <div><div class="sl">Distance</div><div class="sv c-a">247 km</div></div>
+        <div><div class="sl">D+</div><div class="sv c-g">9 120m</div></div>
+        <div><div class="sl">Sessions</div><div class="sv c-m">16</div></div>
+      </div>
+<div class="pb-wrap">
+        <div class="pb-hd"><span>Progression du mois</span><span>31/31 jours</span></div>
+        <div class="pb-bg"><div class="pb-fill" style="width:100%"></div></div>
+      </div>
+    </div>
+    <div class="plain-card" style="border-color:rgba(61,178,224,0.25)">
+      <div class="ev-stripe"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="ev-tag" style="margin-bottom:0">Prochain événement</div>
+        <div class="ev-badge">J-23</div>
+      </div>
+      <div class="ev-name">UTMB OCC 2025</div>
+      <div class="ev-where">CHAMONIX · 15 AOÛT 2025</div>
+      <div class="ev-row">
+        <div><div class="ev-val">55</div><div class="ev-unit">KM</div></div>
+        <div><div class="ev-val">3 500</div><div class="ev-unit">M D+</div></div>
+      </div>
+      <a href="#calendrier" style="font-size:9px;color:rgba(61,178,224,0.5);font-family:'JetBrains Mono',monospace;text-decoration:none;text-transform:uppercase;letter-spacing:1.5px;transition:color 0.15s" onmouseover="this.style.color='rgba(61,178,224,0.9)'" onmouseout="this.style.color='rgba(61,178,224,0.5)'">Calendrier →</a>
+    </div>
+  </div>
+
+  <!-- LIGNE 2 : Activités récentes + Records Trail -->
+  <div class="bottom-row">
+    <div class="plain-card amber">
+      <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+      <div class="card-header"><div class="card-title">Activités récentes</div><div style="font-size:9px;color:#3DB2E0;font-family:monospace;cursor:pointer">VOIR TOUT →</div></div>
+      <a href="#activite-belledonne" style="text-decoration:none;color:inherit;display:block">
+        <div class="act-featured">
+          <div class="act-featured-header">
+            <div class="act-featured-bar"></div>
+            <div>
+              <div class="act-featured-tag">Dernière activité · Hier</div>
+              <div class="act-featured-name">Sortie Belledonne</div>
+              <div class="act-featured-meta">TRAIL · +1 240m D+</div>
+            </div>
+          </div>
+          <div class="act-featured-stats">
+            <div class="act-featured-stat"><div class="sl">Distance</div><div class="sv c-a">18.4<span style="font-size:9px;color:rgba(232,131,42,0.6)"> km</span></div></div>
+            <div class="act-featured-stat"><div class="sl">Temps</div><div class="sv c-w">2h47</div></div>
+            <div class="act-featured-stat"><div class="sl">Allure</div><div class="sv c-g">9'04<span style="font-size:9px;color:rgba(61,178,224,0.6)">/km</span></div></div>
+            <div class="act-featured-stat"><div class="sl">FC moy.</div><div class="sv" style="color:#fc8181">158<span style="font-size:9px;color:rgba(252,129,129,0.6)"> bpm</span></div></div>
+          </div>
+        </div>
+      </a>
+      <a href="#activite-tempo" class="act-row">
+        <div class="act-bar run"></div>
+        <div><div class="act-name">Tempo matinal</div><div class="act-meta">COURSE · LUNDI · +80m</div></div>
+        <div class="act-num">
+          <div><div class="act-v">12.1 km</div><div class="act-u">dist.</div></div>
+          <div><div class="act-v">52min</div><div class="act-u">temps</div></div>
+        </div>
+      </a>
+      <a href="#activite-vence" class="act-row">
+        <div class="act-bar trail"></div>
+        <div><div class="act-name">Col de Vence</div><div class="act-meta">TRAIL · SAMEDI · +780m</div></div>
+        <div class="act-num">
+          <div><div class="act-v">14.7 km</div><div class="act-u">dist.</div></div>
+          <div><div class="act-v">1h58</div><div class="act-u">temps</div></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="rec-card">
+      <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+      <div class="rec-header">
+        <div class="rec-title">Records Trail</div>
+        <div class="rec-link">VOIR TOUT →</div>
+      </div>
+      <div class="rec-inline-row">
+        <div class="rec-inline-label">D+ en 5 min</div>
+        <div><span class="rec-inline-val">148</span><span class="rec-inline-unit">m</span></div>
+      </div>
+      <div class="rec-inline-row">
+        <div class="rec-inline-label">D+ en 30 min</div>
+        <div><span class="rec-inline-val">612</span><span class="rec-inline-unit">m</span></div>
+      </div>
+      <div class="rec-inline-row">
+        <div class="rec-inline-label">D+ en 60 min</div>
+        <div><span class="rec-inline-val">1 024</span><span class="rec-inline-unit">m</span></div>
+      </div>
+      <div class="rec-inline-row">
+        <div class="rec-inline-label">KV 1000m</div>
+        <div><span class="rec-inline-val">58:42</span></div>
+      </div>
+      <div class="rec-inline-row">
+        <div class="rec-inline-label">Max D+ activité</div>
+        <div><span class="rec-inline-val">3 840</span><span class="rec-inline-unit">m</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphiques — pleine largeur, 2 par ligne, hauteur 160px -->
+  <div class="charts-section">
+    <div class="charts-section-title">
+      <div class="charts-section-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
+        </svg>
+      </div>
+      <div class="charts-section-text">
+        <h2>Analyses hebdomadaires</h2>
+        <div class="charts-section-underline">
+          <div class="charts-section-underline-line"></div>
+          <div class="charts-section-underline-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <!-- Minutes / jour -->
+      <div class="chart-card glacier">
+        <div class="br br-tl"></div><div class="br br-br"></div>
+        <div class="chart-title">Minutes d'activités quotidiennes <span class="chart-subtitle">Cette semaine · 7h42 · 68.4km · 2840m D+</span></div>
+        <div style="height:200px;position:relative"><canvas id="chart-daily"></canvas></div>
+      </div>
+
+      <!-- Heures / semaine -->
+      <div class="chart-card glacier">
+        <div class="br br-tl"></div><div class="br br-br"></div>
+        <div class="chart-title">Heures d'activité par semaine <span class="chart-subtitle">10 semaines · moy. 7.2h</span></div>
+        <div style="height:200px;position:relative"><canvas id="chart-weekly-hours"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <!-- km / semaine + D+ -->
+      <div class="chart-card amber">
+        <div class="br br-tl"></div><div class="br br-br"></div>
+        <div class="chart-title">Kilomètres par semaine <span class="chart-subtitle">Run &amp; Trail · moy. 62km · 2 180m D+</span></div>
+        <div style="height:200px;position:relative"><canvas id="chart-weekly-dist"></canvas></div>
+      </div>
+
+      <!-- Répartition donut -->
+      <div class="chart-card glacier">
+        <div class="br br-tl"></div><div class="br br-br"></div>
+        <div class="chart-title">Répartition des activités <span class="chart-subtitle">12 semaines</span></div>
+        <div style="height:200px;position:relative"><canvas id="chart-repartition"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <!-- Allure moyenne -->
+      <div class="chart-card moss">
+        <div class="br br-tl"></div><div class="br br-br"></div>
+        <div class="chart-title">Allure moyenne par semaine <span class="chart-subtitle">Trail · moy. 6:12 min/km</span></div>
+        <div style="height:200px;position:relative"><canvas id="chart-pace"></canvas></div>
+      </div>
+
+      <!-- Conquête -->
+      <div class="chart-card glacier">
+        <div class="br br-tl"></div><div class="br br-br"></div>
+        <div class="chart-title">Taux de conquête <span class="chart-subtitle">Nouvelles zones H3 / semaine</span></div>
+        <div style="height:200px;position:relative"><canvas id="chart-conquete"></canvas></div>
+      </div>
+    </div>
+
+    <!-- placeholder fermant la dernière row -->
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+mapboxgl.accessToken = 'YOUR_MAPBOX_TOKEN';
+
+const map = new mapboxgl.Map({
+  container: 'exploration-map',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: [5.85, 45.15], // Grenoble / Belledonne
+  zoom: 9.5,
+  interactive: true,
+  attributionControl: false,
+  projection: 'mercator',
+});
+
+// Zones explorées — clusters de halos autour de massifs Belledonne, Chartreuse, Vercors
+const exploredZones = [
+  // Belledonne
+  { center: [5.98, 45.18], radius: 18000 },
+  { center: [6.05, 45.10], radius: 12000 },
+  { center: [5.92, 45.25], radius: 10000 },
+  // Chartreuse
+  { center: [5.72, 45.38], radius: 14000 },
+  { center: [5.78, 45.28], radius: 9000  },
+  // Vercors
+  { center: [5.55, 45.05], radius: 11000 },
+  { center: [5.48, 44.95], radius: 8000  },
+  // Grenoble proche
+  { center: [5.85, 45.19], radius: 6000  },
+];
+
+map.on('load', () => {
+  exploredZones.forEach((zone, i) => {
+    const id = `zone-${i}`;
+
+    // Créer un cercle GeoJSON
+    map.addSource(id, {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: zone.center },
+      },
+    });
+
+    // Halo extérieur — très diffus
+    map.addLayer({
+      id: `${id}-glow-outer`,
+      type: 'circle',
+      source: id,
+      paint: {
+        'circle-radius': zone.radius / 50,
+        'circle-color': '#3DB2E0',
+        'circle-opacity': 0.04,
+        'circle-blur': 1,
+        'circle-pitch-alignment': 'map',
+      },
+    });
+
+    // Halo intermédiaire
+    map.addLayer({
+      id: `${id}-glow-mid`,
+      type: 'circle',
+      source: id,
+      paint: {
+        'circle-radius': zone.radius / 80,
+        'circle-color': '#3DB2E0',
+        'circle-opacity': 0.10,
+        'circle-blur': 0.8,
+        'circle-pitch-alignment': 'map',
+      },
+    });
+
+    // Cœur plus net
+    map.addLayer({
+      id: `${id}-core`,
+      type: 'circle',
+      source: id,
+      paint: {
+        'circle-radius': zone.radius / 160,
+        'circle-color': '#3DB2E0',
+        'circle-opacity': 0.22,
+        'circle-blur': 0.4,
+        'circle-pitch-alignment': 'map',
+      },
+    });
+  });
+});
+</script>
+
+<script>
+// ── Chart.js — dark theme defaults ──────────────────────────────
+Chart.defaults.color = '#F2F2F2';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = "'SF Pro Display', -apple-system, sans-serif";
+Chart.defaults.font.size = 11;
+
+const gridOpts = { color: 'rgba(255,255,255,0.05)', drawBorder: false };
+const tickOpts = { color: 'rgba(242,242,242,0.5)', padding: 4 };
+
+// ── 1. Minutes d'activités quotidiennes (stacked bar — Trail + Run) ─
+new Chart(document.getElementById('chart-daily'), {
+  type: 'bar',
+  data: {
+    labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+    datasets: [
+      {
+        label: 'Trail',
+        data: [0, 65, 0, 90, 0, 135, 0],
+        backgroundColor: '#1E6A8F',
+        borderRadius: 3,
+        stack: 'a',
+      },
+      {
+        label: 'Run',
+        data: [45, 0, 55, 0, 40, 0, 92],
+        backgroundColor: '#3DB2E0',
+        borderRadius: 3,
+        stack: 'a',
+      },
+    ],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, ticks: tickOpts, stacked: true },
+      y: { grid: gridOpts, ticks: { ...tickOpts, callback: v => v + 'min' }, stacked: true, beginAtZero: true },
+    },
+  },
+});
+
+// ── 2. Heures d'activité par semaine (line + fill) ─────────────────
+new Chart(document.getElementById('chart-weekly-hours'), {
+  type: 'line',
+  data: {
+    labels: ['S-10','S-9','S-8','S-7','S-6','S-5','S-4','S-3','S-2','S-1'],
+    datasets: [{
+      label: 'Heures',
+      data: [5.2, 6.8, 4.5, 7.1, 8.3, 6.0, 9.2, 7.5, 6.8, 7.7],
+      borderColor: '#3DB2E0',
+      backgroundColor: 'rgba(61,178,224,0.12)',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 3,
+      pointBackgroundColor: '#3DB2E0',
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, ticks: tickOpts },
+      y: { grid: gridOpts, ticks: { ...tickOpts, callback: v => v + 'h' }, beginAtZero: true },
+    },
+  },
+});
+
+// ── 3. Kilomètres par semaine + D+ (combo bar + line, dual axis) ───
+new Chart(document.getElementById('chart-weekly-dist'), {
+  type: 'bar',
+  data: {
+    labels: ['S-10','S-9','S-8','S-7','S-6','S-5','S-4','S-3','S-2','S-1'],
+    datasets: [
+      {
+        label: 'km',
+        data: [52, 67, 44, 71, 83, 60, 89, 74, 68, 77],
+        backgroundColor: '#E8832A',
+        borderRadius: 3,
+        yAxisID: 'y',
+      },
+      {
+        label: 'D+ (m)',
+        data: [1800, 2400, 1200, 2800, 3200, 2000, 3600, 2600, 2200, 2840],
+        type: 'line',
+        borderColor: '#C4561A',
+        backgroundColor: 'transparent',
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: '#C4561A',
+        yAxisID: 'y2',
+      },
+    ],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, ticks: tickOpts },
+      y:  { grid: gridOpts, ticks: { ...tickOpts, callback: v => v + 'km' }, beginAtZero: true, position: 'left' },
+      y2: { grid: { display: false }, ticks: { ...tickOpts, callback: v => v + 'm' }, beginAtZero: true, position: 'right' },
+    },
+  },
+});
+
+// ── 4. Répartition des activités (doughnut) ───────────────────────
+new Chart(document.getElementById('chart-repartition'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Trail', 'Run', 'Randonnée', 'Vélo'],
+    datasets: [{
+      data: [48, 30, 14, 8],
+      backgroundColor: ['#1E6A8F', '#3DB2E0', '#E8832A', '#6B7280'],
+      borderWidth: 0,
+      hoverOffset: 6,
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { boxWidth: 10, padding: 12, color: 'rgba(242,242,242,0.7)', font: { size: 11 } },
+      },
+    },
+  },
+});
+
+// ── 5. Allure moyenne par semaine (bar, moss green) ────────────────
+// Pace stored as seconds/km, displayed as mm:ss
+const paceToSec = (m, s) => m * 60 + s;
+const paceData = [
+  paceToSec(6,42), paceToSec(6,15), paceToSec(6,58), paceToSec(5,58),
+  paceToSec(5,45), paceToSec(6,30), paceToSec(5,22), paceToSec(6,5),
+  paceToSec(6,18), paceToSec(6,12),
+];
+const fmtPace = s => {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+};
+new Chart(document.getElementById('chart-pace'), {
+  type: 'bar',
+  data: {
+    labels: ['S-10','S-9','S-8','S-7','S-6','S-5','S-4','S-3','S-2','S-1'],
+    datasets: [{
+      label: 'Allure',
+      data: paceData,
+      backgroundColor: 'rgba(109,170,117,0.7)',
+      borderRadius: 3,
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, ticks: tickOpts },
+      y: {
+        grid: gridOpts,
+        ticks: { ...tickOpts, callback: v => fmtPace(v) },
+        beginAtZero: false,
+        reverse: true,
+      },
+    },
+  },
+});
+
+// ── 6. Taux de conquête (bar, glacier) ────────────────────────────
+new Chart(document.getElementById('chart-conquete'), {
+  type: 'bar',
+  data: {
+    labels: ['S-10','S-9','S-8','S-7','S-6','S-5','S-4','S-3','S-2','S-1'],
+    datasets: [{
+      label: 'Zones H3',
+      data: [3, 7, 2, 9, 11, 5, 14, 8, 6, 10],
+      backgroundColor: 'rgba(61,178,224,0.7)',
+      borderRadius: 3,
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpts, ticks: tickOpts },
+      y: { grid: gridOpts, ticks: { ...tickOpts, stepSize: 4 }, beginAtZero: true },
+    },
+  },
+});
+</script>
+
+</body>
+</html>

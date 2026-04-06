@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 3 — Terrain View</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Pro Display', -apple-system, sans-serif; background: #0B0C10; color: #F2F2F2; display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── NAVBAR ICON-ONLY ── */
+  .nav {
+    width: 64px;
+    background: #080910;
+    border-right: 1px solid rgba(58,63,71,0.4);
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 20px 0; gap: 4px; flex-shrink: 0;
+  }
+  .nav-logo {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 22px;
+  }
+  .nav-item {
+    width: 40px; height: 40px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; color: #3A3F47;
+    transition: all 0.15s; position: relative;
+  }
+  .nav-item:hover { background: rgba(58,63,71,0.2); color: rgba(242,242,242,0.5); }
+  .nav-item.active { color: #E8832A; background: rgba(232,131,42,0.08); }
+  .nav-item.active::after {
+    content: '';
+    position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+    width: 2px; height: 18px;
+    background: #E8832A;
+    border-radius: 2px 0 0 2px;
+  }
+  .nav-spacer { flex: 1; }
+  .nav-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #E8832A, #A020F0);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #F2F2F2;
+  }
+
+  /* ── LAYOUT : MAP GAUCHE + DATA DROITE ── */
+  .main { flex: 1; display: grid; grid-template-columns: 1.4fr 1fr; overflow: hidden; }
+
+  /* ── MAP FULL HEIGHT ── */
+  .left-col {
+    position: relative; overflow: hidden;
+    border-right: 1px solid rgba(58,63,71,0.3);
+  }
+  .map-full { position: absolute; inset: 0; background: #060c18; }
+  .map-grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(61,178,224,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(61,178,224,0.02) 1px, transparent 1px);
+    background-size: 36px 36px;
+  }
+  .map-vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(6,12,24,0.75) 100%);
+    pointer-events: none;
+  }
+  .map-grad-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 220px;
+    background: linear-gradient(to top, #0B0C10 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* ── SCORE FLOTTANT ── */
+  .score-float {
+    position: absolute; top: 28px; left: 28px; z-index: 10;
+  }
+  .score-eyebrow {
+    font-size: 9px; color: rgba(232,131,42,0.65);
+    text-transform: uppercase; letter-spacing: 3px; margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .score-eyebrow::before { content:''; width: 12px; height: 1px; background: #E8832A; }
+  .score-big {
+    font-size: 88px; font-weight: 800; line-height: 0.9; color: #E8832A;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 80px rgba(232,131,42,0.25);
+  }
+  .grad-sep { height: 1px; background: linear-gradient(90deg, #E8832A, #3DB2E0, transparent); width: 100px; margin: 10px 0; }
+  .score-sub {
+    font-size: 11px; color: rgba(242,242,242,0.35);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .score-sub strong { color: #6DAA75; }
+
+  /* ── STATS MAP BAS GAUCHE ── */
+  .map-bottom {
+    position: absolute; bottom: 28px; left: 28px; z-index: 10;
+    display: flex; gap: 28px;
+  }
+  .map-stat-val {
+    font-size: 24px; font-weight: 700; color: #3DB2E0;
+    font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace;
+  }
+  .map-stat-label { font-size: 9px; color: #3A3F47; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── CORNER BRACKETS ── */
+  .cb { position: relative; }
+  .cb .br { position: absolute; width: 14px; height: 14px; }
+  .cb .br-tl { top:0;left:0;border-top:2px solid;border-left:2px solid;border-radius:8px 0 0 0; }
+  .cb .br-tr { top:0;right:0;border-top:2px solid;border-right:2px solid;border-radius:0 8px 0 0; }
+  .cb .br-bl { bottom:0;left:0;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 8px; }
+  .cb .br-br { bottom:0;right:0;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 8px 0; }
+
+  /* ── COLONNE DROITE ── */
+  .right-col {
+    overflow-y: auto; padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    scrollbar-width: thin; scrollbar-color: rgba(58,63,71,0.3) transparent;
+  }
+
+  /* En-tête */
+  .right-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .greeting { font-size: 17px; font-weight: 700; color: #F2F2F2; }
+  .greeting-sub { font-size: 11px; color: #3A3F47; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .date-pill {
+    font-size: 10px; color: #3A3F47;
+    background: rgba(58,63,71,0.15);
+    border: 1px solid rgba(58,63,71,0.3);
+    border-radius: 4px; padding: 4px 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── CARD HEBDO ── */
+  .card-weekly {
+    background: linear-gradient(135deg, rgba(232,131,42,0.12) 0%, rgba(61,178,224,0.12) 100%);
+    border: 1px solid rgba(232,131,42,0.35);
+    border-radius: 8px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .card-weekly .br { position:absolute;width:14px;height:14px; }
+  .card-weekly .br-tl { top:0;left:0;border-top:2px solid rgba(232,131,42,0.5);border-left:2px solid rgba(232,131,42,0.5);border-radius:8px 0 0 0; }
+  .card-weekly .br-tr { top:0;right:0;border-top:2px solid rgba(232,131,42,0.5);border-right:2px solid rgba(232,131,42,0.5);border-radius:0 8px 0 0; }
+  .card-weekly .br-bl { bottom:0;left:0;border-bottom:2px solid rgba(61,178,224,0.4);border-left:2px solid rgba(61,178,224,0.4);border-radius:0 0 0 8px; }
+  .card-weekly .br-br { bottom:0;right:0;border-bottom:2px solid rgba(61,178,224,0.4);border-right:2px solid rgba(61,178,224,0.4);border-radius:0 0 8px 0; }
+
+  /* ── CARD MENSUEL ── */
+  .card-monthly {
+    background: linear-gradient(135deg, rgba(61,178,224,0.12) 0%, rgba(109,170,117,0.12) 100%);
+    border: 1px solid rgba(61,178,224,0.35);
+    border-radius: 8px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .card-monthly .br { position:absolute;width:14px;height:14px; }
+  .card-monthly .br-tl { top:0;left:0;border-top:2px solid rgba(61,178,224,0.5);border-left:2px solid rgba(61,178,224,0.5);border-radius:8px 0 0 0; }
+  .card-monthly .br-tr { top:0;right:0;border-top:2px solid rgba(61,178,224,0.5);border-right:2px solid rgba(61,178,224,0.5);border-radius:0 8px 0 0; }
+  .card-monthly .br-bl { bottom:0;left:0;border-bottom:2px solid rgba(109,170,117,0.4);border-left:2px solid rgba(109,170,117,0.4);border-radius:0 0 0 8px; }
+  .card-monthly .br-br { bottom:0;right:0;border-bottom:2px solid rgba(109,170,117,0.4);border-right:2px solid rgba(109,170,117,0.4);border-radius:0 0 8px 0; }
+
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .card-title { font-size: 12px; font-weight: 600; color: #F2F2F2; }
+  .trend-up { font-size: 10px; color: #6DAA75; font-family: 'JetBrains Mono', monospace; }
+
+  .sg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sg3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .sl { font-size: 9px; color: rgba(242,242,242,0.3); margin-bottom: 3px; font-family: 'JetBrains Mono', monospace; }
+  .sv { font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .c-a { color: #E8832A; } .c-g { color: #3DB2E0; } .c-m { color: #6DAA75; } .c-w { color: #F2F2F2; }
+
+  .pb-wrap { margin-top: 12px; }
+  .pb-hd { display: flex; justify-content: space-between; font-size: 9px; color: rgba(242,242,242,0.25); margin-bottom: 5px; font-family: 'JetBrains Mono', monospace; }
+  .pb-bg { height: 3px; background: rgba(58,63,71,0.35); border-radius: 2px; overflow: hidden; }
+  .pb-fill { height: 100%; background: linear-gradient(90deg, #3DB2E0, #6DAA75); }
+
+  /* ── ACTIVITÉS ── */
+  .plain-card {
+    background: #0B0C10; border: 1px solid rgba(58,63,71,0.3);
+    border-radius: 8px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .plain-card .br { position: absolute; width: 14px; height: 14px; }
+  .plain-card.amber .br { border-color: rgba(232,131,42,0.4); }
+  .plain-card.amber .br-tl { top:0;left:0;border-top:2px solid;border-left:2px solid;border-radius:8px 0 0 0; }
+  .plain-card.amber .br-tr { top:0;right:0;border-top:2px solid;border-right:2px solid;border-radius:0 8px 0 0; }
+  .plain-card.amber .br-bl { bottom:0;left:0;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 8px; }
+  .plain-card.amber .br-br { bottom:0;right:0;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 8px 0; }
+  .plain-card.purple .br { border-color: rgba(160,32,240,0.4); }
+  .plain-card.purple .br-tl { top:0;left:0;border-top:2px solid;border-left:2px solid;border-radius:8px 0 0 0; }
+  .plain-card.purple .br-tr { top:0;right:0;border-top:2px solid;border-right:2px solid;border-radius:0 8px 0 0; }
+  .plain-card.purple .br-bl { bottom:0;left:0;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 8px; }
+  .plain-card.purple .br-br { bottom:0;right:0;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 8px 0; }
+
+  .act-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(58,63,71,0.2); }
+  .act-row:last-child { border-bottom: none; }
+  .act-bar { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+  .act-bar.trail { background: #C96A1A; }
+  .act-bar.run { background: #E8832A; }
+  .act-name { font-size: 12px; font-weight: 500; color: #F2F2F2; }
+  .act-meta { font-size: 9px; color: #3A3F47; margin-top: 1px; font-family: 'JetBrains Mono', monospace; }
+  .act-num { margin-left: auto; display: flex; gap: 14px; }
+  .act-v { font-size: 11px; font-weight: 600; color: rgba(242,242,242,0.55); text-align: right; font-family: 'JetBrains Mono', monospace; }
+  .act-u { font-size: 9px; color: #3A3F47; }
+
+  /* ── EVENT ── */
+  .ev-stripe { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #A020F0, #3DB2E0, #E8832A); }
+  .ev-tag { font-size: 9px; color: #A020F0; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; }
+  .ev-name { font-size: 16px; font-weight: 700; color: #F2F2F2; margin-bottom: 3px; }
+  .ev-where { font-size: 10px; color: #3A3F47; margin-bottom: 14px; font-family: 'JetBrains Mono', monospace; }
+  .ev-row { display: flex; gap: 18px; margin-bottom: 14px; }
+  .ev-val { font-size: 22px; font-weight: 700; color: #A020F0; font-family: 'JetBrains Mono', monospace; }
+  .ev-unit { font-size: 9px; color: #3A3F47; font-family: 'JetBrains Mono', monospace; }
+  .ev-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(160,32,240,0.08); border: 1px solid rgba(160,32,240,0.2);
+    border-radius: 4px; padding: 5px 10px;
+    font-size: 10px; color: #A020F0; font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── RECORDS TRAIL ── */
+  .rec-card {
+    background: linear-gradient(135deg, rgba(232,131,42,0.06) 0%, rgba(200,106,26,0.06) 100%);
+    border: 1px solid rgba(232,131,42,0.3);
+    border-radius: 8px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .rec-card .br { position: absolute; width: 14px; height: 14px; }
+  .rec-card .br-tl { top:0;left:0;border-top:2px solid rgba(232,131,42,0.5);border-left:2px solid rgba(232,131,42,0.5);border-radius:8px 0 0 0; }
+  .rec-card .br-tr { top:0;right:0;border-top:2px solid rgba(232,131,42,0.5);border-right:2px solid rgba(232,131,42,0.5);border-radius:0 8px 0 0; }
+  .rec-card .br-bl { bottom:0;left:0;border-bottom:2px solid rgba(200,106,26,0.35);border-left:2px solid rgba(200,106,26,0.35);border-radius:0 0 0 8px; }
+  .rec-card .br-br { bottom:0;right:0;border-bottom:2px solid rgba(200,106,26,0.35);border-right:2px solid rgba(200,106,26,0.35);border-radius:0 0 8px 0; }
+  .rec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .rec-title { font-size: 12px; font-weight: 600; color: #F2F2F2; }
+  .rec-link { font-size: 9px; color: #3DB2E0; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+  .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rec-item {
+    background: rgba(58,63,71,0.12); border: 1px solid rgba(58,63,71,0.25);
+    border-radius: 6px; padding: 10px 12px;
+  }
+  .rec-label { font-size: 9px; color: rgba(242,242,242,0.3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+  .rec-val { font-size: 18px; font-weight: 700; color: #E8832A; font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+  .rec-unit { font-size: 10px; color: rgba(232,131,42,0.6); margin-left: 2px; }
+  .rec-date { font-size: 9px; color: #3A3F47; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .rec-item.full { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+  .rec-item.full .rec-val { font-size: 15px; }
+
+  /* ── CHARTS SECTION ── */
+  .charts-section { display: flex; flex-direction: column; gap: 12px; }
+  .charts-section-title {
+    font-size: 9px; color: rgba(242,242,242,0.25); text-transform: uppercase;
+    letter-spacing: 2px; font-family: 'JetBrains Mono', monospace;
+    padding: 4px 0 2px; border-bottom: 1px solid rgba(58,63,71,0.2);
+  }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .chart-card {
+    background: #0B0C10; border: 1px solid rgba(58,63,71,0.3);
+    border-radius: 8px; padding: 14px; position: relative; overflow: hidden;
+  }
+  .chart-card .br { position: absolute; width: 14px; height: 14px; }
+  .chart-card.glacier .br-tl { top:0;left:0;border-top:2px solid rgba(61,178,224,0.4);border-left:2px solid rgba(61,178,224,0.4);border-radius:8px 0 0 0; }
+  .chart-card.glacier .br-br { bottom:0;right:0;border-bottom:2px solid rgba(61,178,224,0.3);border-right:2px solid rgba(61,178,224,0.3);border-radius:0 0 8px 0; }
+  .chart-card.amber .br-tl { top:0;left:0;border-top:2px solid rgba(232,131,42,0.4);border-left:2px solid rgba(232,131,42,0.4);border-radius:8px 0 0 0; }
+  .chart-card.amber .br-br { bottom:0;right:0;border-bottom:2px solid rgba(232,131,42,0.3);border-right:2px solid rgba(232,131,42,0.3);border-radius:0 0 8px 0; }
+  .chart-card.moss .br-tl { top:0;left:0;border-top:2px solid rgba(109,170,117,0.4);border-left:2px solid rgba(109,170,117,0.4);border-radius:8px 0 0 0; }
+  .chart-card.moss .br-br { bottom:0;right:0;border-bottom:2px solid rgba(109,170,117,0.3);border-right:2px solid rgba(109,170,117,0.3);border-radius:0 0 8px 0; }
+  .chart-title { font-size: 10px; font-weight: 600; color: rgba(242,242,242,0.7); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .chart-subtitle { font-size: 9px; color: #3A3F47; font-family: 'JetBrains Mono', monospace; }
+  .chart-area { width: 100%; height: 90px; }
+  .chart-area-tall { width: 100%; height: 100px; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR ICON-ONLY -->
+<nav class="nav">
+  <div class="nav-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="30" height="30">
+      <path d="M8 72 L28 40 L44 56 L58 30 L80 72" fill="none" stroke="#F2F2F2" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M20 72 L36 48 L46 60 L60 38" fill="none" stroke="#F2F2F2" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" opacity="0.8"/>
+      <polyline points="24,60 35,48 46,56 58,42 70,54" fill="none" stroke="#E8832A" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="nav-item active">⊞</div>
+  <div class="nav-item">⚡</div>
+  <div class="nav-item">🗺</div>
+  <div class="nav-item">📅</div>
+  <div class="nav-item">⛰</div>
+  <div class="nav-spacer"></div>
+  <div class="nav-avatar">AR</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- GAUCHE : MAP IMMERSIVE -->
+  <div class="left-col">
+    <div class="map-full">
+      <div class="map-grid-bg"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 700 900" preserveAspectRatio="xMidYMid slice">
+        <!-- Grand cluster central — amber/orange -->
+        <polygon points="320,300 340,288 360,300 360,324 340,336 320,324" fill="#E8832A" opacity="0.85"/>
+        <polygon points="360,300 380,288 400,300 400,324 380,336 360,324" fill="#E8832A" opacity="0.8"/>
+        <polygon points="340,336 360,324 380,336 380,360 360,372 340,360" fill="#A020F0" opacity="0.7"/>
+        <polygon points="380,336 400,324 420,336 420,360 400,372 380,360" fill="#E8832A" opacity="0.65"/>
+        <polygon points="360,372 380,360 400,372 400,396 380,408 360,396" fill="#E8832A" opacity="0.6"/>
+        <polygon points="300,324 320,312 340,324 340,348 320,360 300,348" fill="#E8832A" opacity="0.55"/>
+        <polygon points="400,300 420,288 440,300 440,324 420,336 400,324" fill="#C96A1A" opacity="0.55"/>
+        <polygon points="340,264 360,252 380,264 380,288 360,300 340,288" fill="#E8832A" opacity="0.45"/>
+        <polygon points="360,228 380,216 400,228 400,252 380,264 360,252" fill="#E8832A" opacity="0.3"/>
+        <polygon points="380,192 400,180 420,192 420,216 400,228 380,216" fill="#E8832A" opacity="0.18"/>
+        <polygon points="320,360 340,348 360,360 360,384 340,396 320,384" fill="#E8832A" opacity="0.45"/>
+        <polygon points="340,396 360,384 380,396 380,420 360,432 340,420" fill="#E8832A" opacity="0.35"/>
+        <!-- Cluster secondaire — glacier -->
+        <polygon points="500,180 520,168 540,180 540,204 520,216 500,204" fill="#3DB2E0" opacity="0.6"/>
+        <polygon points="520,204 540,192 560,204 560,228 540,240 520,228" fill="#3DB2E0" opacity="0.5"/>
+        <polygon points="540,180 560,168 580,180 580,204 560,216 540,204" fill="#3DB2E0" opacity="0.4"/>
+        <polygon points="500,216 520,204 540,216 540,240 520,252 500,240" fill="#3DB2E0" opacity="0.3"/>
+        <!-- Petit cluster bas gauche — moss -->
+        <polygon points="160,560 180,548 200,560 200,584 180,596 160,584" fill="#6DAA75" opacity="0.5"/>
+        <polygon points="180,584 200,572 220,584 220,608 200,620 180,608" fill="#6DAA75" opacity="0.4"/>
+        <polygon points="200,560 220,548 240,560 240,584 220,596 200,584" fill="#6DAA75" opacity="0.35"/>
+      </svg>
+    </div>
+    <div class="map-vignette"></div>
+    <div class="map-grad-bottom"></div>
+
+    <!-- Score flottant haut gauche -->
+    <div class="score-float">
+      <div class="score-eyebrow">Trail Score</div>
+      <div class="score-big">847</div>
+      <div class="grad-sep"></div>
+      <div class="score-sub"><strong>↑ Top 8%</strong> · +12 pts cette semaine</div>
+    </div>
+
+    <!-- Stats exploration bas gauche -->
+    <div class="map-bottom">
+      <div>
+        <div class="map-stat-val">312</div>
+        <div class="map-stat-label">Zones</div>
+      </div>
+      <div>
+        <div class="map-stat-val">230 km²</div>
+        <div class="map-stat-label">Surface</div>
+      </div>
+      <div>
+        <div class="map-stat-val">+3</div>
+        <div class="map-stat-label">Nouvelles</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DROITE : DATA SCROLL -->
+  <div class="right-col">
+
+    <!-- Header -->
+    <div class="right-header">
+      <div>
+        <div class="greeting">Bonjour, Arthur</div>
+        <div class="greeting-sub">4 SORTIES · BONNE DYNAMIQUE</div>
+      </div>
+      <div class="date-pill">MAR 31, 2026</div>
+    </div>
+
+    <!-- Card semaine -->
+    <div class="card-weekly">
+      <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+      <div class="card-header"><div class="card-title">Cette semaine</div><div class="trend-up">↑ 14%</div></div>
+      <div class="sg2">
+        <div><div class="sl">Distance</div><div class="sv c-a">68.4 km</div></div>
+        <div><div class="sl">Temps</div><div class="sv c-w">7h42</div></div>
+        <div><div class="sl">Dénivelé</div><div class="sv c-g">2 840 m</div></div>
+        <div><div class="sl">Sessions</div><div class="sv c-m">4</div></div>
+      </div>
+    </div>
+
+    <!-- Card mois -->
+    <div class="card-monthly">
+      <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+      <div class="card-header"><div class="card-title">Mars 2026</div><div class="trend-up">↑ 8%</div></div>
+      <div class="sg3">
+        <div><div class="sl">Distance</div><div class="sv c-a">247 km</div></div>
+        <div><div class="sl">D+</div><div class="sv c-g">9 120m</div></div>
+        <div><div class="sl">Sessions</div><div class="sv c-m">16</div></div>
+      </div>
+      <div class="pb-wrap">
+        <div class="pb-hd"><span>Progression du mois</span><span>31/31 jours</span></div>
+        <div class="pb-bg"><div class="pb-fill" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <!-- Activités récentes -->
+    <div class="plain-card amber">
+      <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+      <div class="card-header">
+        <div class="card-title">Activités récentes</div>
+        <div style="font-size:9px;color:#3DB2E0;font-family:'JetBrains Mono',monospace;cursor:pointer">VOIR TOUT →</div>
+      </div>
+      <div class="act-row">
+        <div class="act-bar trail"></div>
+        <div><div class="act-name">Sortie Belledonne</div><div class="act-meta">TRAIL · HIER · +1 240m</div></div>
+        <div class="act-num">
+          <div><div class="act-v">18.4 km</div><div class="act-u">dist.</div></div>
+          <div><div class="act-v">2h47</div><div class="act-u">temps</div></div>
+        </div>
+      </div>
+      <div class="act-row">
+        <div class="act-bar run"></div>
+        <div><div class="act-name">Tempo matinal</div><div class="act-meta">COURSE · LUNDI · +80m</div></div>
+        <div class="act-num">
+          <div><div class="act-v">12.1 km</div><div class="act-u">dist.</div></div>
+          <div><div class="act-v">52min</div><div class="act-u">temps</div></div>
+        </div>
+      </div>
+      <div class="act-row">
+        <div class="act-bar trail"></div>
+        <div><div class="act-name">Col de Vence</div><div class="act-meta">TRAIL · SAMEDI · +780m</div></div>
+        <div class="act-num">
+          <div><div class="act-v">14.7 km</div><div class="act-u">dist.</div></div>
+          <div><div class="act-v">1h58</div><div class="act-u">temps</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Événement -->
+    <div class="plain-card purple">
+      <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+      <div class="ev-stripe"></div>
+      <div class="ev-tag">Prochain événement</div>
+      <div class="ev-name">UTMB OCC 2025</div>
+      <div class="ev-where">CHAMONIX · 15 AOÛT</div>
+      <div class="ev-row">
+        <div>
+          <div class="ev-val">23</div>
+          <div class="ev-unit">JOURS</div>
+        </div>
+        <div>
+          <div class="ev-val">55</div>
+          <div class="ev-unit">KM</div>
+        </div>
+        <div>
+          <div class="ev-val">3 500</div>
+          <div class="ev-unit">D+</div>
+        </div>
+      </div>
+      <div class="ev-pill">⏱ Objectif : sub-9h</div>
+    </div>
+
+    <!-- Records Trail -->
+    <div class="rec-card">
+      <div class="br br-tl"></div><div class="br br-tr"></div><div class="br br-bl"></div><div class="br br-br"></div>
+      <div class="rec-header">
+        <div class="rec-title">Records Trail — All Time</div>
+        <div class="rec-link">VOIR TOUT →</div>
+      </div>
+      <div class="rec-grid">
+        <div class="rec-item">
+          <div class="rec-label">D+ en 5 min</div>
+          <div><span class="rec-val">148</span><span class="rec-unit">m</span></div>
+          <div class="rec-date">12-11-2024</div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-label">D+ en 30 min</div>
+          <div><span class="rec-val">612</span><span class="rec-unit">m</span></div>
+          <div class="rec-date">08-03-2025</div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-label">D+ en 60 min</div>
+          <div><span class="rec-val">1 024</span><span class="rec-unit">m</span></div>
+          <div class="rec-date">08-03-2025</div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-label">KV 1000m</div>
+          <div><span class="rec-val">58:42</span></div>
+          <div class="rec-date">22-06-2024</div>
+        </div>
+        <div class="rec-item full">
+          <div>
+            <div class="rec-label">Max D+ activité</div>
+            <div class="rec-date">Sortie Belledonne · 14-09-2024</div>
+          </div>
+          <div style="text-align:right"><span class="rec-val">3 840</span><span class="rec-unit">m</span></div>
+        </div>
+        <div class="rec-item full">
+          <div>
+            <div class="rec-label">Meilleur ratio D+/km</div>
+            <div class="rec-date">Col de la Croix de Fer · 02-07-2024</div>
+          </div>
+          <div style="text-align:right"><span class="rec-val">124</span><span class="rec-unit">m/km</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graphiques dashboard -->
+    <div class="charts-section">
+      <div class="charts-section-title">Analytics · Graphiques</div>
+
+      <!-- Row 1 : Activité quotidienne + Heures par semaine -->
+      <div class="charts-row">
+        <!-- Activités quotidiennes (stacked bar) -->
+        <div class="chart-card glacier">
+          <div class="br br-tl"></div><div class="br br-br"></div>
+          <div class="chart-title">Minutes / jour <span class="chart-subtitle">Cette semaine</span></div>
+          <svg class="chart-area" viewBox="0 0 200 90" preserveAspectRatio="none">
+            <!-- Grid lines -->
+            <line x1="0" y1="22" x2="200" y2="22" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="44" x2="200" y2="44" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="66" x2="200" y2="66" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <!-- Bars stacked (run+trail per day) -->
+            <!-- Lun -->
+            <rect x="8" y="50" width="18" height="30" fill="#E8832A" opacity="0.8" rx="1"/>
+            <!-- Mar -->
+            <rect x="35" y="62" width="18" height="18" fill="#3DB2E0" opacity="0.8" rx="1"/>
+            <!-- Mer -->
+            <rect x="62" y="20" width="18" height="60" fill="#C96A1A" opacity="0.8" rx="1"/>
+            <!-- Jeu -->
+            <rect x="89" y="55" width="18" height="25" fill="#E8832A" opacity="0.8" rx="1"/>
+            <!-- Ven -->
+            <rect x="116" y="72" width="18" height="8" fill="#3DB2E0" opacity="0.8" rx="1"/>
+            <!-- Sam -->
+            <rect x="143" y="10" width="18" height="70" fill="#C96A1A" opacity="0.8" rx="1"/>
+            <!-- Dim -->
+            <rect x="170" y="75" width="18" height="5" fill="#E8832A" opacity="0.4" rx="1"/>
+            <!-- X labels -->
+            <text x="17" y="88" font-size="6" fill="#3A3F47" text-anchor="middle" font-family="monospace">L</text>
+            <text x="44" y="88" font-size="6" fill="#3A3F47" text-anchor="middle" font-family="monospace">M</text>
+            <text x="71" y="88" font-size="6" fill="#3A3F47" text-anchor="middle" font-family="monospace">M</text>
+            <text x="98" y="88" font-size="6" fill="#3A3F47" text-anchor="middle" font-family="monospace">J</text>
+            <text x="125" y="88" font-size="6" fill="#3A3F47" text-anchor="middle" font-family="monospace">V</text>
+            <text x="152" y="88" font-size="6" fill="#3A3F47" text-anchor="middle" font-family="monospace">S</text>
+            <text x="179" y="88" font-size="6" fill="#3A3F47" text-anchor="middle" font-family="monospace">D</text>
+          </svg>
+        </div>
+
+        <!-- Heures par semaine (line area) -->
+        <div class="chart-card glacier">
+          <div class="br br-tl"></div><div class="br br-br"></div>
+          <div class="chart-title">Heures / semaine <span class="chart-subtitle">10 sem.</span></div>
+          <svg class="chart-area" viewBox="0 0 200 90" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3DB2E0" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#3DB2E0" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="22" x2="200" y2="22" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="44" x2="200" y2="44" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="66" x2="200" y2="66" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <!-- Average line -->
+            <line x1="0" y1="52" x2="200" y2="52" stroke="rgba(61,178,224,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+            <!-- Area fill -->
+            <polygon points="0,65 22,58 44,42 66,70 88,35 110,50 132,25 154,45 176,38 200,52 200,80 0,80" fill="url(#gBlue)"/>
+            <!-- Line -->
+            <polyline points="0,65 22,58 44,42 66,70 88,35 110,50 132,25 154,45 176,38 200,52" fill="none" stroke="#3DB2E0" stroke-width="1.5" stroke-linejoin="round"/>
+            <!-- Dots -->
+            <circle cx="132" cy="25" r="2.5" fill="#3DB2E0"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Row 2 : Distance/semaine (bar+line) + Répartition (donut) -->
+      <div class="charts-row">
+        <!-- Distance par semaine -->
+        <div class="chart-card amber">
+          <div class="br br-tl"></div><div class="br br-br"></div>
+          <div class="chart-title">km / semaine <span class="chart-subtitle">Run &amp; Trail</span></div>
+          <svg class="chart-area" viewBox="0 0 200 90" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gAmber" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E8832A" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#E8832A" stop-opacity="0.05"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="22" x2="200" y2="22" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="44" x2="200" y2="44" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="66" x2="200" y2="66" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <!-- Bars distance -->
+            <rect x="4"   y="55" width="14" height="25" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="24"  y="40" width="14" height="40" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="44"  y="48" width="14" height="32" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="64"  y="35" width="14" height="45" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="84"  y="58" width="14" height="22" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="104" y="30" width="14" height="50" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="124" y="42" width="14" height="38" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="144" y="38" width="14" height="42" fill="#E8832A" opacity="0.7" rx="1"/>
+            <rect x="164" y="20" width="14" height="60" fill="#E8832A" opacity="0.85" rx="1"/>
+            <rect x="184" y="28" width="14" height="52" fill="#E8832A" opacity="0.7" rx="1"/>
+            <!-- D+ line (secondary axis) -->
+            <polyline points="11,60 31,45 51,52 71,38 91,62 111,32 131,46 151,40 171,22 191,32" fill="none" stroke="#C96A1A" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="3,2"/>
+          </svg>
+        </div>
+
+        <!-- Répartition doughnut -->
+        <div class="chart-card glacier">
+          <div class="br br-tl"></div><div class="br br-br"></div>
+          <div class="chart-title">Répartition <span class="chart-subtitle">12 sem.</span></div>
+          <div style="display:flex;align-items:center;gap:14px;height:90px">
+            <svg viewBox="0 0 80 80" width="80" height="80" style="flex-shrink:0">
+              <!-- Donut segments -->
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#3DB2E0" stroke-width="12" stroke-dasharray="88 88" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#E8832A" stroke-width="12" stroke-dasharray="55 88" stroke-dashoffset="-88" transform="rotate(-90 40 40)"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#7B6BC8" stroke-width="12" stroke-dasharray="21 88" stroke-dashoffset="-143" transform="rotate(-90 40 40)"/>
+              <!-- Center -->
+              <circle cx="40" cy="40" r="18" fill="#0B0C10"/>
+              <text x="40" y="43" font-size="9" fill="#F2F2F2" text-anchor="middle" font-family="monospace" font-weight="700">73%</text>
+            </svg>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="width:8px;height:8px;border-radius:2px;background:#3DB2E0;flex-shrink:0"></div>
+                <span style="font-size:9px;color:rgba(242,242,242,0.5);font-family:monospace">Trail 50%</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="width:8px;height:8px;border-radius:2px;background:#E8832A;flex-shrink:0"></div>
+                <span style="font-size:9px;color:rgba(242,242,242,0.5);font-family:monospace">Course 32%</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="width:8px;height:8px;border-radius:2px;background:#7B6BC8;flex-shrink:0"></div>
+                <span style="font-size:9px;color:rgba(242,242,242,0.5);font-family:monospace">Vélo 18%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3 : Allure + Conquête -->
+      <div class="charts-row">
+        <!-- Allure par semaine (bar vert) -->
+        <div class="chart-card moss">
+          <div class="br br-tl"></div><div class="br br-br"></div>
+          <div class="chart-title">Allure moy. / sem. <span class="chart-subtitle">Trail</span></div>
+          <svg class="chart-area" viewBox="0 0 200 90" preserveAspectRatio="none">
+            <line x1="0" y1="22" x2="200" y2="22" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="44" x2="200" y2="44" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="66" x2="200" y2="66" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <!-- Bars allure (plus bas = meilleur) -->
+            <rect x="4"   y="40" width="14" height="40" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <rect x="24"  y="35" width="14" height="45" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <rect x="44"  y="50" width="14" height="30" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <rect x="64"  y="28" width="14" height="52" fill="#6DAA75" opacity="0.85" rx="1"/>
+            <rect x="84"  y="45" width="14" height="35" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <rect x="104" y="32" width="14" height="48" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <rect x="124" y="38" width="14" height="42" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <rect x="144" y="30" width="14" height="50" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <rect x="164" y="20" width="14" height="60" fill="#6DAA75" opacity="0.85" rx="1"/>
+            <rect x="184" y="35" width="14" height="45" fill="#6DAA75" opacity="0.7" rx="1"/>
+            <!-- Y label -->
+            <text x="198" y="14" font-size="6" fill="#3A3F47" text-anchor="end" font-family="monospace">5:30</text>
+            <text x="198" y="36" font-size="6" fill="#3A3F47" text-anchor="end" font-family="monospace">6:00</text>
+            <text x="198" y="58" font-size="6" fill="#3A3F47" text-anchor="end" font-family="monospace">6:30</text>
+            <text x="198" y="80" font-size="6" fill="#3A3F47" text-anchor="end" font-family="monospace">7:00</text>
+          </svg>
+        </div>
+
+        <!-- Conquête — nouvelles zones par semaine -->
+        <div class="chart-card glacier">
+          <div class="br br-tl"></div><div class="br br-br"></div>
+          <div class="chart-title">Conquête <span class="chart-subtitle">Nouvelles zones</span></div>
+          <svg class="chart-area" viewBox="0 0 200 90" preserveAspectRatio="none">
+            <line x1="0" y1="22" x2="200" y2="22" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="44" x2="200" y2="44" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <line x1="0" y1="66" x2="200" y2="66" stroke="rgba(58,63,71,0.2)" stroke-width="0.5"/>
+            <!-- Bars nouvelles cellules -->
+            <rect x="4"   y="55" width="14" height="25" fill="#3DB2E0" opacity="0.7" rx="1"/>
+            <rect x="24"  y="48" width="14" height="32" fill="#3DB2E0" opacity="0.7" rx="1"/>
+            <rect x="44"  y="60" width="14" height="20" fill="#3DB2E0" opacity="0.7" rx="1"/>
+            <rect x="64"  y="40" width="14" height="40" fill="#3DB2E0" opacity="0.75" rx="1"/>
+            <rect x="84"  y="65" width="14" height="15" fill="#3DB2E0" opacity="0.6" rx="1"/>
+            <rect x="104" y="35" width="14" height="45" fill="#3DB2E0" opacity="0.8" rx="1"/>
+            <rect x="124" y="52" width="14" height="28" fill="#3DB2E0" opacity="0.7" rx="1"/>
+            <rect x="144" y="44" width="14" height="36" fill="#3DB2E0" opacity="0.7" rx="1"/>
+            <rect x="164" y="25" width="14" height="55" fill="#3DB2E0" opacity="0.85" rx="1"/>
+            <rect x="184" y="58" width="14" height="22" fill="#3DB2E0" opacity="0.7" rx="1"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
