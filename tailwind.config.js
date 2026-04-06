@@ -27,8 +27,8 @@ export default {
         mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {
-        'sm': '8px',
-        'md': '12px',
+        'sm': '6px',
+        'md': '8px',
         'lg': '16px',
       },
       boxShadow: {

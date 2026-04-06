@@ -117,6 +117,236 @@ body::before {
   backdrop-filter: blur(10px);
 }
 
+/* ============================================
+   HAWKSIGHT DESIGN SYSTEM — Reusable utilities
+   ============================================ */
+
+/* ── Base card ── */
+.hw-card {
+  background: #0B0C10;
+  border: 1px solid rgba(58,63,71,0.3);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Weekly gradient card (amber → glacier) ── */
+.hw-card-weekly {
+  background: linear-gradient(135deg, rgba(232,131,42,0.12) 0%, rgba(61,178,224,0.12) 100%);
+  border: 1px solid rgba(232,131,42,0.35);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Monthly gradient card (glacier → moss) ── */
+.hw-card-monthly {
+  background: linear-gradient(135deg, rgba(61,178,224,0.12) 0%, rgba(109,170,117,0.12) 100%);
+  border: 1px solid rgba(61,178,224,0.35);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Records card (amber gradient) ── */
+.hw-card-records {
+  background: linear-gradient(135deg, rgba(232,131,42,0.06) 0%, rgba(200,106,26,0.06) 100%);
+  border: 1px solid rgba(232,131,42,0.3);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Stat label (9px muted mono uppercase) ── */
+.hw-label {
+  font-size: 9px;
+  color: rgba(242,242,242,0.35);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+
+/* ── Stat value (16px bold mono tabular) ── */
+.hw-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Card title (12px semibold) ── */
+.hw-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #F2F2F2;
+}
+
+/* ── Mono link (9px mono uppercase spaced) ── */
+.hw-link {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #3DB2E0;
+  cursor: pointer;
+  text-decoration: none;
+}
+.hw-link:hover { color: #5bc4ed; }
+
+/* ── Section separator (glacier accent) ── */
+.hw-section-sep {
+  border-top: 1px solid rgba(61,178,224,0.2);
+  margin-top: 8px;
+  padding-top: 28px;
+  position: relative;
+}
+.hw-section-sep::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, #3DB2E0, transparent);
+}
+
+/* ── Corner brackets — 14×14px, placed absolutely ── */
+.hw-br {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.hw-br-tl { top: 0; left: 0; border-top: 2px solid; border-left: 2px solid; border-radius: 8px 0 0 0; }
+.hw-br-tr { top: 0; right: 0; border-top: 2px solid; border-right: 2px solid; border-radius: 0 8px 0 0; }
+.hw-br-bl { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; border-radius: 0 0 0 8px; }
+.hw-br-br { bottom: 0; right: 0; border-bottom: 2px solid; border-right: 2px solid; border-radius: 0 0 8px 0; }
+
+/* Color variants for corner brackets */
+.hw-br-amber { border-color: rgba(232,131,42,0.45); }
+.hw-br-amber-dark { border-color: rgba(200,106,26,0.35); }
+.hw-br-glacier { border-color: rgba(61,178,224,0.45); }
+.hw-br-glacier-dim { border-color: rgba(61,178,224,0.35); }
+.hw-br-moss { border-color: rgba(109,170,117,0.4); }
+.hw-br-steel { border-color: rgba(58,63,71,0.3); }
+
+/* ── Progress bar ── */
+.hw-pb-bg {
+  height: 3px;
+  background: rgba(58,63,71,0.35);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.hw-pb-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3DB2E0, #6DAA75);
+}
+
+/* ── Event badge (pulsing amber pill) ── */
+.hw-ev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(232,131,42,0.12);
+  border: 1px solid rgba(232,131,42,0.4);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #E8832A;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  animation: hw-pulse-badge 2s ease-in-out infinite;
+}
+.hw-ev-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #E8832A;
+  animation: hw-pulse-dot 2s ease-in-out infinite;
+}
+@keyframes hw-pulse-badge {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232,131,42,0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(232,131,42,0); }
+}
+@keyframes hw-pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Activity row ── */
+.hw-act-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(58,63,71,0.2);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+  border-radius: 4px;
+  margin: 0 -6px;
+}
+.hw-act-row:last-child { border-bottom: none; }
+.hw-act-row:hover { background: rgba(58,63,71,0.15); }
+
+/* ── Featured activity block ── */
+.hw-act-featured {
+  background: rgba(232,131,42,0.07);
+  border: 1px solid rgba(232,131,42,0.25);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.hw-act-featured:hover { background: rgba(232,131,42,0.11); }
+
+/* ── Score eyebrow (amber line + text) ── */
+.hw-score-eyebrow {
+  font-size: 9px;
+  color: rgba(232,131,42,0.6);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hw-score-eyebrow::before {
+  content: '';
+  width: 12px;
+  height: 1px;
+  background: #E8832A;
+}
+
+/* ── Gradient separator (amber → glacier) ── */
+.hw-grad-sep {
+  height: 1px;
+  background: linear-gradient(90deg, #E8832A, #3DB2E0, transparent);
+  width: 100px;
+  margin: 10px 0;
+}
+
+/* ── Record inline row ── */
+.hw-rec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(58,63,71,0.18);
+}
+.hw-rec-row:last-child { border-bottom: none; padding-bottom: 0; }
+
 /* Override browser autofill background on inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

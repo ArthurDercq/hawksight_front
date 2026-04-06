@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from '@/context';
-import { Navbar, Footer } from '@/components/layout';
+import { Navbar, Sidebar, Footer } from '@/components/layout';
 import { Spinner } from '@/components/ui/Spinner';
 
 const HomePage = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
@@ -132,13 +132,17 @@ function AppLayout() {
     );
   }
 
+  // Authenticated app layout: fixed sidebar + scrollable main
   return (
-    <div className="min-h-screen bg-charcoal text-mist font-body flex flex-col">
-      <Navbar />
-      <main className="container mx-auto px-4 py-6 flex-1">
-        <AppRoutes />
-      </main>
-      <Footer />
+    <div className="min-h-screen bg-charcoal text-mist font-body flex">
+      <Sidebar />
+      {/* Offset for fixed sidebar */}
+      <div className="ml-[196px] flex flex-col flex-1 min-h-screen">
+        <main className="flex-1 px-6 py-6">
+          <AppRoutes />
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }

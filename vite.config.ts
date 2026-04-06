@@ -13,7 +13,6 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-charts': ['chart.js', 'react-chartjs-2'],
           'vendor-mapbox': ['mapbox-gl'],
-          'vendor-leaflet': ['leaflet', 'react-leaflet'],
           'vendor-motion': ['motion'],
           'vendor-icons': ['lucide-react'],
         },

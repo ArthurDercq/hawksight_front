@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
-import React, { lazy, Suspense, useRef, useEffect, useState, type ReactNode } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useDashboard, useDashboardCharts, usePermissions, useInView, useEvents } from '@/hooks';
 import { DemoBanner } from '@/components/ui/DemoBanner';
 import { EventModal } from '@/components/ui/EventModal';
+import { DashboardMap } from '@/components/maps';
+import { trailApi, kpiApi } from '@/services/api';
+import type { TrailProfile, TrailRecord } from '@/types';
 
 const DashboardChartsSection = lazy(() =>
   import('./DashboardChartsSection').then(m => ({ default: m.DashboardChartsSection }))
@@ -16,50 +19,13 @@ const MONTH_NAMES = [
 
 const SPORT_COLORS: Record<string, string> = {
   Run: '#3DB2E0',
-  Trail: '#1E6A8F',
+  Trail: '#C96A1A',
   Bike: '#7B6BC8',
   Swim: '#8B92A0',
   WeightTraining: '#9ca3af',
   Hike: '#5A5F6C',
 };
 
-// Convert polyline coordinates to SVG path
-function polylineToSvgPath(coords: [number, number][]): string {
-  if (coords.length === 0) return '';
-
-  const lats = coords.map(c => c[0]);
-  const lngs = coords.map(c => c[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  const rangeLat = maxLat - minLat || 0.001;
-  const rangeLng = maxLng - minLng || 0.001;
-
-  const scale = Math.max(rangeLat, rangeLng);
-  const pad = 10;
-  const w = 100 - 2 * pad;
-
-  const points = coords.map(([lat, lng]) => {
-    const x = pad + ((lng - minLng) / scale) * w;
-    const y = pad + ((maxLat - lat) / scale) * w;
-    return `${x.toFixed(1)} ${y.toFixed(1)}`;
-  });
-
-  return `M ${points.join(' L ')}`;
-}
-
-function ScrollToEndContainer({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.scrollLeft = ref.current.scrollWidth;
-  }, []);
-  return (
-    <div ref={ref} className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide">
-      {children}
-    </div>
-  );
-}
-
-// Lazy-mount charts only when scrolled into view
 function ChartsPlaceholder(props: React.ComponentProps<typeof DashboardChartsSection>) {
   const [ref, inView] = useInView();
   return (
@@ -82,71 +48,62 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-const EVENT_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
-  Trail: { bg: 'rgba(30,106,143,0.2)', color: '#3DB2E0' },
-  Run: { bg: 'rgba(61,178,224,0.15)', color: '#3DB2E0' },
-  Bike: { bg: 'rgba(123,107,200,0.2)', color: '#7B6BC8' },
-  Ultra: { bg: 'rgba(232,131,42,0.15)', color: '#E8832A' },
-  Swim: { bg: 'rgba(139,146,160,0.2)', color: '#8B92A0' },
-  Hike: { bg: 'rgba(109,170,117,0.2)', color: '#6DAA75' },
-  Other: { bg: 'rgba(58,63,71,0.4)', color: '#8B92A0' },
-};
+// Corner bracket — 14×14px, using hw-br utilities from index.css
+function CornerBrackets({ tlColor, trColor, blColor, brColor }: {
+  tlColor?: string; trColor?: string; blColor?: string; brColor?: string;
+}) {
+  return (
+    <>
+      <span className="hw-br hw-br-tl" style={tlColor ? { borderColor: tlColor } : undefined} />
+      <span className="hw-br hw-br-tr" style={trColor ? { borderColor: trColor } : undefined} />
+      <span className="hw-br hw-br-bl" style={blColor ? { borderColor: blColor } : undefined} />
+      <span className="hw-br hw-br-br" style={brColor ? { borderColor: brColor } : undefined} />
+    </>
+  );
+}
 
 export function DashboardPage() {
   const { lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
   const { nextEvent, createEvent } = useEvents();
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const { isDemo, canSync } = usePermissions();
+
+  // Trail profile — fetch léger en background, non bloquant
+  const [trailProfile, setTrailProfile] = useState<TrailProfile | null>(null);
+  useEffect(() => {
+    trailApi.getProfile().then(setTrailProfile).catch(() => null);
+  }, []);
+
+  // Trail records — fetch en background
+  const [trailRecords, setTrailRecords] = useState<Record<string, TrailRecord[]>>({});
+  useEffect(() => {
+    kpiApi.getRecords().then(d => setTrailRecords(d.trailRecords)).catch(() => null);
+  }, []);
+
   const {
-    dailyHoursData,
-    weekOffset,
-    setWeekOffset,
-    weekLabel,
-    weekStats,
-    weeklyHoursData,
-    weeklyHoursAverage,
-    weeklyDistanceData,
-    distanceSport,
-    setDistanceSport,
-    weeklyDistanceAverage,
-    repartitionData,
-    repartitionSport,
-    setRepartitionSport,
-    repartitionWeeks,
-    setRepartitionWeeks,
-    weeklyPaceData,
-    paceSport,
-    setPaceSport,
-    weeklyPaceAverage,
-    conqueteData,
-    conqueteAverage,
-    weeklyElevationAverage,
-    globalOffset,
-    setGlobalOffset,
-    isRefetchingDailyHours,
-    isRefetchingWeeklyHours,
-    isRefetchingWeeklyDistance,
-    isRefetchingRepartition,
-    isRefetchingWeeklyPace,
-    isRefetchingConquete,
+    dailyHoursData, weekOffset, setWeekOffset, weekLabel, weekStats,
+    weeklyHoursData, weeklyHoursAverage,
+    weeklyDistanceData, distanceSport, setDistanceSport, weeklyDistanceAverage,
+    repartitionData, repartitionSport, setRepartitionSport, repartitionWeeks, setRepartitionWeeks,
+    weeklyPaceData, paceSport, setPaceSport, weeklyPaceAverage,
+    conqueteData, conqueteAverage, weeklyElevationAverage,
+    globalOffset, setGlobalOffset,
+    isRefetchingDailyHours, isRefetchingWeeklyHours, isRefetchingWeeklyDistance,
+    isRefetchingRepartition, isRefetchingWeeklyPace, isRefetchingConquete,
   } = useDashboardCharts();
 
   if (isLoading) {
     return (
-      <div className="max-w-[1400px] mx-auto px-6">
-        <div className="flex items-center justify-center py-12">
-          <Spinner message="Chargement du tableau de bord..." />
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <Spinner message="Chargement du tableau de bord..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-[1400px] mx-auto px-6">
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6 text-center">
-          <p className="text-red-400">{error}</p>
-        </div>
+      <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6 text-center">
+        <p className="text-red-400">{error}</p>
       </div>
     );
   }
@@ -154,430 +111,437 @@ export function DashboardPage() {
   const currentMonth = MONTH_NAMES[new Date().getMonth()];
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6">
-      {/* Demo mode banner */}
+    <div className="flex flex-col gap-3 max-w-[1200px]">
       {isDemo && <DemoBanner />}
 
-      {/* Top Row - Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
-        {/* Weekly Summary */}
-        <div className="card-weekly rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-semibold text-mist">Cette semaine</h2>
-            {weeklySummary && (
-              <span
-                className={`text-sm font-medium ${
-                  weeklySummary.prevWeekComparison >= 0 ? 'text-moss' : 'text-red-400'
-                }`}
-              >
-                {weeklySummary.prevWeekComparison >= 0 ? '↑' : '↓'}{' '}
-                {Math.abs(weeklySummary.prevWeekComparison).toFixed(0)}%
-              </span>
-            )}
+      {/* ── ROW 0 : Score Trail + Carte ── */}
+      <div className="grid gap-3" style={{ gridTemplateColumns: '280px 1fr' }}>
+
+        {/* Score Trail */}
+        <div
+          className="relative overflow-hidden flex flex-col"
+          style={{
+            background: '#0B0C10',
+            border: '1px solid rgba(58,63,71,0.3)',
+            borderRadius: '8px',
+            padding: '20px',
+            minHeight: '200px',
+          }}
+        >
+          {/* Radial amber glow at top-left */}
+          <span className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, rgba(232,131,42,0.06) 0%, transparent 65%)' }} />
+          <CornerBrackets tlColor="rgba(232,131,42,0.45)" trColor="rgba(232,131,42,0.45)" blColor="rgba(232,131,42,0.45)" brColor="rgba(232,131,42,0.45)" />
+
+          {/* Eyebrow */}
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="hw-score-eyebrow">Trail Score</p>
+            <Link to="/profile" className="hw-link" style={{ color: 'rgba(232,131,42,0.5)' }}>Profil →</Link>
           </div>
+
+          {/* Big score */}
+          {trailProfile ? (
+            <>
+              <p
+                className="tabular-nums"
+                style={{ fontSize: '84px', fontWeight: 800, lineHeight: 0.95, color: '#E8832A', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}
+              >
+                {Math.round(trailProfile.trail_score_final)}
+              </p>
+              <div className="hw-grad-sep" />
+              <p style={{ fontSize: '11px', color: 'rgba(242,242,242,0.35)', fontFamily: 'JetBrains Mono, monospace' }}>
+                Profil dominant · <strong style={{ color: '#6DAA75' }}>{trailProfile.dominant_profile}</strong>
+              </p>
+            </>
+          ) : (
+            <>
+              <p
+                className="tabular-nums"
+                style={{ fontSize: '84px', fontWeight: 800, lineHeight: 0.95, color: 'rgba(58,63,71,0.4)', fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                --
+              </p>
+              <div className="hw-grad-sep" />
+              <p style={{ fontSize: '11px', color: 'rgba(242,242,242,0.2)', fontFamily: 'JetBrains Mono, monospace' }}>Aucune donnée</p>
+            </>
+          )}
+
+          {/* Axis scores mini bars */}
+          {trailProfile?.axis_scores && (
+            <div className="flex flex-col gap-1.5 mt-4">
+              {(Object.entries(trailProfile.axis_scores) as [string, number | null][])
+                .filter(([k, v]) => k !== 'legacy' && v !== null)
+                .map(([key, val]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)', textTransform: 'uppercase', width: '64px', flexShrink: 0 }}>{key}</span>
+                    <div className="flex-1 hw-pb-bg" style={{ marginTop: 0 }}>
+                      <div className="hw-pb-fill" style={{ width: `${Math.min(100, (val ?? 0) * 100)}%` }} />
+                    </div>
+                    <span style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(232,131,42,0.5)', width: '28px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                      {((val ?? 0) * 100).toFixed(0)}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Ghost rank bottom-right */}
+          <div className="absolute" style={{ bottom: '20px', right: '20px', textAlign: 'right' }}>
+            <p style={{ fontSize: '26px', fontWeight: 700, color: 'rgba(242,242,242,0.06)', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}>
+              {trailProfile ? `#${Math.max(1, Math.round((100 - trailProfile.trail_score_final) / 10))}` : ''}
+            </p>
+          </div>
+        </div>
+
+        {/* Carte Mapbox */}
+        <DashboardMap
+          className=""
+          style={{ minHeight: '200px', borderRadius: '8px' }}
+          explorationStats={explorationStats}
+        />
+      </div>
+
+      {/* ── ROW 1 : Stats semaine / mois / event ── */}
+      <div className="grid grid-cols-3 gap-3">
+
+        {/* Cette semaine */}
+        <div className="hw-card-weekly">
+          {/* Weekly: TL+TR amber, BL+BR glacier */}
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
+          <span className="hw-br hw-br-tr" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
+          <span className="hw-br hw-br-bl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
+
+          <div className="flex items-center justify-between mb-3">
+            <span className="hw-card-title">Cette semaine</span>
+            <div className="flex items-center gap-2">
+              {weeklySummary && (
+                <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: weeklySummary.prevWeekComparison >= 0 ? '#6DAA75' : '#fc8181' }}>
+                  {weeklySummary.prevWeekComparison >= 0 ? '↑' : '↓'} {Math.abs(weeklySummary.prevWeekComparison).toFixed(0)}%
+                </span>
+              )}
+              <Link to="/performance" className="hw-link" style={{ color: 'rgba(232,131,42,0.5)' }}>Stats →</Link>
+            </div>
+          </div>
+
           {weeklySummary ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <p className="text-xs text-mist/50 mb-1">Distance</p>
-                <p className="text-lg font-mono text-amber font-semibold">
-                  {weeklySummary.totalDistance.toFixed(1)} km
-                </p>
+                <p className="hw-label">Distance</p>
+                <p className="hw-value" style={{ color: '#E8832A' }}>{weeklySummary.totalDistance.toFixed(1)} <span style={{ fontSize: '10px', color: 'rgba(232,131,42,0.6)' }}>km</span></p>
               </div>
               <div>
-                <p className="text-xs text-mist/50 mb-1">Temps</p>
-                <p className="text-lg font-mono text-mist font-semibold">
-                  {formatTime(weeklySummary.totalTime)}
-                </p>
+                <p className="hw-label">Temps</p>
+                <p className="hw-value" style={{ color: '#F2F2F2' }}>{formatTime(weeklySummary.totalTime)}</p>
               </div>
               <div>
-                <p className="text-xs text-mist/50 mb-1">Denivele</p>
-                <p className="text-lg font-mono text-glacier font-semibold">
-                  {Math.round(weeklySummary.totalElevation)} m
-                </p>
+                <p className="hw-label">D+</p>
+                <p className="hw-value" style={{ color: '#3DB2E0' }}>{Math.round(weeklySummary.totalElevation)} <span style={{ fontSize: '10px', color: 'rgba(61,178,224,0.6)' }}>m</span></p>
               </div>
               <div>
-                <p className="text-xs text-mist/50 mb-1">Sessions</p>
-                <p className="text-lg font-mono text-moss font-semibold">{weeklySummary.sessionCount}</p>
+                <p className="hw-label">Sessions</p>
+                <p className="hw-value" style={{ color: '#6DAA75' }}>{weeklySummary.sessionCount}</p>
               </div>
             </div>
           ) : (
-            <p className="text-mist/60">Pas de donnees</p>
+            <p style={{ color: 'rgba(242,242,242,0.3)', fontSize: '12px' }}>Pas de données</p>
           )}
         </div>
 
-        {/* Monthly Summary */}
-        <div className="card-monthly rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-semibold text-mist">{currentMonth}</h2>
-            {monthlySummary && (
-              <span
-                className={`text-sm font-medium ${
-                  monthlySummary.trend >= 0 ? 'text-moss' : 'text-red-400'
-                }`}
-              >
-                {monthlySummary.trend >= 0 ? '↑' : '↓'} {Math.abs(monthlySummary.trend).toFixed(0)}%
-              </span>
-            )}
+        {/* Ce mois */}
+        <div className="hw-card-monthly">
+          {/* Monthly: TL+TR glacier, BL+BR moss */}
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.5)' }} />
+          <span className="hw-br hw-br-tr" style={{ borderColor: 'rgba(61,178,224,0.5)' }} />
+          <span className="hw-br hw-br-bl" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
+
+          <div className="flex items-center justify-between mb-3">
+            <span className="hw-card-title">{currentMonth}</span>
+            <div className="flex items-center gap-2">
+              {monthlySummary && (
+                <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: monthlySummary.trend >= 0 ? '#6DAA75' : '#fc8181' }}>
+                  {monthlySummary.trend >= 0 ? '↑' : '↓'} {Math.abs(monthlySummary.trend).toFixed(0)}%
+                </span>
+              )}
+              <Link to="/kpi" className="hw-link" style={{ color: 'rgba(61,178,224,0.5)' }}>KPIs →</Link>
+            </div>
           </div>
+
           {monthlySummary ? (
             <>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                 <div>
-                  <p className="text-xs text-mist/50 mb-1">Distance</p>
-                  <p className="text-lg font-mono text-amber font-semibold">
-                    {monthlySummary.totalDistance.toFixed(1)} km
-                  </p>
+                  <p className="hw-label">Distance</p>
+                  <p className="hw-value" style={{ color: '#E8832A', fontSize: '15px' }}>{monthlySummary.totalDistance.toFixed(1)} <span style={{ fontSize: '9px', color: 'rgba(232,131,42,0.6)' }}>km</span></p>
                 </div>
                 <div>
-                  <p className="text-xs text-mist/50 mb-1">D+</p>
-                  <p className="text-lg font-mono text-glacier font-semibold">
-                    {Math.round(monthlySummary.totalElevation)} m
-                  </p>
+                  <p className="hw-label">D+</p>
+                  <p className="hw-value" style={{ color: '#3DB2E0', fontSize: '15px' }}>{Math.round(monthlySummary.totalElevation)} <span style={{ fontSize: '9px', color: 'rgba(61,178,224,0.6)' }}>m</span></p>
                 </div>
                 <div>
-                  <p className="text-xs text-mist/50 mb-1">Sessions</p>
-                  <p className="text-lg font-mono text-moss font-semibold">{monthlySummary.sessionCount}</p>
+                  <p className="hw-label">Sessions</p>
+                  <p className="hw-value" style={{ color: '#6DAA75', fontSize: '15px' }}>{monthlySummary.sessionCount}</p>
                 </div>
               </div>
               <div>
-                <div className="flex justify-between text-xs text-mist/50 mb-1">
-                  <span>Progression du mois</span>
-                  <span>
-                    {monthlySummary.daysPassed}/{monthlySummary.daysInMonth} jours
-                  </span>
+                <div className="hw-pb-bg">
+                  <div className="hw-pb-fill" style={{ width: `${monthlySummary.monthProgress}%` }} />
                 </div>
-                <div className="h-2 bg-charcoal/50 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-glacier to-moss transition-all"
-                    style={{ width: `${monthlySummary.monthProgress}%` }}
-                  />
+                <div className="flex justify-between" style={{ marginTop: '5px' }}>
+                  <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)' }}>Progression</span>
+                  <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)' }}>{monthlySummary.daysPassed}/{monthlySummary.daysInMonth}j</span>
                 </div>
               </div>
             </>
           ) : (
-            <p className="text-mist/60">Pas de donnees</p>
+            <p style={{ color: 'rgba(242,242,242,0.3)', fontSize: '12px' }}>Pas de données</p>
           )}
         </div>
 
         {/* Prochain événement */}
-        <div className="card-streak rounded-lg p-4 flex flex-col gap-3">
-          <h2 className="font-heading font-semibold text-mist">Prochain événement</h2>
+        <div className="hw-card" style={{ border: '1px solid rgba(61,178,224,0.25)' }}>
+          {/* Top stripe amber→glacier */}
+          <span className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none" style={{ background: 'linear-gradient(90deg, #E8832A, #3DB2E0, transparent)' }} />
+
+          <div className="flex items-center justify-between mb-2.5">
+            <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(61,178,224,0.7)', textTransform: 'uppercase', letterSpacing: '2px' }}>
+              Prochain Événement
+            </p>
+            {nextEvent && (
+              <span className="hw-ev-badge">J-{getDaysUntil(nextEvent.date)}</span>
+            )}
+          </div>
+
           {nextEvent ? (
             <>
-              <div className="flex-1 flex items-center gap-4 bg-charcoal/30 rounded-lg p-3">
-                <span className="text-4xl font-bold text-amber font-mono">{getDaysUntil(nextEvent.date)}</span>
-                <div>
-                  <p className="text-sm font-semibold text-mist">jours</p>
-                  <p className="text-xs text-mist/50">restants</p>
-                </div>
+              <p style={{ fontSize: '16px', fontWeight: 700, color: '#F2F2F2', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nextEvent.name}</p>
+              {(nextEvent.location || nextEvent.date) && (
+                <p style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {[nextEvent.location, new Date(nextEvent.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()].filter(Boolean).join(' · ')}
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: '18px', marginBottom: '14px' }}>
+                {nextEvent.distance_km && (
+                  <div>
+                    <p style={{ fontSize: '22px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{nextEvent.distance_km}</p>
+                    <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>km</p>
+                  </div>
+                )}
+                {nextEvent.elevation_m && (
+                  <div>
+                    <p style={{ fontSize: '22px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{nextEvent.elevation_m.toLocaleString('fr-FR')}</p>
+                    <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>m D+</p>
+                  </div>
+                )}
               </div>
-              <div className="flex-1 flex flex-col justify-center bg-charcoal/30 rounded-lg p-3 gap-1.5">
-                <p className="text-sm font-semibold text-mist truncate">{nextEvent.name}</p>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded"
-                    style={{
-                      backgroundColor: EVENT_TYPE_COLORS[nextEvent.type]?.bg ?? 'rgba(58,63,71,0.4)',
-                      color: EVENT_TYPE_COLORS[nextEvent.type]?.color ?? '#8B92A0',
-                      border: `1px solid ${EVENT_TYPE_COLORS[nextEvent.type]?.color ?? '#8B92A0'}40`,
-                    }}
-                  >
-                    {nextEvent.type}
-                  </span>
-                  {nextEvent.distance_km && (
-                    <span className="text-xs text-mist/50 font-mono">{nextEvent.distance_km} km</span>
-                  )}
-                </div>
-              </div>
+              <Link to="/calendar" className="hw-link">Calendrier →</Link>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <p className="text-mist/40 text-sm text-center">Aucun événement planifié</p>
-              <button
-                onClick={() => setEventModalOpen(true)}
-                className="text-xs text-amber hover:text-amber/80 font-medium transition-colors"
-              >
+            <div className="flex flex-col gap-2 pt-1">
+              <p style={{ color: 'rgba(242,242,242,0.25)', fontSize: '12px' }}>Aucun événement planifié</p>
+              <button onClick={() => setEventModalOpen(true)} style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: '#E8832A', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                 + Ajouter un événement
               </button>
+              <Link to="/calendar" className="hw-link" style={{ marginTop: '4px' }}>Calendrier →</Link>
             </div>
-          )}
-        </div>
-
-        {/* Conquête */}
-        <div className="card-glass rounded-lg p-4">
-          <h2 className="font-heading font-semibold text-mist mb-4">Conquête</h2>
-          {explorationStats ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-mist/50 mb-1">Ce mois</p>
-                <p className="text-lg font-mono text-amber font-semibold">
-                  +{Math.round(explorationStats.new_cells_per_month)}
-                </p>
-                <p className="text-[10px] text-mist/40">territoires</p>
-              </div>
-              <div>
-                <p className="text-xs text-mist/50 mb-1">Belgique</p>
-                <p className="text-lg font-mono text-glacier font-semibold">
-                  {((explorationStats.total_cells / 41200) * 100).toFixed(2)}%
-                </p>
-                <p className="text-[10px] text-mist/40">exploré</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs text-mist/50 mb-1">Nouveauté</p>
-                <p className="text-sm font-mono text-moss font-semibold">
-                  {explorationStats.novelty_percent.toFixed(1)}% cette année
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-mist/60 text-sm">Pas de données</p>
           )}
         </div>
       </div>
 
-      {/* Second Row - Last Activity & Quick Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Last Activity */}
-        <div className="card-glass rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber/10 border border-amber/30">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8832A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              </div>
-              <h2 className="font-heading font-semibold text-mist">Dernière activité</h2>
-            </div>
-            <button
-              onClick={syncData}
-              disabled={isSyncing || !canSync}
-              className="p-2 rounded-lg bg-steel/20 border border-steel/30 hover:bg-steel/40 hover:border-glacier/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-              title={canSync ? "Synchroniser mes données" : "Indisponible en mode démo"}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={`text-mist/60 group-hover:text-glacier transition-colors ${isSyncing ? 'animate-spin' : ''}`}
+      {/* ── ROW 2 : Activités récentes + Records Trail ── */}
+      <div className="grid grid-cols-2 gap-3">
+
+        {/* Activités récentes */}
+        <div className="hw-card" style={{ border: '1px solid rgba(232,131,42,0.25)' }}>
+          <CornerBrackets
+            tlColor="rgba(232,131,42,0.45)" trColor="rgba(232,131,42,0.45)"
+            blColor="rgba(232,131,42,0.45)" brColor="rgba(232,131,42,0.45)"
+          />
+          <div className="flex items-center justify-between mb-3">
+            <span className="hw-card-title">Activités récentes</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={syncData}
+                disabled={isSyncing || !canSync}
+                className="flex items-center gap-1.5"
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '9px',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  background: 'rgba(58,63,71,0.3)',
+                  border: '1px solid rgba(58,63,71,0.5)',
+                  color: isSyncing ? '#3DB2E0' : 'rgba(242,242,242,0.4)',
+                  cursor: isSyncing || !canSync ? 'not-allowed' : 'pointer',
+                  opacity: !canSync ? 0.4 : 1,
+                  transition: 'all 0.15s',
+                }}
+                title={canSync ? 'Synchroniser mes données' : 'Indisponible en mode démo'}
               >
-                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-              </svg>
-            </button>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isSyncing ? 'animate-spin' : ''}>
+                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
+                </svg>
+                {isSyncing ? 'Sync...' : 'Màj'}
+              </button>
+              <Link to="/activities" className="hw-link">Voir tout →</Link>
+            </div>
           </div>
-          {lastActivity ? (
+
+          {/* Dernière activité — featured block */}
+          {lastActivity && (
             <Link
               to={`/activity/${lastActivity.id}`}
-              className="block hover:bg-steel/10 -m-2 p-2 rounded-lg transition-all hover:-translate-y-0.5"
+              className="hw-act-featured block"
+              style={{ display: 'block' }}
             >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="font-medium text-mist">{lastActivity.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-sm text-mist/60">{formatActivityDate(lastActivity.date)}</p>
-                    {lastActivity.race && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
-                        🏁 {lastActivity.race.name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-charcoal/50 rounded-lg p-2">
-                  <p className="text-xs text-mist/50 mb-1">Distance</p>
-                  <p className="font-mono text-amber font-semibold">{lastActivity.distance_km.toFixed(1)} km</p>
-                </div>
-                <div className="bg-charcoal/50 rounded-lg p-2">
-                  <p className="text-xs text-mist/50 mb-1">Durée</p>
-                  <p className="font-mono text-mist font-semibold">{lastActivity.duree_hms}</p>
-                </div>
-                <div className="bg-charcoal/50 rounded-lg p-2">
-                  <p className="text-xs text-mist/50 mb-1">D+</p>
-                  <p className="font-mono text-glacier font-semibold">{lastActivity.denivele_m} m</p>
-                </div>
-                <div className="bg-charcoal/50 rounded-lg p-2">
-                  <p className="text-xs text-mist/50 mb-1">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
-                  <p className="font-mono text-moss font-semibold">
-                    {lastActivity.type === 'Bike'
-                      ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'} km/h`
-                      : formatPace(lastActivity.allure_min_per_km)}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                <div style={{ width: '3px', height: '36px', borderRadius: '2px', background: SPORT_COLORS[lastActivity.type || ''] || '#C96A1A', flexShrink: 0 }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(232,131,42,0.7)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '2px' }}>
+                    Dernière activité · {lastActivity.type}
+                    {lastActivity.denivele_m ? ` · +${lastActivity.denivele_m}m D+` : ''}
                   </p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#F2F2F2', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lastActivity.name}</p>
+                  <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47' }}>{formatActivityDate(lastActivity.date)}</p>
                 </div>
-                {lastActivity.bpm_moyen && lastActivity.bpm_moyen > 0 && (
-                  <div className="bg-charcoal/50 rounded-lg p-2">
-                    <p className="text-xs text-mist/50 mb-1">FC moy.</p>
-                    <p className="font-mono text-red-400 font-semibold">{Math.round(lastActivity.bpm_moyen!)} bpm</p>
-                  </div>
+                {lastActivity.race && (
+                  <span style={{ flexShrink: 0, fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
+                    🏁 {lastActivity.race.name}
+                  </span>
                 )}
               </div>
+              {/* Featured stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                <div>
+                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>Distance</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#E8832A' }}>{lastActivity.distance_km.toFixed(1)}<span style={{ fontSize: '8px', color: 'rgba(232,131,42,0.5)', marginLeft: '2px' }}>km</span></p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>Temps</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#F2F2F2' }}>{lastActivity.duree_hms}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>D+</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#3DB2E0' }}>{lastActivity.denivele_m}<span style={{ fontSize: '8px', color: 'rgba(61,178,224,0.5)', marginLeft: '2px' }}>m</span></p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#6DAA75' }}>
+                    {lastActivity.type === 'Bike' ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'}` : formatPace(lastActivity.allure_min_per_km)}
+                  </p>
+                </div>
+              </div>
               {lastActivityExploration && lastActivityExploration.total_cells > 0 && (
-                <div className="mt-3 flex items-center gap-2 px-2 py-1.5 rounded-lg bg-glacier/5 border border-glacier/20">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                  </svg>
-                  <span className="text-xs text-glacier/80">{lastActivityExploration.label}</span>
+                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', borderRadius: '4px', background: 'rgba(61,178,224,0.05)', border: '1px solid rgba(61,178,224,0.15)' }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>
+                  <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(61,178,224,0.7)' }}>{lastActivityExploration.label}</span>
                   {lastActivityExploration.exploration_rate !== null && (
-                    <span className="ml-auto text-xs font-mono text-glacier font-semibold">
-                      {lastActivityExploration.exploration_rate.toFixed(0)}%
-                    </span>
+                    <span style={{ marginLeft: 'auto', fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3DB2E0', fontWeight: 700 }}>{lastActivityExploration.exploration_rate.toFixed(0)}%</span>
                   )}
                 </div>
               )}
             </Link>
-          ) : (
-            <p className="text-mist/60">Aucune activite recente</p>
           )}
+
+          {/* Autres activités récentes */}
+          <div>
+            {[...recentActivities].reverse().slice(1, 5).map((activity) => {
+              const color = SPORT_COLORS[activity.type || ''] || '#3DB2E0';
+              const isBike = activity.type === 'Bike';
+              const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : formatPace(activity.allure_min_per_km);
+              return (
+                <Link
+                  key={activity.id}
+                  to={`/activity/${activity.id}`}
+                  className="hw-act-row"
+                >
+                  <div style={{ width: '3px', height: '28px', borderRadius: '2px', flexShrink: 0, background: color }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '12px', fontWeight: 500, color: '#F2F2F2', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.name}</p>
+                    <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', marginTop: '1px' }}>{activity.type?.toUpperCase()} · {formatActivityDate(activity.date)}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '14px', marginLeft: 'auto', flexShrink: 0 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: 'rgba(242,242,242,0.6)' }}>{activity.distance_km.toFixed(1)} km</p>
+                      <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47' }}>{pace}{isBike ? ' km/h' : '/km'}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Recent Traces */}
-        <div className="card-glass rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-glacier/10 border border-glacier/30">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              </div>
-              <h2 className="font-heading font-semibold text-mist">Mes activités</h2>
-            </div>
-            <Link to="/activities" className="text-sm text-amber hover:text-amber-light font-medium transition-colors">
-              Voir tout →
-            </Link>
+        {/* Records Trail */}
+        <div className="hw-card-records">
+          {/* TL/TR amber, BL/BR amber-dark */}
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
+          <span className="hw-br hw-br-tr" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
+          <span className="hw-br hw-br-bl" style={{ borderColor: 'rgba(200,106,26,0.35)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(200,106,26,0.35)' }} />
+
+          <div className="flex items-center justify-between" style={{ marginBottom: '14px' }}>
+            <span className="hw-card-title">Records Trail</span>
+            <Link to="/kpi" className="hw-link">Voir tout →</Link>
           </div>
-          {recentActivities.length > 0 ? (
-            <ScrollToEndContainer>
-              {[...recentActivities].reverse().map((activity) => {
-                const color = SPORT_COLORS[activity.type || ''] || '#3DB2E0';
-                const isBikeActivity = activity.type === 'Bike';
-                const paceValue = isBikeActivity
-                  ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--')
-                  : formatPace(activity.allure_min_per_km);
-                const paceLabel = isBikeActivity ? 'vit.' : 'allure';
-                return (
-                  <Link
-                    key={activity.id}
-                    to={`/activity/${activity.id}`}
-                    className="flex-shrink-0 w-[220px] snap-start group"
-                  >
-                    <div
-                      className="relative rounded-lg overflow-hidden border transition-all duration-200 hover:-translate-y-0.5"
-                      style={{ borderColor: `${color}25`, backgroundColor: '#0B0C10' }}
-                    >
-                      {/* Polyline background */}
-                      <div className="aspect-[4/3] relative">
-                        {activity.polyline_coords && activity.polyline_coords.length > 0 ? (
-                          <>
-                            {/* Glow layer */}
-                            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
-                              <defs>
-                                <filter id={`glow-${activity.id}`}>
-                                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                                  <feMerge>
-                                    <feMergeNode in="coloredBlur" />
-                                    <feMergeNode in="SourceGraphic" />
-                                  </feMerge>
-                                </filter>
-                              </defs>
-                              <path
-                                d={polylineToSvgPath(activity.polyline_coords)}
-                                fill="none"
-                                stroke={color}
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                opacity="0.9"
-                                filter={`url(#glow-${activity.id})`}
-                              />
-                            </svg>
-                            {/* Gradient overlay bottom */}
-                            <div
-                              className="absolute inset-x-0 bottom-0 h-2/3"
-                              style={{ background: 'linear-gradient(to top, #0B0C10 0%, #0B0C1099 50%, transparent 100%)' }}
-                            />
-                          </>
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <span className="text-[10px] text-mist/20 font-mono">NO GPS</span>
-                          </div>
-                        )}
 
-                        {/* Sport badge top-left */}
-                        <div className="absolute top-2 left-2">
-                          <span
-                            className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
-                            style={{ backgroundColor: `${color}22`, color, border: `1px solid ${color}40` }}
-                          >
-                            {activity.type || 'Sport'}
-                          </span>
-                        </div>
-
-                        {/* Name + date over gradient */}
-                        <div className="absolute bottom-0 inset-x-0 px-3 pb-2">
-                          <p className="text-[11px] font-semibold text-[#F2F2F2] truncate leading-tight group-hover:text-white transition-colors">
-                            {activity.name}
-                          </p>
-                          <p className="text-[9px] text-mist/40 font-mono mt-0.5">{formatActivityDate(activity.date)}</p>
-                        </div>
+          {(() => {
+            const TRAIL_LABELS: [string, string, string][] = [
+              ['climb_5min',        'D+ en 5 min',       'm'],
+              ['climb_30min',       'D+ en 30 min',      'm'],
+              ['climb_60min',       'D+ en 60 min',      'm'],
+              ['kv_1000m',          'KV 1000m',          ''],
+              ['max_dplus_activity','Max D+ activité',   'm'],
+              ['best_week_dplus',   'Meilleure semaine', 'm D+'],
+            ];
+            const hasAny = TRAIL_LABELS.some(([key]) => (trailRecords[key]?.length ?? 0) > 0);
+            if (!hasAny) {
+              return <p style={{ color: 'rgba(242,242,242,0.25)', fontSize: '12px' }}>Pas de records disponibles</p>;
+            }
+            return (
+              <div>
+                {TRAIL_LABELS.map(([key, label, unit]) => {
+                  const rec = trailRecords[key]?.[0];
+                  if (!rec) return null;
+                  const display = rec.value_formatted ?? rec.time_formatted ?? (rec.value != null ? String(Math.round(rec.value)) : '--');
+                  return (
+                    <div key={key} className="hw-rec-row">
+                      <div>
+                        <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{label}</p>
                       </div>
-
-                      {/* Metrics row */}
-                      <div
-                        className="flex items-center justify-between px-3 py-2 border-t gap-2"
-                        style={{ borderColor: `${color}15` }}
-                      >
-                        <div className="flex flex-col items-center flex-1">
-                          <span className="font-mono text-[10px] font-semibold" style={{ color }}>{activity.distance_km.toFixed(1)}</span>
-                          <span className="text-[8px] text-mist/30 font-mono uppercase tracking-wide">km</span>
-                        </div>
-                        <div className="w-px h-6 bg-steel/20" />
-                        <div className="flex flex-col items-center flex-1">
-                          <span className="font-mono text-[10px] font-semibold text-[#F2F2F2]">{activity.duree_hms}</span>
-                          <span className="text-[8px] text-mist/30 font-mono uppercase tracking-wide">durée</span>
-                        </div>
-                        <div className="w-px h-6 bg-steel/20" />
-                        <div className="flex flex-col items-center flex-1">
-                          <span className="font-mono text-[10px] font-semibold text-[#F2F2F2]">
-                            {paceValue}{isBikeActivity && <span className="text-[8px] font-normal text-mist/50 ml-0.5">km/h</span>}
-                          </span>
-                          <span className="text-[8px] text-mist/30 font-mono uppercase tracking-wide">{paceLabel}</span>
-                        </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#E8832A', display: 'inline' }}>{display}</p>
+                        {unit && <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(232,131,42,0.55)', marginLeft: '2px' }}>{unit}</span>}
+                        {rec.date && <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', marginTop: '2px' }}>{new Date(rec.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
                       </div>
                     </div>
-                  </Link>
-                );
-              })}
-            </ScrollToEndContainer>
-          ) : (
-            <p className="text-mist/60 text-center py-4">Aucune trace recente</p>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
-      {/* Analytics Section - lazy loaded when scrolled into view */}
-      <ChartsPlaceholder
-        dailyHoursData={dailyHoursData} weekOffset={weekOffset} setWeekOffset={setWeekOffset}
-        weekLabel={weekLabel} weekStats={weekStats}
-        weeklyHoursData={weeklyHoursData} weeklyHoursAverage={weeklyHoursAverage}
-        weeklyDistanceData={weeklyDistanceData} distanceSport={distanceSport} setDistanceSport={setDistanceSport}
-        weeklyDistanceAverage={weeklyDistanceAverage} weeklyElevationAverage={weeklyElevationAverage}
-        repartitionData={repartitionData} repartitionSport={repartitionSport} setRepartitionSport={setRepartitionSport}
-        repartitionWeeks={repartitionWeeks} setRepartitionWeeks={setRepartitionWeeks}
-        weeklyPaceData={weeklyPaceData} paceSport={paceSport} setPaceSport={setPaceSport}
-        weeklyPaceAverage={weeklyPaceAverage}
-        conqueteData={conqueteData} conqueteAverage={conqueteAverage}
-        globalOffset={globalOffset} setGlobalOffset={setGlobalOffset}
-        isRefetchingDailyHours={isRefetchingDailyHours} isRefetchingWeeklyHours={isRefetchingWeeklyHours}
-        isRefetchingWeeklyDistance={isRefetchingWeeklyDistance} isRefetchingRepartition={isRefetchingRepartition}
-        isRefetchingWeeklyPace={isRefetchingWeeklyPace} isRefetchingConquete={isRefetchingConquete}
-      />
+      {/* ── Analytiques ── */}
+      <div className="hw-section-sep">
+        <ChartsPlaceholder
+          dailyHoursData={dailyHoursData} weekOffset={weekOffset} setWeekOffset={setWeekOffset}
+          weekLabel={weekLabel} weekStats={weekStats}
+          weeklyHoursData={weeklyHoursData} weeklyHoursAverage={weeklyHoursAverage}
+          weeklyDistanceData={weeklyDistanceData} distanceSport={distanceSport} setDistanceSport={setDistanceSport}
+          weeklyDistanceAverage={weeklyDistanceAverage} weeklyElevationAverage={weeklyElevationAverage}
+          repartitionData={repartitionData} repartitionSport={repartitionSport} setRepartitionSport={setRepartitionSport}
+          repartitionWeeks={repartitionWeeks} setRepartitionWeeks={setRepartitionWeeks}
+          weeklyPaceData={weeklyPaceData} paceSport={paceSport} setPaceSport={setPaceSport}
+          weeklyPaceAverage={weeklyPaceAverage}
+          conqueteData={conqueteData} conqueteAverage={conqueteAverage}
+          globalOffset={globalOffset} setGlobalOffset={setGlobalOffset}
+          isRefetchingDailyHours={isRefetchingDailyHours} isRefetchingWeeklyHours={isRefetchingWeeklyHours}
+          isRefetchingWeeklyDistance={isRefetchingWeeklyDistance} isRefetchingRepartition={isRefetchingRepartition}
+          isRefetchingWeeklyPace={isRefetchingWeeklyPace} isRefetchingConquete={isRefetchingConquete}
+        />
+      </div>
 
       <EventModal
         open={eventModalOpen}
@@ -596,8 +560,6 @@ function formatActivityDate(dateString: string): string {
   return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${rest}`;
 }
 
-// Normalise allure_min_per_km to "X:XX /km" format
-// Input can be "5.25" (decimal) or already "5:15" (hms-like)
 function formatPace(raw: string): string {
   if (!raw || raw === '--') return '--';
   if (raw.includes(':')) return `${raw}/km`;

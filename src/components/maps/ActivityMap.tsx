@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { ENV } from '@/config/env';
 import type { ActivityStream } from '@/types';
 
 interface ActivityMapProps {
@@ -11,84 +12,75 @@ interface ActivityMapProps {
 const COLORS = {
   moss: '#6DAA75',
   glacier: '#3DB2E0',
-  route: '#2563EB',
+  route: '#E8832A',
 };
 
 export function ActivityMap({ streams, className = '' }: ActivityMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
+  const mapInstanceRef = useRef<mapboxgl.Map | null>(null);
+
+  const coords = streams
+    .filter((s) => s.lat && s.lon)
+    .map((s) => [s.lon!, s.lat!] as [number, number]);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || coords.length === 0) return;
 
-    // Cleanup existing map
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
+    mapboxgl.accessToken = ENV.MAPBOX_ACCESS_TOKEN;
 
-    // Filter streams with valid coordinates
-    const coords = streams
-      .filter((s) => s.lat && s.lon)
-      .map((s) => [s.lat!, s.lon!] as [number, number]);
+    // Compute bounds
+    const bounds = coords.reduce(
+      (b, c) => b.extend(c as mapboxgl.LngLatLike),
+      new mapboxgl.LngLatBounds(coords[0], coords[0])
+    );
 
-    if (coords.length === 0) {
-      return;
-    }
-
-    // Initialize map
-    const map = L.map(mapRef.current);
+    const map = new mapboxgl.Map({
+      container: mapRef.current,
+      style: 'mapbox://styles/mapbox/dark-v11',
+      bounds,
+      fitBoundsOptions: { padding: 40 },
+      interactive: false,
+    });
     mapInstanceRef.current = map;
 
-    // Fit to bounds
-    map.fitBounds(coords);
+    map.on('load', () => {
+      // Route line
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coords },
+          properties: {},
+        },
+      });
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': COLORS.route, 'line-width': 3, 'line-opacity': 0.9 },
+      });
 
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-    }).addTo(map);
+      // Start marker
+      new mapboxgl.Marker({ color: COLORS.moss })
+        .setLngLat(coords[0] as mapboxgl.LngLatLike)
+        .setPopup(new mapboxgl.Popup().setText('Départ'))
+        .addTo(map);
 
-    // Add route polyline
-    L.polyline(coords, {
-      color: COLORS.route,
-      weight: 3,
-      opacity: 0.8,
-    }).addTo(map);
+      // End marker
+      new mapboxgl.Marker({ color: COLORS.glacier })
+        .setLngLat(coords[coords.length - 1] as mapboxgl.LngLatLike)
+        .setPopup(new mapboxgl.Popup().setText('Arrivée'))
+        .addTo(map);
+    });
 
-    // Add start marker
-    L.circleMarker(coords[0], {
-      radius: 8,
-      fillColor: COLORS.moss,
-      color: '#fff',
-      weight: 2,
-      fillOpacity: 0.9,
-    })
-      .addTo(map)
-      .bindPopup('Départ');
-
-    // Add end marker
-    L.circleMarker(coords[coords.length - 1], {
-      radius: 8,
-      fillColor: COLORS.glacier,
-      color: '#fff',
-      weight: 2,
-      fillOpacity: 0.9,
-    })
-      .addTo(map)
-      .bindPopup('Arrivée');
-
-    // Cleanup on unmount
     return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
+      map.remove();
+      mapInstanceRef.current = null;
     };
   }, [streams]);
 
-  const hasCoords = streams.some((s) => s.lat && s.lon);
-
-  if (!hasCoords) {
+  if (coords.length === 0) {
     return (
       <div className={`flex items-center justify-center bg-charcoal-light rounded-lg ${className}`}>
         <p className="text-steel">Pas de données GPS disponibles</p>
@@ -96,5 +88,5 @@ export function ActivityMap({ streams, className = '' }: ActivityMapProps) {
     );
   }
 
-  return <div ref={mapRef} className={`rounded-lg ${className}`} />;
+  return <div ref={mapRef} className={`rounded-lg overflow-hidden ${className}`} />;
 }
