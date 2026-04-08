@@ -12,6 +12,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import type { ChartDataset } from '@/services/api';
 
@@ -180,30 +181,71 @@ export function DashboardChartsSection({
     },
   };
 
+  const styleA = {
+    background: '#0B0C10',
+    border: '1px solid rgba(58,63,71,0.3)',
+    borderRadius: '8px',
+    padding: '20px',
+    position: 'relative' as const,
+    overflow: 'hidden' as const,
+  };
+
+  const titleA: React.CSSProperties = {
+    fontSize: '10px', fontWeight: 600, color: 'rgba(242,242,242,0.7)',
+    fontFamily: 'JetBrains Mono, monospace', marginBottom: '4px',
+  };
+
+  const subtitleA: React.CSSProperties = {
+    fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47',
+  };
+
+  const selectA: React.CSSProperties = {
+    fontSize: '9px', fontFamily: 'JetBrains Mono, monospace',
+    background: 'rgba(58,63,71,0.2)', border: '1px solid rgba(58,63,71,0.4)',
+    borderRadius: '4px', padding: '3px 6px', color: 'rgba(242,242,242,0.6)', outline: 'none',
+  };
+
+  const navBtnA = (disabled = false): React.CSSProperties => ({
+    padding: '2px 6px', background: 'none', border: 'none',
+    color: disabled ? '#3A3F47' : 'rgba(242,242,242,0.4)',
+    cursor: disabled ? 'not-allowed' : 'pointer', fontSize: '12px',
+  });
+
+  const emptyA = (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(242,242,242,0.2)', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>
+      Pas de données
+    </div>
+  );
+
+  const axisStyle = { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } };
+  const gridStyle = { color: 'rgba(255,255,255,0.03)' };
+
   return (
     <div className="mt-8 mb-8">
       <SectionTitle icon={<BarChartIcon />} title="Analyses hebdomadaires" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Daily Hours */}
-        <div className="card-glass rounded-lg p-6">
+        {/* Daily Hours — Style A */}
+        <div style={styleA}>
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(232,131,42,0.3)' }} />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-heading font-semibold text-mist text-sm">Minutes d'activités quotidiennes</h3>
+              <h3 style={titleA}>Minutes d'activités quotidiennes</h3>
               {weekStats && (
-                <div className="flex items-center gap-2 mt-1 text-xs text-mist/60 font-mono">
-                  <span className="text-amber">{weekStats.distance.toFixed(1)} km</span>
-                  <span>•</span>
-                  <span className="text-glacier">{weekStats.elevation} D+</span>
-                  <span>•</span>
+                <p style={subtitleA}>
+                  <span style={{ color: '#E8832A' }}>{weekStats.distance.toFixed(1)} km</span>
+                  {' · '}
+                  <span style={{ color: '#3DB2E0' }}>{weekStats.elevation} D+</span>
+                  {' · '}
                   <span>{weekStats.time}</span>
-                </div>
+                </p>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-1 hover:bg-steel/30 rounded transition-colors text-mist/60 hover:text-mist">←</button>
-              <span className="text-xs text-mist/60 font-mono min-w-[100px] text-center">{weekLabel}</span>
-              <button onClick={() => setWeekOffset(weekOffset - 1)} disabled={weekOffset <= 0} className="p-1 hover:bg-steel/30 rounded transition-colors text-mist/60 hover:text-mist disabled:opacity-30">→</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+              <button onClick={() => setWeekOffset(weekOffset + 1)} style={navBtnA()}>←</button>
+              <span style={{ ...subtitleA, minWidth: '100px', textAlign: 'center' }}>{weekLabel}</span>
+              <button onClick={() => setWeekOffset(weekOffset - 1)} disabled={weekOffset <= 0} style={navBtnA(weekOffset <= 0)}>→</button>
             </div>
           </div>
           <div className={`h-[200px] relative transition-opacity duration-300 ${isRefetchingDailyHours ? 'opacity-50' : 'opacity-100'}`}>
@@ -215,29 +257,30 @@ export function DashboardChartsSection({
                     ? dailyHoursData.datasets.map((ds: ChartDataset) => ({
                         ...ds,
                         backgroundColor: ({ Run: '#3DB2E0', Trail: '#1E6A8F', Bike: '#7B6BC8', Swim: '#8B92A0', WeightTraining: '#9ca3af', Hike: '#5A5F6C' } as Record<string, string>)[ds.label] || '#3DB2E0',
-                        borderColor: ({ Run: '#3DB2E0', Trail: '#1E6A8F', Bike: '#7B6BC8', Swim: '#8B92A0', WeightTraining: '#9ca3af', Hike: '#5A5F6C' } as Record<string, string>)[ds.label] || '#3DB2E0',
+                        borderColor: 'transparent',
+                        borderRadius: 3,
                       }))
                     : [{ label: 'Aucune activité', data: [0, 0, 0, 0, 0, 0, 0], backgroundColor: '#3A3F47' }],
                 }}
-                options={barChartOptionsMinutes}
+                options={{ ...barChartOptionsMinutes, scales: { x: { stacked: true, grid: { display: false }, ticks: axisStyle }, y: { stacked: true, grid: gridStyle, ticks: { ...axisStyle, stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}` : null } } }, plugins: { legend: { display: true, position: 'bottom' as const, labels: { color: 'rgba(242,242,242,0.4)', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 10 } } } }}
               />
-            ) : (
-              <div className="flex items-center justify-center h-full text-mist/40">Chargement...</div>
-            )}
+            ) : emptyA}
           </div>
         </div>
 
-        {/* Weekly Hours */}
-        <div className="card-glass rounded-lg p-6">
+        {/* Weekly Hours — Style A */}
+        <div style={styleA}>
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-heading font-semibold text-mist text-sm">Heures d'activite par semaine</h3>
-              <span className="text-xs text-mist/60 font-mono">{weeklyHoursAverage}</span>
+              <h3 style={titleA}>Heures d'activité par semaine</h3>
+              <p style={subtitleA}>{weeklyHoursAverage}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setGlobalOffset(globalOffset + 1)} className="p-1 hover:bg-steel/30 rounded transition-colors text-mist/60 hover:text-mist">←</button>
-              <span className="text-xs text-mist/60 font-mono">10 semaines</span>
-              <button onClick={() => setGlobalOffset(globalOffset - 1)} disabled={globalOffset <= 0} className="p-1 hover:bg-steel/30 rounded transition-colors text-mist/60 hover:text-mist disabled:opacity-30">→</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+              <button onClick={() => setGlobalOffset(globalOffset + 1)} style={navBtnA()}>←</button>
+              <span style={{ ...subtitleA, minWidth: '72px', textAlign: 'center' }}>10 semaines</span>
+              <button onClick={() => setGlobalOffset(globalOffset - 1)} disabled={globalOffset <= 0} style={navBtnA(globalOffset <= 0)}>→</button>
             </div>
           </div>
           <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingWeeklyHours ? 'opacity-50' : 'opacity-100'}`}>
@@ -248,27 +291,30 @@ export function DashboardChartsSection({
                   datasets: weeklyHoursData.datasets.map((ds: ChartDataset) => ({
                     ...ds,
                     borderColor: '#3DB2E0',
-                    backgroundColor: 'rgba(61, 178, 224, 0.1)',
+                    backgroundColor: 'rgba(61,178,224,0.08)',
                     fill: true,
                     tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#3DB2E0',
                   })),
                 }}
-                options={lineChartOptions}
+                options={{ ...lineChartOptions, scales: { x: { grid: { display: false }, ticks: axisStyle }, y: { grid: gridStyle, ticks: { ...axisStyle, stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}h` : null } } } }}
               />
-            ) : (
-              <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
-            )}
+            ) : emptyA}
           </div>
         </div>
 
-        {/* Weekly Distance */}
-        <div className="card-glass rounded-lg p-6">
+        {/* Weekly Distance — Style A */}
+        <div style={{ background: '#0B0C10', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '8px', padding: '20px', position: 'relative', overflow: 'hidden' }}>
+          {/* Corner brackets TL+BR glacier */}
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-heading font-semibold text-mist text-sm">Kilometres par semaine</h3>
-              <span className="text-xs text-mist/60 font-mono">{weeklyDistanceAverage} · <span style={{ color: '#C4561A' }}>{weeklyElevationAverage}</span></span>
+              <h3 style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(242,242,242,0.7)', fontFamily: 'JetBrains Mono, monospace', marginBottom: '4px' }}>Kilomètres par semaine</h3>
+              <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47' }}>{weeklyDistanceAverage} · <span style={{ color: '#C4561A' }}>{weeklyElevationAverage}</span></span>
             </div>
-            <select value={distanceSport} onChange={(e) => setDistanceSport(e.target.value)} className="text-xs bg-steel/20 border border-steel/30 rounded px-2 py-1 text-mist focus:outline-none focus:border-glacier">
+            <select value={distanceSport} onChange={(e) => setDistanceSport(e.target.value)} style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(58,63,71,0.2)', border: '1px solid rgba(58,63,71,0.4)', borderRadius: '4px', padding: '3px 6px', color: 'rgba(242,242,242,0.6)', outline: 'none' }}>
               <option value="Run">Run</option>
               <option value="Trail">Trail</option>
               <option value="Bike">Bike</option>
@@ -291,9 +337,9 @@ export function DashboardChartsSection({
                   responsive: true,
                   maintainAspectRatio: false,
                   scales: {
-                    x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
-                    y: { position: 'left' as const, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#F2F2F2', callback: (v: number | string) => `${Number(v).toFixed(0)}` } },
-                    y1: { position: 'right' as const, grid: { display: false }, ticks: { color: '#C4561A', callback: (v: number | string) => `${Number(v).toFixed(0)}m` } },
+                    x: { grid: { display: false }, ticks: { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } } },
+                    y: { position: 'left' as const, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' }, callback: (v: number | string) => `${Number(v).toFixed(0)}` } },
+                    y1: { position: 'right' as const, grid: { display: false }, ticks: { color: 'rgba(196,86,26,0.5)', font: { size: 10, family: 'JetBrains Mono' }, callback: (v: number | string) => `${Number(v).toFixed(0)}m` } },
                   },
                   plugins: {
                     legend: { display: false },
@@ -327,23 +373,25 @@ export function DashboardChartsSection({
                 }}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
+              <div className="flex items-center justify-center h-full" style={{ color: 'rgba(242,242,242,0.2)', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>Pas de données</div>
             )}
           </div>
         </div>
 
-        {/* Repartition */}
-        <div className="card-glass rounded-lg p-6">
+        {/* Repartition — Style A */}
+        <div style={styleA}>
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(109,170,117,0.3)' }} />
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading font-semibold text-mist text-sm">Repartition des activites</h3>
-            <div className="flex items-center gap-2">
-              <select value={repartitionSport} onChange={(e) => setRepartitionSport(e.target.value)} className="text-xs bg-steel/20 border border-steel/30 rounded px-2 py-1 text-mist focus:outline-none focus:border-glacier">
+            <h3 style={titleA}>Répartition des activités</h3>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <select value={repartitionSport} onChange={(e) => setRepartitionSport(e.target.value)} style={selectA}>
                 <option value="Run,Trail">Run & Trail</option>
                 <option value="Run">Run</option>
                 <option value="Trail">Trail</option>
                 <option value="Bike">Bike</option>
               </select>
-              <select value={repartitionWeeks} onChange={(e) => setRepartitionWeeks(parseInt(e.target.value))} className="text-xs bg-steel/20 border border-steel/30 rounded px-2 py-1 text-mist focus:outline-none focus:border-glacier">
+              <select value={repartitionWeeks} onChange={(e) => setRepartitionWeeks(parseInt(e.target.value))} style={selectA}>
                 <option value={4}>Ce mois</option>
                 <option value={8}>2 mois</option>
                 <option value={12}>3 mois</option>
@@ -354,6 +402,7 @@ export function DashboardChartsSection({
           <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingRepartition ? 'opacity-50' : 'opacity-100'}`}>
             {repartitionData && repartitionData.datasets?.length > 0 ? (
               <Doughnut
+                plugins={[ChartDataLabels]}
                 data={{
                   labels: repartitionData.labels,
                   datasets: repartitionData.datasets.map((ds: ChartDataset) => ({
@@ -363,22 +412,32 @@ export function DashboardChartsSection({
                     borderWidth: 2,
                   })),
                 }}
-                options={doughnutChartOptions}
+                options={{
+                  ...doughnutChartOptions,
+                  plugins: {
+                    legend: { position: 'right' as const, labels: { color: 'rgba(242,242,242,0.4)', font: { size: 10, family: 'JetBrains Mono' }, padding: 12, boxWidth: 10 } },
+                    datalabels: {
+                      color: '#F2F2F2',
+                      font: { size: 11, weight: 700, family: 'JetBrains Mono' },
+                      formatter: (value: number) => value > 0 ? value : '',
+                    },
+                  },
+                }}
               />
-            ) : (
-              <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
-            )}
+            ) : emptyA}
           </div>
         </div>
 
-        {/* Weekly Pace */}
-        <div className="card-glass rounded-lg p-6">
+        {/* Weekly Pace — Style A */}
+        <div style={styleA}>
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(109,170,117,0.3)' }} />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-heading font-semibold text-mist text-sm">Allure moyenne par semaine</h3>
-              <span className="text-xs text-mist/60 font-mono">{weeklyPaceAverage}</span>
+              <h3 style={titleA}>Allure moyenne par semaine</h3>
+              <p style={subtitleA}>{weeklyPaceAverage}</p>
             </div>
-            <select value={paceSport} onChange={(e) => setPaceSport(e.target.value)} className="text-xs bg-steel/20 border border-steel/30 rounded px-2 py-1 text-mist focus:outline-none focus:border-glacier">
+            <select value={paceSport} onChange={(e) => setPaceSport(e.target.value)} style={selectA}>
               <option value="Run">Run</option>
               <option value="Trail">Trail</option>
               <option value="Bike">Bike</option>
@@ -393,26 +452,26 @@ export function DashboardChartsSection({
                   labels: weeklyPaceData.labels,
                   datasets: weeklyPaceData.datasets.map((ds: ChartDataset) => ({
                     ...ds,
-                    backgroundColor: 'rgba(109, 170, 117, 0.7)',
+                    backgroundColor: 'rgba(109,170,117,0.7)',
                     borderColor: '#6DAA75',
                     borderWidth: 1,
                     borderRadius: 3,
                   })),
                 }}
-                options={paceChartOptions}
+                options={{ ...paceChartOptions, scales: { ...paceChartOptions.scales, x: { grid: { display: false }, ticks: axisStyle }, y: { ...paceChartOptions.scales.y, grid: gridStyle, ticks: { ...paceChartOptions.scales.y.ticks, color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } } } } }}
               />
-            ) : (
-              <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
-            )}
+            ) : emptyA}
           </div>
         </div>
 
-        {/* Conquête */}
-        <div className="card-glass rounded-lg p-6">
+        {/* Conquête — Style A */}
+        <div style={styleA}>
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-heading font-semibold text-mist text-sm">Taux de conquête</h3>
-              <span className="text-xs text-mist/60 font-mono">{conqueteAverage}</span>
+              <h3 style={titleA}>Taux de conquête</h3>
+              <p style={subtitleA}>{conqueteAverage}</p>
             </div>
           </div>
           <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingConquete ? 'opacity-50' : 'opacity-100'}`}>
@@ -422,25 +481,15 @@ export function DashboardChartsSection({
                   labels: conqueteData.labels,
                   datasets: conqueteData.datasets.map((ds: ChartDataset) => ({
                     ...ds,
-                    backgroundColor: 'rgba(61, 178, 224, 0.7)',
+                    backgroundColor: 'rgba(61,178,224,0.7)',
                     borderColor: '#3DB2E0',
                     borderWidth: 1,
                     borderRadius: 3,
                   })),
                 }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    x: { grid: { display: false }, ticks: { color: '#F2F2F2' } },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#F2F2F2', stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}` : null } },
-                  },
-                  plugins: { legend: { display: false } },
-                }}
+                options={{ responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false }, ticks: axisStyle }, y: { grid: gridStyle, ticks: { ...axisStyle, stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}` : null } } }, plugins: { legend: { display: false } } }}
               />
-            ) : (
-              <div className="flex items-center justify-center h-full text-mist/40">Pas de donnees</div>
-            )}
+            ) : emptyA}
           </div>
         </div>
       </div>

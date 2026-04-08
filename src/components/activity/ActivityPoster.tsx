@@ -2,20 +2,6 @@ import { useMemo, useState, RefObject } from "react";
 import type { Activity, ActivityStream, SportType, ActivityExplorationRate } from "@/types";
 import { buildStaticMapUrl } from "@/services/mapbox/staticMap";
 
-// SVG Icons
-const MapPinIcon = ({ color }: { color: string }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-    <circle cx="12" cy="10" r="3" />
-  </svg>
-);
-
-const ActivitySvgIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-  </svg>
-);
-
 const DownloadIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -35,139 +21,77 @@ interface ActivityPosterProps {
 
 const SPORT_COLORS: Record<SportType, string> = {
   Run: "#E8832A",
-  Trail: "#C96A1A",
+  Trail: "#E8832A",
   Bike: "#3DB2E0",
   Swim: "#6DAA75",
   Hike: "#6DAA75",
   WeightTraining: "#3A3F47",
 };
 
-const SPORT_LABELS: Record<SportType, string> = {
-  Run: "Course",
-  Trail: "Trail",
-  Bike: "Velo",
-  Swim: "Natation",
-  Hike: "Randonnee",
-  WeightTraining: "Musculation",
-};
-
-// Project GPS coordinates to SVG viewBox (0-100)
 function projectCoordsToSVG(
   coords: { lat: number; lon: number }[],
   padding: number = 10
 ): { points: { x: number; y: number }[]; bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number } } {
-  if (coords.length === 0) {
-    return { points: [], bounds: { minLat: 0, maxLat: 0, minLon: 0, maxLon: 0 } };
-  }
-
+  if (coords.length === 0) return { points: [], bounds: { minLat: 0, maxLat: 0, minLon: 0, maxLon: 0 } };
   const lats = coords.map(c => c.lat);
   const lons = coords.map(c => c.lon);
-
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons);
-  const maxLon = Math.max(...lons);
-
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
   const latRange = maxLat - minLat || 0.001;
   const lonRange = maxLon - minLon || 0.001;
-
-  // Normalize to 0-100 with padding
   const usableRange = 100 - 2 * padding;
   const points = coords.map(({ lat, lon }) => ({
     x: padding + ((lon - minLon) / lonRange) * usableRange,
-    y: padding + ((maxLat - lat) / latRange) * usableRange, // Invert Y axis
+    y: padding + ((maxLat - lat) / latRange) * usableRange,
   }));
-
   return { points, bounds: { minLat, maxLat, minLon, maxLon } };
 }
 
-// Create smooth SVG path from points using quadratic Bezier curves
 function createSmoothPath(points: { x: number; y: number }[]): string {
   if (points.length < 2) return "";
-
   let path = `M ${points[0].x} ${points[0].y}`;
-
   for (let i = 1; i < points.length - 1; i++) {
     const xc = (points[i].x + points[i + 1].x) / 2;
     const yc = (points[i].y + points[i + 1].y) / 2;
     path += ` Q ${points[i].x} ${points[i].y}, ${xc} ${yc}`;
   }
-
-  // Add last point
-  if (points.length > 1) {
-    path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
-  }
-
+  if (points.length > 1) path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
   return path;
 }
 
-// Format coordinates to degrees/minutes
-function formatCoord(value: number, isLat: boolean): string {
-  const direction = isLat ? (value >= 0 ? "N" : "S") : (value >= 0 ? "E" : "W");
-  const absValue = Math.abs(value);
-  const degrees = Math.floor(absValue);
-  const minutes = Math.floor((absValue - degrees) * 60);
-  return `${direction} ${degrees}°${minutes.toString().padStart(2, "0")}'`;
-}
-
-// Format duration from seconds to readable string
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
-  }
-  return `${minutes}min ${secs.toString().padStart(2, "0")}s`;
+  if (hours > 0) return `${hours}h${minutes.toString().padStart(2, "0")}`;
+  return `${minutes}min`;
 }
 
-// Format date to readable string
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-export function ActivityPoster({ activity, streams, posterRef, explorationRate, onExportPNG, race }: ActivityPosterProps) {
+export function ActivityPoster({ activity, streams, posterRef, explorationRate, onExportPNG }: ActivityPosterProps) {
   const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
-  const sportLabel = SPORT_LABELS[activity.sport_type] || activity.sport_type;
   const [mapImageError, setMapImageError] = useState(false);
 
-  // Extract GPS coordinates from streams
-  const gpsCoords = useMemo(() => {
-    return streams
-      .filter((s) => s.lat != null && s.lon != null)
-      .map((s) => ({ lat: s.lat!, lon: s.lon! }));
-  }, [streams]);
+  const gpsCoords = useMemo(() =>
+    streams.filter(s => s.lat != null && s.lon != null).map(s => ({ lat: s.lat!, lon: s.lon! })),
+    [streams]
+  );
 
-  // Project to SVG coordinates
-  const { points, bounds } = useMemo(() => {
-    return projectCoordsToSVG(gpsCoords);
-  }, [gpsCoords]);
-
-  // Create SVG path
+  const { points } = useMemo(() => projectCoordsToSVG(gpsCoords), [gpsCoords]);
   const path = useMemo(() => createSmoothPath(points), [points]);
 
-  // Build Mapbox Static Image URL
   const mapboxUrl = useMemo(() => {
     if (gpsCoords.length < 2) return null;
     return buildStaticMapUrl({
-      coordinates: gpsCoords.map((c) => [c.lat, c.lon] as [number, number]),
-      color: color,
-      width: 500,
+      coordinates: gpsCoords.map(c => [c.lat, c.lon] as [number, number]),
+      color,
+      width: 800,
       height: 500,
-      strokeWidth: 4,
+      strokeWidth: 1.5,
     });
   }, [gpsCoords, color]);
 
-  // Use Mapbox if URL is available and no error, otherwise fallback to SVG
   const useMapbox = mapboxUrl && !mapImageError;
+  const hasGPSData = points.length > 0;
 
-  // Calculate metrics
   const distance = activity.distance_km || activity.distance || 0;
   const duration = activity.moving_time_hms ?? formatDuration(activity.moving_time);
   const isBike = activity.sport_type === "Bike";
@@ -179,301 +103,120 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
   const elevation = activity.total_elevation_gain ?? 0;
   const heartRate = activity.average_heartrate ?? null;
 
-  const hasGPSData = points.length > 0;
+  // pstat style helpers
+  const pstatLabel: React.CSSProperties = { fontSize: '8px', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'JetBrains Mono, monospace' };
+  const pstatVal = (c: string): React.CSSProperties => ({ fontSize: '18px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: c });
+  const pstatUnit: React.CSSProperties = { fontSize: '11px', color: 'rgba(242,242,242,0.4)', marginLeft: '2px' };
 
   return (
     <div
       ref={posterRef}
-      className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden w-[555px]"
+      style={{
+        background: '#060c18',
+        border: '1px solid rgba(58,63,71,0.35)',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
-        {/* Background effects */}
-        <div className="absolute top-0 left-0 w-64 h-64 bg-[#E8832A]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#3DB2E0]/5 rounded-full blur-3xl" />
+      {/* Corner brackets TL + TR amber */}
+      <span style={{ position: 'absolute', top: 0, left: 0, width: '14px', height: '14px', borderTop: '2px solid rgba(232,131,42,0.5)', borderLeft: '2px solid rgba(232,131,42,0.5)', borderRadius: '8px 0 0 0', zIndex: 2 }} />
+      <span style={{ position: 'absolute', top: 0, right: 0, width: '14px', height: '14px', borderTop: '2px solid rgba(232,131,42,0.5)', borderRight: '2px solid rgba(232,131,42,0.5)', borderRadius: '0 8px 0 0', zIndex: 2 }} />
 
-        <div className="relative space-y-6">
-          {/* Header */}
-          <div className="space-y-3 pb-4 border-b border-[#3A3F47]/30">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                <div className="relative">
-                  <div
-                    className="absolute inset-0 blur-lg"
-                    style={{ backgroundColor: `${color}33` }}
-                  />
-                  <div
-                    className="relative p-2 border rounded"
-                    style={{
-                      backgroundColor: `${color}10`,
-                      borderColor: `${color}30`,
-                    }}
-                  >
-                    <MapPinIcon color={color} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-heading text-[#F2F2F2]">
-                    {activity.name || "Activite sans titre"}
-                  </h3>
-                  <p className="text-[#3A3F47] font-['Inter'] text-sm mt-1">
-                    {formatDate(activity.start_date)} • {sportLabel}
-                  </p>
-                  {(race ?? activity.race) && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded mt-1.5"
-                      style={{ backgroundColor: 'rgba(123,107,200,0.2)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.4)' }}>
-                      🏁 {(race ?? activity.race)!.name}
-                    </span>
-                  )}
-                </div>
-              </div>
+      {/* Map area */}
+      <div style={{ flex: 1, minHeight: '260px', position: 'relative', background: '#060c18' }}>
+        {/* Gradient overlay bottom */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 60%, #060c18 100%)', pointerEvents: 'none', zIndex: 1 }} />
 
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  {[...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 h-1 rounded-full"
-                      style={{
-                        backgroundColor: color,
-                        opacity: 1 - i * 0.3,
-                      }}
-                    />
-                  ))}
-                </div>
-                <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
-                  HAWKSIGHT
-                </span>
-                {onExportPNG && (
-                  <button
-                    onClick={onExportPNG}
-                    className="text-[#3A3F47] hover:text-[#F2F2F2] transition-colors"
-                    title="Exporter en PNG"
-                  >
-                    <DownloadIcon />
-                  </button>
-                )}
-              </div>
-            </div>
+        {useMapbox ? (
+          <img
+            src={mapboxUrl}
+            alt="Trace GPS"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            onError={() => setMapImageError(true)}
+          />
+        ) : hasGPSData ? (
+          <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
+            <defs>
+              <filter id="poster-glow">
+                <feGaussianBlur stdDeviation="1.2" result="coloredBlur" />
+                <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+              <linearGradient id="trace-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                <stop offset="50%" stopColor={color} stopOpacity="1" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+              </linearGradient>
+            </defs>
+            {/* Glow layer — large + very transparent */}
+            <path d={path} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.08" />
+            {/* Main trace — fine + gradient */}
+            <path d={path} fill="none" stroke="url(#trace-grad)" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" filter="url(#poster-glow)" />
+            {/* Start dot */}
+            <circle cx={points[0].x} cy={points[0].y} r="1.5" fill={color} opacity="0.9" />
+            <circle cx={points[0].x} cy={points[0].y} r="3" fill="none" stroke={color} strokeWidth="0.5" opacity="0.4" />
+            {/* End dot */}
+            <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="1.2" fill={color} opacity="0.7" />
+          </svg>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>
+            Pas de données GPS
           </div>
+        )}
+      </div>
 
-          {/* Main GPS Trace */}
-          <div className="relative aspect-square border border-[#3A3F47]/40 rounded-lg overflow-hidden bg-[#0B0C10]">
-            {/* Grid background (only shown when not using Mapbox) */}
-            {!useMapbox && (
-              <div
-                className="absolute inset-0 opacity-[0.03]"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(to right, #F2F2F2 1px, transparent 1px),
-                    linear-gradient(to bottom, #F2F2F2 1px, transparent 1px)
-                  `,
-                  backgroundSize: "20px 20px",
-                }}
-              />
-            )}
-
-            {/* Corner coordinates overlay */}
-            {hasGPSData && (
-              <>
-                <div className="absolute top-2 left-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
-                  {formatCoord(bounds.maxLat, true)}
-                </div>
-                <div className="absolute top-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
-                  {formatCoord(bounds.maxLon, false)}
-                </div>
-                <div className="absolute bottom-2 left-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
-                  ALT {Math.round(elevation)}m
-                </div>
-                <div className="absolute bottom-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px] z-10 bg-[#0B0C10]/70 px-1 rounded">
-                  {distance.toFixed(1)}km
-                </div>
-              </>
-            )}
-
-            {/* Mapbox Static Image or SVG Fallback */}
-            {useMapbox ? (
-              <img
-                src={mapboxUrl}
-                alt="Trace GPS sur carte"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={() => setMapImageError(true)}
-              />
-            ) : hasGPSData ? (
-              <svg viewBox="0 0 100 100" className="w-full h-full relative">
-                {/* Shadow/glow effect */}
-                <defs>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="1" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                {/* Main trace */}
-                <path
-                  d={path}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  opacity="0.8"
-                  filter="url(#glow)"
-                />
-
-                {/* Tracking points every N points */}
-                {points
-                  .filter((_, i) => i % Math.max(1, Math.floor(points.length / 15)) === 0)
-                  .map((point, i) => (
-                    <g key={i}>
-                      <circle
-                        cx={point.x}
-                        cy={point.y}
-                        r="1.5"
-                        fill={color}
-                        opacity="0.4"
-                      />
-                      {i % 2 === 0 && (
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r="3"
-                          fill="none"
-                          stroke={color}
-                          strokeWidth="0.5"
-                          opacity="0.2"
-                        />
-                      )}
-                    </g>
-                  ))}
-
-                {/* Start point */}
-                <circle
-                  cx={points[0].x}
-                  cy={points[0].y}
-                  r="3"
-                  fill={color}
-                  opacity="0.9"
-                />
-                <circle
-                  cx={points[0].x}
-                  cy={points[0].y}
-                  r="5"
-                  fill="none"
-                  stroke={color}
-                  strokeWidth="1"
-                  opacity="0.5"
-                />
-
-                {/* End point */}
-                <circle
-                  cx={points[points.length - 1].x}
-                  cy={points[points.length - 1].y}
-                  r="2.5"
-                  fill={color}
-                  opacity="0.7"
-                />
-              </svg>
-            ) : (
-              <div className="flex items-center justify-center h-full text-[#3A3F47] font-['Inter'] text-sm">
-                Pas de donnees GPS
-              </div>
-            )}
-
-            {/* Technical overlay corners */}
-            <div
-              className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 opacity-20 z-10"
-              style={{ borderColor: color }}
-            />
-            <div
-              className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 opacity-20 z-10"
-              style={{ borderColor: color }}
-            />
-            <div
-              className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 opacity-20 z-10"
-              style={{ borderColor: color }}
-            />
-            <div
-              className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 opacity-20 z-10"
-              style={{ borderColor: color }}
-            />
+      {/* Stats grid — 3×2 */}
+      <div style={{ padding: '16px', background: '#060c18', borderTop: '1px solid rgba(58,63,71,0.25)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div>
+            <div style={pstatLabel}>Distance</div>
+            <div style={pstatVal('#E8832A')}>{distance.toFixed(1)}<span style={pstatUnit}>km</span></div>
           </div>
-
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-3 gap-4 pt-2">
-            <div className="space-y-1">
-              <div className="text-[#3A3F47] font-['Inter'] text-xs">Distance</div>
-              <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
-                {distance.toFixed(2)}
-                <span className="text-xs text-[#F2F2F2]/40 ml-1">km</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-[#3A3F47] font-['Inter'] text-xs">Duree</div>
-              <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
-                {duration}
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-[#3A3F47] font-['Inter'] text-xs">{paceLabel}</div>
-              <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
-                {pace}
-                {pace !== "--" && <span className="text-xs text-[#F2F2F2]/40 ml-1">{paceUnit}</span>}
-              </div>
-            </div>
+          <div>
+            <div style={pstatLabel}>Durée</div>
+            <div style={pstatVal('#F2F2F2')}>{duration}</div>
           </div>
-
-          <div className={`grid gap-4 ${explorationRate ? 'grid-cols-3' : 'grid-cols-2'}`}>
-            <div className="space-y-1">
-              <div className="text-[#3A3F47] font-['Inter'] text-xs">Denivele</div>
-              <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
-                {Math.round(elevation)}
-                <span className="text-xs text-[#F2F2F2]/40 ml-1">m</span>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-[#3A3F47] font-['Inter'] text-xs">BPM moy.</div>
-              <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
-                {heartRate ? Math.round(heartRate) : "--"}
-                {heartRate && <span className="text-xs text-[#F2F2F2]/40 ml-1">bpm</span>}
-              </div>
-            </div>
-            {explorationRate && (
-              <div className="space-y-1">
-                <div className="text-[#3A3F47] font-['Inter'] text-xs">Territoire</div>
-                <div className="font-['JetBrains_Mono'] text-lg" style={{ color }}>
-                  {explorationRate.exploration_rate !== null
-                    ? `${explorationRate.exploration_rate.toFixed(0)}`
-                    : "--"}
-                  {explorationRate.exploration_rate !== null && (
-                    <span className="text-xs text-[#F2F2F2]/40 ml-1">%</span>
-                  )}
-                </div>
-              </div>
-            )}
+          <div>
+            <div style={pstatLabel}>D+</div>
+            <div style={pstatVal('#3DB2E0')}>{Math.round(elevation)}<span style={pstatUnit}>m</span></div>
           </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-[#3A3F47]/30">
-            <div className="flex items-center gap-2">
-              <ActivitySvgIcon />
-              <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
-                ACTIVITY_{activity.id.toString().padStart(3, "0")}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
-                RECORDED
-              </span>
-            </div>
+          <div>
+            <div style={pstatLabel}>{paceLabel}</div>
+            <div style={pstatVal('#6DAA75')}>{pace}{pace !== '--' && <span style={pstatUnit}>{paceUnit}</span>}</div>
           </div>
+          {heartRate && (
+            <div>
+              <div style={pstatLabel}>FC moy.</div>
+              <div style={pstatVal('#F2F2F2')}>{Math.round(heartRate)}<span style={pstatUnit}>bpm</span></div>
+            </div>
+          )}
+          {explorationRate && explorationRate.exploration_rate != null && (
+            <div>
+              <div style={pstatLabel}>Nv. territoire</div>
+              <div style={pstatVal('#3DB2E0')}>{Math.round(explorationRate.exploration_rate)}<span style={pstatUnit}>%</span></div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid rgba(58,63,71,0.2)', background: 'rgba(0,0,0,0.3)' }}>
+        <span style={{ fontSize: '8px', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+          HawkSight · #ACT-{activity.id.toString().padStart(4, '0')}
+        </span>
+        {onExportPNG && (
+          <button
+            onClick={onExportPNG}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '9px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(242,242,242,0.5)')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#3A3F47')}
+          >
+            <DownloadIcon /> Exporter PNG
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

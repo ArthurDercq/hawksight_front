@@ -93,11 +93,12 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
         },
       });
 
-      // Hexagone fill par-dessus
+      // Hexagone fill par-dessus — visible seulement à partir de zoom 9
       map.addLayer({
         id: LAYER_FILL,
         type: 'fill',
         source: SOURCE_ID,
+        minzoom: 9,
         paint: {
           'fill-color': [
             'interpolate', ['linear'],
@@ -108,7 +109,7 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
             3, '#60D5FF',
             4, '#B3ECFF',
           ],
-          'fill-opacity': 0.35,
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.35],
         },
       });
 

@@ -186,8 +186,21 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
           ...ds,
           data: ds.data.map((minutes: number) => Math.round(minutes)),
         }));
+        // Générer les labels avec la date réelle de chaque jour de la semaine
+        const DAY_ABBR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        const today = new Date();
+        // Lundi de la semaine courante
+        const dayOfWeek = today.getDay(); // 0=dim, 1=lun...
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const monday = new Date(today);
+        monday.setDate(today.getDate() + mondayOffset - weekOffset * 7);
+        const weekLabels = DAY_ABBR.map((abbr, i) => {
+          const d = new Date(monday);
+          d.setDate(monday.getDate() + i);
+          return `${abbr} ${d.getDate()}/${d.getMonth() + 1}`;
+        });
         const chartData: ChartData = {
-          labels: data.labels || ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+          labels: weekLabels,
           datasets: datasetsInMinutes,
           week_range: data.week_range,
           stats: data.stats,

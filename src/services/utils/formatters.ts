@@ -67,10 +67,45 @@ export function formatDuration(seconds: number): string {
 }
 
 /**
- * Format pace (min/km)
+ * Format pace (min/km) — ex: 5'32"
  */
 export function formatPace(secondsPerKm: number): string {
   const minutes = Math.floor(secondsPerKm / 60);
   const seconds = Math.floor(secondsPerKm % 60);
   return `${minutes}'${seconds.toString().padStart(2, '0')}"`;
+}
+
+/**
+ * Format pace seconds to MM:SS — ex: 8:51
+ * Usage : axes de graphiques allure
+ */
+export function formatPaceSeconds(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
+}
+
+/**
+ * Formate une date ISO en libellé FR court — ex: "28 mars 2026"
+ */
+export function formatDateShort(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/**
+ * Formate une date ISO en libellé FR long avec heure — ex: "28 mars 2026 à 07:42"
+ */
+export function formatDateLong(dateString: string): string {
+  const date = new Date(dateString);
+  return `${date.getDate()} ${date.toLocaleDateString('fr-FR', { month: 'long' })} ${date.getFullYear()} à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+/**
+ * Formate une durée en secondes en chaîne compacte — ex: "3h18" ou "45min"
+ * Usage : posters, stats compactes
+ */
+export function formatDurationCompact(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h${minutes.toString().padStart(2, '0')}`;
+  return `${minutes}min`;
 }

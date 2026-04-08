@@ -115,7 +115,7 @@ export function DashboardPage() {
       {isDemo && <DemoBanner />}
 
       {/* ── ROW 0 : Score Trail + Carte ── */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: '280px 1fr' }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: '280px 1fr', minHeight: '280px' }}>
 
         {/* Score Trail */}
         <div
@@ -125,7 +125,7 @@ export function DashboardPage() {
             border: '1px solid rgba(58,63,71,0.3)',
             borderRadius: '8px',
             padding: '20px',
-            minHeight: '200px',
+            minHeight: '280px',
           }}
         >
           {/* Radial amber glow at top-left */}
@@ -141,16 +141,16 @@ export function DashboardPage() {
           {/* Big score */}
           {trailProfile ? (
             <>
-              <p
-                className="tabular-nums"
-                style={{ fontSize: '84px', fontWeight: 800, lineHeight: 0.95, color: '#E8832A', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}
-              >
-                {Math.round(trailProfile.trail_score_final)}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+                <p
+                  className="tabular-nums"
+                  style={{ fontSize: '84px', fontWeight: 800, lineHeight: 0.95, color: '#E8832A', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {Math.round(trailProfile.trail_score_final)}
+                </p>
+                <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(232,131,42,0.4)', fontFamily: 'JetBrains Mono, monospace', paddingBottom: '10px' }}>/100</span>
+              </div>
               <div className="hw-grad-sep" />
-              <p style={{ fontSize: '11px', color: 'rgba(242,242,242,0.35)', fontFamily: 'JetBrains Mono, monospace' }}>
-                Profil dominant · <strong style={{ color: '#6DAA75' }}>{trailProfile.dominant_profile}</strong>
-              </p>
             </>
           ) : (
             <>
@@ -161,41 +161,24 @@ export function DashboardPage() {
                 --
               </p>
               <div className="hw-grad-sep" />
-              <p style={{ fontSize: '11px', color: 'rgba(242,242,242,0.2)', fontFamily: 'JetBrains Mono, monospace' }}>Aucune donnée</p>
             </>
           )}
 
-          {/* Axis scores mini bars */}
-          {trailProfile?.axis_scores && (
-            <div className="flex flex-col gap-1.5 mt-4">
-              {(Object.entries(trailProfile.axis_scores) as [string, number | null][])
-                .filter(([k, v]) => k !== 'legacy' && v !== null)
-                .map(([key, val]) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <span style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)', textTransform: 'uppercase', width: '64px', flexShrink: 0 }}>{key}</span>
-                    <div className="flex-1 hw-pb-bg" style={{ marginTop: 0 }}>
-                      <div className="hw-pb-fill" style={{ width: `${Math.min(100, (val ?? 0) * 100)}%` }} />
-                    </div>
-                    <span style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(232,131,42,0.5)', width: '28px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                      {((val ?? 0) * 100).toFixed(0)}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Ghost rank bottom-right */}
+          {/* Profil dominant — bas droite, comme le mockup */}
           <div className="absolute" style={{ bottom: '20px', right: '20px', textAlign: 'right' }}>
-            <p style={{ fontSize: '26px', fontWeight: 700, color: 'rgba(242,242,242,0.06)', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}>
-              {trailProfile ? `#${Math.max(1, Math.round((100 - trailProfile.trail_score_final) / 10))}` : ''}
-            </p>
+            {trailProfile ? (
+              <>
+                <p style={{ fontSize: '13px', color: '#6DAA75', letterSpacing: '0.5px', fontWeight: 600 }}>{trailProfile.dominant_profile}</p>
+                <p style={{ fontSize: '9px', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px' }}>Profil dominant</p>
+              </>
+            ) : null}
           </div>
         </div>
 
         {/* Carte Mapbox */}
         <DashboardMap
           className=""
-          style={{ minHeight: '200px', borderRadius: '8px' }}
+          style={{ minHeight: '280px', borderRadius: '8px' }}
           explorationStats={explorationStats}
         />
       </div>
@@ -205,22 +188,14 @@ export function DashboardPage() {
 
         {/* Cette semaine */}
         <div className="hw-card-weekly">
-          {/* Weekly: TL+TR amber, BL+BR glacier */}
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
-          <span className="hw-br hw-br-tr" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
-          <span className="hw-br hw-br-bl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
 
           <div className="flex items-center justify-between mb-3">
             <span className="hw-card-title">Cette semaine</span>
-            <div className="flex items-center gap-2">
-              {weeklySummary && (
-                <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: weeklySummary.prevWeekComparison >= 0 ? '#6DAA75' : '#fc8181' }}>
-                  {weeklySummary.prevWeekComparison >= 0 ? '↑' : '↓'} {Math.abs(weeklySummary.prevWeekComparison).toFixed(0)}%
-                </span>
-              )}
-              <Link to="/performance" className="hw-link" style={{ color: 'rgba(232,131,42,0.5)' }}>Stats →</Link>
-            </div>
+            {weeklySummary && (
+              <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: weeklySummary.prevWeekComparison >= 0 ? '#6DAA75' : '#fc8181' }}>
+                {weeklySummary.prevWeekComparison >= 0 ? '↑' : '↓'} {Math.abs(weeklySummary.prevWeekComparison).toFixed(0)}%
+              </span>
+            )}
           </div>
 
           {weeklySummary ? (
@@ -234,7 +209,7 @@ export function DashboardPage() {
                 <p className="hw-value" style={{ color: '#F2F2F2' }}>{formatTime(weeklySummary.totalTime)}</p>
               </div>
               <div>
-                <p className="hw-label">D+</p>
+                <p className="hw-label">Dénivelé</p>
                 <p className="hw-value" style={{ color: '#3DB2E0' }}>{Math.round(weeklySummary.totalElevation)} <span style={{ fontSize: '10px', color: 'rgba(61,178,224,0.6)' }}>m</span></p>
               </div>
               <div>
@@ -249,22 +224,14 @@ export function DashboardPage() {
 
         {/* Ce mois */}
         <div className="hw-card-monthly">
-          {/* Monthly: TL+TR glacier, BL+BR moss */}
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.5)' }} />
-          <span className="hw-br hw-br-tr" style={{ borderColor: 'rgba(61,178,224,0.5)' }} />
-          <span className="hw-br hw-br-bl" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
 
           <div className="flex items-center justify-between mb-3">
             <span className="hw-card-title">{currentMonth}</span>
-            <div className="flex items-center gap-2">
-              {monthlySummary && (
-                <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: monthlySummary.trend >= 0 ? '#6DAA75' : '#fc8181' }}>
-                  {monthlySummary.trend >= 0 ? '↑' : '↓'} {Math.abs(monthlySummary.trend).toFixed(0)}%
-                </span>
-              )}
-              <Link to="/kpi" className="hw-link" style={{ color: 'rgba(61,178,224,0.5)' }}>KPIs →</Link>
-            </div>
+            {monthlySummary && (
+              <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: monthlySummary.trend >= 0 ? '#6DAA75' : '#fc8181' }}>
+                {monthlySummary.trend >= 0 ? '↑' : '↓'} {Math.abs(monthlySummary.trend).toFixed(0)}%
+              </span>
+            )}
           </div>
 
           {monthlySummary ? (
@@ -272,15 +239,15 @@ export function DashboardPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                 <div>
                   <p className="hw-label">Distance</p>
-                  <p className="hw-value" style={{ color: '#E8832A', fontSize: '15px' }}>{monthlySummary.totalDistance.toFixed(1)} <span style={{ fontSize: '9px', color: 'rgba(232,131,42,0.6)' }}>km</span></p>
+                  <p className="hw-value" style={{ color: '#E8832A' }}>{monthlySummary.totalDistance.toFixed(1)} <span style={{ fontSize: '10px', color: 'rgba(232,131,42,0.6)' }}>km</span></p>
                 </div>
                 <div>
                   <p className="hw-label">D+</p>
-                  <p className="hw-value" style={{ color: '#3DB2E0', fontSize: '15px' }}>{Math.round(monthlySummary.totalElevation)} <span style={{ fontSize: '9px', color: 'rgba(61,178,224,0.6)' }}>m</span></p>
+                  <p className="hw-value" style={{ color: '#3DB2E0' }}>{Math.round(monthlySummary.totalElevation)} <span style={{ fontSize: '10px', color: 'rgba(61,178,224,0.6)' }}>m</span></p>
                 </div>
                 <div>
                   <p className="hw-label">Sessions</p>
-                  <p className="hw-value" style={{ color: '#6DAA75', fontSize: '15px' }}>{monthlySummary.sessionCount}</p>
+                  <p className="hw-value" style={{ color: '#6DAA75' }}>{monthlySummary.sessionCount}</p>
                 </div>
               </div>
               <div>
@@ -352,23 +319,21 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 gap-3">
 
         {/* Activités récentes */}
-        <div className="hw-card" style={{ border: '1px solid rgba(232,131,42,0.25)' }}>
+        <div className="hw-card" style={{ border: '1px solid rgba(232,131,42,0.25)', maxHeight: '320px', overflow: 'hidden' }}>
           <CornerBrackets
             tlColor="rgba(232,131,42,0.45)" trColor="rgba(232,131,42,0.45)"
             blColor="rgba(232,131,42,0.45)" brColor="rgba(232,131,42,0.45)"
           />
           <div className="flex items-center justify-between mb-3">
-            <span className="hw-card-title">Activités récentes</span>
             <div className="flex items-center gap-2">
+              <span className="hw-card-title">Activités récentes</span>
               <button
                 onClick={syncData}
                 disabled={isSyncing || !canSync}
-                className="flex items-center gap-1.5"
+                className="flex items-center"
                 style={{
-                  padding: '4px 8px',
+                  padding: '3px 6px',
                   borderRadius: '4px',
-                  fontSize: '9px',
-                  fontFamily: 'JetBrains Mono, monospace',
                   background: 'rgba(58,63,71,0.3)',
                   border: '1px solid rgba(58,63,71,0.5)',
                   color: isSyncing ? '#3DB2E0' : 'rgba(242,242,242,0.4)',
@@ -381,10 +346,9 @@ export function DashboardPage() {
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isSyncing ? 'animate-spin' : ''}>
                   <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
                 </svg>
-                {isSyncing ? 'Sync...' : 'Màj'}
               </button>
-              <Link to="/activities" className="hw-link">Voir tout →</Link>
             </div>
+            <Link to="/activities" className="hw-link">Voir tout →</Link>
           </div>
 
           {/* Dernière activité — featured block */}
@@ -445,7 +409,7 @@ export function DashboardPage() {
 
           {/* Autres activités récentes */}
           <div>
-            {[...recentActivities].reverse().slice(1, 5).map((activity) => {
+            {[...recentActivities].reverse().slice(1, 3).map((activity) => {
               const color = SPORT_COLORS[activity.type || ''] || '#3DB2E0';
               const isBike = activity.type === 'Bike';
               const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : formatPace(activity.allure_min_per_km);
@@ -473,7 +437,7 @@ export function DashboardPage() {
         </div>
 
         {/* Records Trail */}
-        <div className="hw-card-records">
+        <div className="hw-card-records" style={{ maxHeight: '320px', overflow: 'hidden' }}>
           {/* TL/TR amber, BL/BR amber-dark */}
           <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
           <span className="hw-br hw-br-tr" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />

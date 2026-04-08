@@ -347,6 +347,10 @@ body::before {
 }
 .hw-rec-row:last-child { border-bottom: none; padding-bottom: 0; }
 
+/* Hide Mapbox branding */
+.mapboxgl-ctrl-logo { display: none !important; }
+.mapboxgl-ctrl-attrib { display: none !important; }
+
 /* Override browser autofill background on inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

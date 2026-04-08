@@ -153,10 +153,12 @@ export function ActivitiesPage() {
         {canWrite && (
           <button
             onClick={handleCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-light text-charcoal font-medium rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30 mt-1"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'rgba(232,131,42,0.1)', border: '1px solid rgba(232,131,42,0.35)', borderRadius: '6px', color: '#E8832A', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', textTransform: 'uppercase', letterSpacing: '1px' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,131,42,0.18)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,131,42,0.1)'; }}
           >
             <PlusIcon />
-            Nouvelle activite
+            Nouvelle activité
           </button>
         )}
       </div>
@@ -169,9 +171,9 @@ export function ActivitiesPage() {
       )}
 
       {/* Search bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="relative flex-1 min-w-[200px]">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-mist/40 pointer-events-none">
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(242,242,242,0.2)', pointerEvents: 'none' }}>
             <SearchIcon />
           </span>
           <input
@@ -179,32 +181,32 @@ export function ActivitiesPage() {
             placeholder="Rechercher par nom..."
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-steel/20 border border-steel/30 rounded-lg text-mist text-sm focus:border-amber focus:outline-none transition-colors placeholder:text-mist/30"
+            style={{ width: '100%', paddingLeft: '34px', paddingRight: '12px', paddingTop: '7px', paddingBottom: '7px', background: 'rgba(58,63,71,0.15)', border: '1px solid rgba(58,63,71,0.35)', borderRadius: '6px', color: '#F2F2F2', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', outline: 'none' }}
           />
         </div>
         <input
           type="date"
           value={searchDateFrom}
           onChange={(e) => setSearchDateFrom(e.target.value)}
-          className="px-3 py-2 bg-steel/20 border border-steel/30 rounded-lg text-mist text-sm focus:border-amber focus:outline-none transition-colors"
+          style={{ padding: '7px 10px', background: 'rgba(58,63,71,0.15)', border: '1px solid rgba(58,63,71,0.35)', borderRadius: '6px', color: 'rgba(242,242,242,0.6)', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', outline: 'none' }}
         />
-        <span className="text-mist/40 text-sm">→</span>
+        <span style={{ fontSize: '9px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace' }}>→</span>
         <input
           type="date"
           value={searchDateTo}
           onChange={(e) => setSearchDateTo(e.target.value)}
-          className="px-3 py-2 bg-steel/20 border border-steel/30 rounded-lg text-mist text-sm focus:border-amber focus:outline-none transition-colors"
+          style={{ padding: '7px 10px', background: 'rgba(58,63,71,0.15)', border: '1px solid rgba(58,63,71,0.35)', borderRadius: '6px', color: 'rgba(242,242,242,0.6)', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', outline: 'none' }}
         />
         {(searchName || searchDateFrom || searchDateTo) && (
           <>
             <button
               onClick={() => { setSearchName(''); setSearchDateFrom(''); setSearchDateTo(''); }}
-              className="px-3 py-2 bg-steel/20 hover:bg-steel/30 border border-steel/30 rounded-lg text-mist/60 hover:text-mist transition-all"
+              style={{ padding: '7px 10px', background: 'rgba(58,63,71,0.15)', border: '1px solid rgba(58,63,71,0.35)', borderRadius: '6px', color: 'rgba(242,242,242,0.4)', cursor: 'pointer' }}
               title="Effacer les filtres"
             >
               <XIcon />
             </button>
-            <span className="text-amber text-xs font-mono">
+            <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#E8832A' }}>
               {filteredActivities.length} résultat{filteredActivities.length !== 1 ? 's' : ''}
             </span>
           </>
@@ -213,26 +215,25 @@ export function ActivitiesPage() {
 
       {/* Activities Grid */}
       {filteredActivities.length === 0 ? (
-        <div className="card-glass rounded-lg p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 grid-pattern pointer-events-none" />
-          <div className="relative">
-            {activities.length === 0 ? (
-              <>
-                <p className="text-mist/60 text-lg mb-4">Aucune activite pour le moment</p>
-                {canWrite && (
-                  <button
-                    onClick={handleCreate}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-light text-charcoal font-medium rounded-lg transition-all hover:-translate-y-0.5"
-                  >
-                    <PlusIcon />
-                    Creer votre premiere activite
-                  </button>
-                )}
-              </>
-            ) : (
-              <p className="text-mist/60 text-lg">Aucune activite ne correspond aux filtres</p>
-            )}
-          </div>
+        <div style={{ background: '#0B0C10', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '8px', padding: '48px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(58,63,71,0.3)' }} />
+          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(58,63,71,0.3)' }} />
+          {activities.length === 0 ? (
+            <>
+              <p style={{ fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)', marginBottom: '16px' }}>Aucune activité pour le moment</p>
+              {canWrite && (
+                <button
+                  onClick={handleCreate}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'rgba(232,131,42,0.1)', border: '1px solid rgba(232,131,42,0.35)', borderRadius: '6px', color: '#E8832A', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px' }}
+                >
+                  <PlusIcon />
+                  Créer votre première activité
+                </button>
+              )}
+            </>
+          ) : (
+            <p style={{ fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)' }}>Aucune activité ne correspond aux filtres</p>
+          )}
         </div>
       ) : (
         <>
@@ -249,22 +250,22 @@ export function ActivitiesPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-steel/20 hover:bg-steel/30 disabled:opacity-50 disabled:cursor-not-allowed text-mist rounded-lg transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(58,63,71,0.15)', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '6px', color: currentPage === 1 ? 'rgba(242,242,242,0.2)' : 'rgba(242,242,242,0.5)', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
               >
                 <ArrowLeftIcon />
-                Precedent
+                Précédent
               </button>
-              <span className="text-steel font-mono text-sm px-4 py-2 bg-charcoal/50 rounded-lg">
+              <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', padding: '6px 16px', background: '#0B0C10', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '6px' }}>
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-steel/20 hover:bg-steel/30 disabled:opacity-50 disabled:cursor-not-allowed text-mist rounded-lg transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(58,63,71,0.15)', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '6px', color: currentPage === totalPages ? 'rgba(242,242,242,0.2)' : 'rgba(242,242,242,0.5)', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
               >
                 Suivant
                 <ArrowRightIcon />
@@ -276,36 +277,32 @@ export function ActivitiesPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="card-glass rounded-lg p-6 max-w-md w-full relative overflow-hidden">
-            <div className="absolute inset-0 grid-pattern pointer-events-none" />
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400">
-                  <TrashIcon />
-                </div>
-                <h3 className="font-heading text-lg font-semibold text-mist">
-                  Confirmer la suppression
-                </h3>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
+          <div style={{ background: '#0B0C10', border: '1px solid rgba(252,129,129,0.25)', borderRadius: '8px', padding: '24px', maxWidth: '400px', width: '100%', position: 'relative', overflow: 'hidden' }}>
+            <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(252,129,129,0.35)' }} />
+            <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(252,129,129,0.2)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ padding: '7px', background: 'rgba(252,129,129,0.1)', border: '1px solid rgba(252,129,129,0.25)', borderRadius: '6px', color: '#fc8181' }}>
+                <TrashIcon />
               </div>
-              <p className="text-mist/70 mb-6">
-                Etes-vous sur de vouloir supprimer l'activite "{deleteConfirm.name}" ?
-                Cette action est irreversible.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2 bg-steel/30 hover:bg-steel/50 text-mist rounded-lg transition-all hover:-translate-y-0.5"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/30"
-                >
-                  Supprimer
-                </button>
-              </div>
+              <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#F2F2F2' }}>Confirmer la suppression</h3>
+            </div>
+            <p style={{ fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.4)', marginBottom: '20px', lineHeight: 1.6 }}>
+              Supprimer "{deleteConfirm.name}" ? Cette action est irréversible.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{ padding: '6px 14px', background: 'rgba(58,63,71,0.2)', border: '1px solid rgba(58,63,71,0.35)', borderRadius: '6px', color: 'rgba(242,242,242,0.5)', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', cursor: 'pointer' }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDelete}
+                style={{ padding: '6px 14px', background: 'rgba(252,129,129,0.1)', border: '1px solid rgba(252,129,129,0.4)', borderRadius: '6px', color: '#fc8181', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', cursor: 'pointer' }}
+              >
+                Supprimer
+              </button>
             </div>
           </div>
         </div>

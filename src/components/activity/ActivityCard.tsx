@@ -8,99 +8,118 @@ interface ActivityCardProps {
   onDelete?: (activity: Activity) => void;
 }
 
+const SPORT_BAR_COLORS: Record<string, string> = {
+  Run: '#3DB2E0',
+  Trail: '#C96A1A',
+  Bike: '#7B6BC8',
+  Swim: '#8B92A0',
+  WeightTraining: '#9ca3af',
+  Hike: '#5A5F6C',
+};
+
 export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) {
   const sportStyle = SPORT_COLORS[activity.sport_type] || SPORT_COLORS.Run;
+  const barColor = SPORT_BAR_COLORS[activity.sport_type] || '#3DB2E0';
   const isBike = activity.sport_type === 'Bike';
   const isWeightTraining = activity.sport_type === 'WeightTraining';
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   return (
-    <div className="bg-charcoal-light border border-steel/30 rounded-lg p-4 hover:border-steel/50 transition-colors">
+    <div
+      style={{
+        background: '#0B0C10',
+        border: '1px solid rgba(58,63,71,0.3)',
+        borderRadius: '8px',
+        padding: '16px',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'border-color 0.15s',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(58,63,71,0.6)')}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(58,63,71,0.3)')}
+    >
+      {/* Corner brackets TL amber, BR sport color */}
+      <span className="hw-br hw-br-tl" style={{ borderColor: `${barColor}66` }} />
+      <span className="hw-br hw-br-br" style={{ borderColor: `${barColor}44` }} />
+
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
+        {/* Sport bar */}
+        <div style={{ width: '3px', height: '36px', borderRadius: '2px', background: barColor, flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Link
             to={`/activity/${activity.id}`}
-            className="font-heading font-semibold text-mist hover:text-amber transition-colors truncate block"
+            style={{ fontSize: '13px', fontWeight: 600, color: '#F2F2F2', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#E8832A')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#F2F2F2')}
           >
             {activity.name}
           </Link>
-          <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-sm text-mist/60">{formatDate(activity.start_date)}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+            <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              {sportStyle.label} · {formatDate(activity.start_date)}
+            </span>
             {activity.race && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded"
-                style={{ backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
+              <span style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', padding: '1px 5px', borderRadius: '3px', backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
                 🏁 {activity.race.name}
               </span>
             )}
           </div>
         </div>
-        <span
-          className="px-2 py-1 text-xs font-medium rounded ml-2 shrink-0"
-          style={{ backgroundColor: sportStyle.bg, color: sportStyle.color }}
-        >
-          {sportStyle.label}
-        </span>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
         {!isWeightTraining && (
           <div>
-            <p className="text-xs text-mist/50">Distance</p>
-            <p className="font-mono text-sm text-amber">
-              {(activity.distance_km || activity.distance || 0).toFixed(1)} km
+            <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', textTransform: 'uppercase', marginBottom: '2px' }}>Distance</p>
+            <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#E8832A' }}>
+              {(activity.distance_km || activity.distance || 0).toFixed(1)}<span style={{ fontSize: '9px', color: 'rgba(232,131,42,0.5)', marginLeft: '2px' }}>km</span>
             </p>
           </div>
         )}
         <div>
-          <p className="text-xs text-mist/50">Duree</p>
-          <p className="font-mono text-sm text-mist">
+          <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', textTransform: 'uppercase', marginBottom: '2px' }}>Durée</p>
+          <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#F2F2F2' }}>
             {activity.moving_time_hms || `${Math.round(activity.moving_time / 60)} min`}
           </p>
         </div>
         {!isWeightTraining && activity.total_elevation_gain !== undefined && activity.total_elevation_gain > 0 && (
           <div>
-            <p className="text-xs text-mist/50">D+</p>
-            <p className="font-mono text-sm text-glacier">
-              {Math.round(activity.total_elevation_gain)} m
+            <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', textTransform: 'uppercase', marginBottom: '2px' }}>D+</p>
+            <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#3DB2E0' }}>
+              {Math.round(activity.total_elevation_gain)}<span style={{ fontSize: '9px', color: 'rgba(61,178,224,0.5)', marginLeft: '2px' }}>m</span>
             </p>
           </div>
         )}
         {!isWeightTraining && activity.speed_minutes_per_km_hms && (
           <div>
-            <p className="text-xs text-mist/50">{isBike ? 'Vitesse' : 'Allure'}</p>
-            <p className="font-mono text-sm text-moss">
-              {isBike
-                ? `${activity.average_speed?.toFixed(1) || '--'} km/h`
-                : `${activity.speed_minutes_per_km_hms}/km`}
+            <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', textTransform: 'uppercase', marginBottom: '2px' }}>{isBike ? 'Vitesse' : 'Allure'}</p>
+            <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#6DAA75' }}>
+              {isBike ? `${activity.average_speed?.toFixed(1) || '--'}` : activity.speed_minutes_per_km_hms}
+              <span style={{ fontSize: '9px', color: 'rgba(109,170,117,0.5)', marginLeft: '2px' }}>{isBike ? 'km/h' : '/km'}</span>
             </p>
           </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-3 border-t border-steel/20">
-        <Link
-          to={`/activity/${activity.id}`}
-          className="text-sm text-mist/60 hover:text-amber transition-colors"
-        >
-          Voir details →
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid rgba(58,63,71,0.2)' }}>
+        <Link to={`/activity/${activity.id}`} className="hw-link">
+          Voir détails →
         </Link>
         {(onEdit || onDelete) && (
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', gap: '8px' }}>
             {onEdit && (
               <button
                 onClick={() => onEdit(activity)}
-                className="px-2 py-1 text-xs text-mist/60 hover:text-mist hover:bg-steel/30 rounded transition-colors"
+                style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', background: 'none', border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(242,242,242,0.7)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(242,242,242,0.3)')}
               >
                 Modifier
               </button>
@@ -108,7 +127,9 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             {onDelete && (
               <button
                 onClick={() => onDelete(activity)}
-                className="px-2 py-1 text-xs text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(252,129,129,0.4)', background: 'none', border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(252,129,129,0.8)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(252,129,129,0.4)')}
               >
                 Supprimer
               </button>

@@ -1,3 +1,6 @@
+import type { SportType } from '@/types';
+
+// ── Palette de couleurs ───────────────────────────────────────────────────────
 export const COLORS = {
   charcoal: '#0B0C10',
   charcoalLight: '#1F2833',
@@ -6,22 +9,62 @@ export const COLORS = {
   mist: '#F2F2F2',
   amber: '#E8832A',
   amberLight: '#ff9942',
-  amberDark: '#c56a1a',
+  amberDark: '#C96A1A',
   glacier: '#3DB2E0',
   glacierLight: '#5bc4ed',
   moss: '#6DAA75',
   mossLight: '#8bc492',
 } as const;
 
-export const SPORT_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  Run: { bg: 'rgba(232, 131, 42, 0.125)', color: '#E8832A', label: 'Course' },
-  Trail: { bg: 'rgba(232, 131, 42, 0.125)', color: '#E8832A', label: 'Trail' },
-  Bike: { bg: 'rgba(61, 178, 224, 0.125)', color: '#3DB2E0', label: 'Velo' },
-  Swim: { bg: 'rgba(109, 170, 117, 0.125)', color: '#6DAA75', label: 'Natation' },
-  Hike: { bg: 'rgba(109, 170, 117, 0.125)', color: '#6DAA75', label: 'Rando' },
-  WeightTraining: { bg: 'rgba(58, 63, 71, 0.125)', color: '#3A3F47', label: 'Muscu' },
+// ── Source de vérité unique pour les sports ───────────────────────────────────
+// color    : couleur principale du sport (badge, valeurs, trace)
+// barColor : couleur de la barre latérale dans les cards liste
+// bg       : fond semi-transparent pour badges
+// label    : libellé FR affiché à l'utilisateur
+export const SPORT_META: Record<SportType, {
+  color: string;
+  barColor: string;
+  bg: string;
+  label: string;
+}> = {
+  Run:           { color: '#E8832A', barColor: '#3DB2E0', bg: 'rgba(232,131,42,0.12)',  label: 'Course' },
+  Trail:         { color: '#E8832A', barColor: '#C96A1A', bg: 'rgba(232,131,42,0.12)',  label: 'Trail' },
+  Bike:          { color: '#3DB2E0', barColor: '#7B6BC8', bg: 'rgba(61,178,224,0.12)',  label: 'Vélo' },
+  Swim:          { color: '#6DAA75', barColor: '#8B92A0', bg: 'rgba(109,170,117,0.12)', label: 'Natation' },
+  Hike:          { color: '#6DAA75', barColor: '#5A5F6C', bg: 'rgba(109,170,117,0.12)', label: 'Randonnée' },
+  WeightTraining:{ color: '#9ca3af', barColor: '#9ca3af', bg: 'rgba(58,63,71,0.12)',    label: 'Muscu' },
 };
 
+// Accès rapide : sportColor(type) → couleur principale
+export function sportColor(type: SportType | string): string {
+  return (SPORT_META as Record<string, { color: string }>)[type]?.color ?? COLORS.amber;
+}
+
+// Accès rapide : sportBarColor(type) → couleur barre card liste
+export function sportBarColor(type: SportType | string): string {
+  return (SPORT_META as Record<string, { barColor: string }>)[type]?.barColor ?? COLORS.glacier;
+}
+
+// Accès rapide : sportLabel(type) → libellé FR
+export function sportLabel(type: SportType | string): string {
+  return (SPORT_META as Record<string, { label: string }>)[type]?.label ?? type;
+}
+
+// Compat : objets plats pour les composants qui les consomment directement
+// (à migrer progressivement vers SPORT_META)
+export const SPORT_COLORS: Record<SportType, { bg: string; color: string; label: string }> = Object.fromEntries(
+  Object.entries(SPORT_META).map(([k, v]) => [k, { bg: v.bg, color: v.color, label: v.label }])
+) as Record<SportType, { bg: string; color: string; label: string }>;
+
+export const SPORT_LABELS: Record<SportType, string> = Object.fromEntries(
+  Object.entries(SPORT_META).map(([k, v]) => [k, v.label])
+) as Record<SportType, string>;
+
+export const SPORT_BAR_COLORS: Record<SportType, string> = Object.fromEntries(
+  Object.entries(SPORT_META).map(([k, v]) => [k, v.barColor])
+) as Record<SportType, string>;
+
+// ── Couleurs de graphiques (charts dashboard) ─────────────────────────────────
 export const CHART_SPORT_COLORS: Record<string, string> = {
   Run: '#3DB2E0',
   Trail: '#1E6A8F',
@@ -31,6 +74,7 @@ export const CHART_SPORT_COLORS: Record<string, string> = {
   Hike: '#5A5F6C',
 };
 
+// ── Misc ──────────────────────────────────────────────────────────────────────
 export const SPORT_TYPES = ['Run', 'Trail', 'Bike', 'Swim', 'Hike', 'WeightTraining'] as const;
 
 export const TAG_ICONS: Record<string, string> = {

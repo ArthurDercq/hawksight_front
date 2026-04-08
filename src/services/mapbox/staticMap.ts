@@ -156,6 +156,7 @@ export function buildStaticMapUrl(options: StaticMapOptions): string | null {
   const pathOverlay = `path-${strokeWidth}+${strokeColor}-0.9(${encodeURIComponent(encoded)})`;
 
   // auto = zoom automatique pour englober toute la trace
+  // padding=60 = marge autour de la trace pour éviter le zoom excessif
   // @2x = résolution retina
-  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${pathOverlay}/auto/${width}x${height}@2x?attribution=false&logo=false&access_token=${ENV.MAPBOX_ACCESS_TOKEN}`;
+  return `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/static/${pathOverlay}/auto/${width}x${height}@2x?padding=120&attribution=false&logo=false&access_token=${ENV.MAPBOX_ACCESS_TOKEN}`;
 }
