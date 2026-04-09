@@ -9,6 +9,7 @@ export default {
       colors: {
         // HawkSight color palette
         charcoal: '#0B0C10',
+        'charcoal-dark': '#060c18',
         'charcoal-light': '#1F2833',
         steel: '#3A3F47',
         'steel-light': '#4A5058',
@@ -20,6 +21,8 @@ export default {
         'glacier-light': '#5bc4ed',
         moss: '#6DAA75',
         'moss-light': '#8bc492',
+        event: '#7B6BC8',
+        'event-light': '#A89BE8',
       },
       fontFamily: {
         heading: ['Poppins', 'sans-serif'],

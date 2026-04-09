@@ -84,34 +84,6 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-
-// Helper: Format date for display
-const formatDateDisplay = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-};
-
-// Helper: Get ISO date (YYYY-MM-DD) from date string
-const getISODate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
-};
-
-// Helper functions
-const formatDuration = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${mins.toString().padStart(2, '0')}min`;
-  }
-  return `${mins}min`;
-};
-
-// Play icon for launch button
 const PlayIcon = ({ className }: { className?: string }) => (
   <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="5 3 19 12 5 21 5 3" />
@@ -124,8 +96,24 @@ const CheckIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const formatDateDisplay = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const getISODate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0];
+};
+
+const formatDuration = (seconds: number) => {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${mins.toString().padStart(2, '0')}min`;
+  return `${mins}min`;
+};
+
 export function PerformancePage() {
-  // Fetch real activities from API
   const { activities, isLoading, error } = useActivities();
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -139,13 +127,11 @@ export function PerformancePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
 
-  // Filter activities by selected date
   const filteredActivities = useMemo(() => {
     if (!selectedDate) return activities;
     return activities.filter((activity) => getISODate(activity.start_date) === selectedDate);
   }, [activities, selectedDate]);
 
-  // Get min/max dates for date picker
   const dateRange = useMemo(() => {
     if (activities.length === 0) return { min: '', max: '' };
     const dates = activities.map(a => new Date(a.start_date).getTime());
@@ -158,11 +144,8 @@ export function PerformancePage() {
   }, [activities]);
 
   const color = selectedActivity ? sportColor(selectedActivity.sport_type) : '#E8832A';
-
-  // Check if ready to launch analysis
   const canLaunchAnalysis = selectedActivity !== null || uploadedFile !== null;
 
-  // Handle launching analysis
   const handleLaunchAnalysis = async () => {
     setAnalysisStarted(true);
     setAnalysisStatus('loading');
@@ -173,10 +156,8 @@ export function PerformancePage() {
       let result: TrailAnalysisResult;
 
       if (uploadedFile) {
-        // Analyze uploaded file
         result = await analysisApi.analyzeFile(uploadedFile);
       } else if (selectedActivity) {
-        // Analyze selected activity
         result = await analysisApi.analyzeActivity(selectedActivity.id);
       } else {
         throw new Error('Aucune activité ou fichier sélectionné');
@@ -185,7 +166,6 @@ export function PerformancePage() {
       setAnalysisResult(result);
       setAnalysisStatus('success');
 
-      // Scroll to analysis section after a short delay
       setTimeout(() => {
         analysisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -207,7 +187,6 @@ export function PerformancePage() {
     }
   };
 
-  // Reset analysis when changing selection
   const handleActivitySelect = (activity: Activity) => {
     setSelectedActivity(activity);
     setUploadedFile(null);
@@ -267,42 +246,34 @@ export function PerformancePage() {
         icon={<ChartBarIcon color="#E8832A" />}
       />
 
-      {/* Selection Interface - Always visible */}
+      {/* Selection Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column: Import File */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <UploadIcon className="w-5 h-5 text-[#F2F2F2]" />
-            <h2 className="font-heading text-lg text-[#F2F2F2]">Importer un fichier</h2>
+            <UploadIcon className="w-5 h-5 text-mist" />
+            <h2 className="font-heading text-lg text-mist">Importer un fichier</h2>
           </div>
 
           {/* Drop Zone or Selected File */}
           {uploadedFile ? (
-            <div className="relative bg-[#0B0C10] border-2 border-[#4CAF50]/50 rounded-lg p-8">
-              {/* Corner decorations */}
-              <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-[#4CAF50]/30" />
-              <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-[#4CAF50]/30" />
-              <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-[#4CAF50]/30" />
-              <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#4CAF50]/30" />
+            <div className="relative bg-charcoal border-2 border-moss/50 rounded-lg p-8">
+              <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-moss/30" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-moss/30" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-moss/30" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-moss/30" />
 
               <div className="flex flex-col items-center gap-4">
-                <div className="p-3 bg-[#4CAF50]/10 border border-[#4CAF50]/30 rounded-lg">
-                  <CheckIcon className="text-[#4CAF50]" />
+                <div className="p-3 bg-moss/10 border border-moss/30 rounded-lg">
+                  <CheckIcon className="text-moss" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[#F2F2F2] font-['Inter'] font-medium">
-                    Fichier sélectionné
-                  </p>
-                  <p className="text-[#4CAF50] font-['JetBrains_Mono'] text-sm mt-1">
-                    {uploadedFile.name}
-                  </p>
+                  <p className="text-mist font-medium">Fichier sélectionné</p>
+                  <p className="text-moss font-mono text-sm mt-1">{uploadedFile.name}</p>
                 </div>
                 <button
-                  onClick={() => {
-                    setUploadedFile(null);
-                    setAnalysisStarted(false);
-                  }}
-                  className="text-[#3A3F47] hover:text-[#E8832A] font-['Inter'] text-sm transition-colors"
+                  onClick={() => { setUploadedFile(null); setAnalysisStarted(false); }}
+                  className="text-steel hover:text-amber text-sm transition-colors"
                 >
                   Changer de fichier
                 </button>
@@ -314,261 +285,212 @@ export function PerformancePage() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`
-                relative bg-[#0B0C10] border-2 border-dashed rounded-lg p-12
-                cursor-pointer transition-all duration-300
-                ${isDragging
-                  ? 'border-[#E8832A] bg-[#E8832A]/5'
-                  : 'border-[#3A3F47]/50 hover:border-[#3A3F47] hover:bg-[#3A3F47]/5'
-                }
-              `}
+              className={`relative bg-charcoal border-2 border-dashed rounded-lg p-12 cursor-pointer transition-all duration-300 ${
+                isDragging ? 'border-amber bg-amber/5' : 'border-steel/50 hover:border-steel hover:bg-steel/5'
+              }`}
             >
-              {/* Corner decorations */}
-              <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-[#3A3F47]/30" />
-              <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-[#3A3F47]/30" />
-              <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-[#3A3F47]/30" />
-              <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#3A3F47]/30" />
+              <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-steel/30" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-steel/30" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-steel/30" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-steel/30" />
 
               <div className="flex flex-col items-center gap-4">
-                <div className="p-4 bg-[#E8832A]/10 border border-[#E8832A]/30 rounded-lg">
+                <div className="p-4 bg-amber/10 border border-amber/30 rounded-lg">
                   <FileIcon color="#E8832A" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[#F2F2F2] font-['Inter']">
-                    Glissez-déposez votre fichier ici
-                  </p>
-                  <p className="text-[#3A3F47] font-['Inter'] text-sm mt-1">
-                    ou cliquez pour sélectionner
-                  </p>
+                  <p className="text-mist">Glissez-déposez votre fichier ici</p>
+                  <p className="text-steel text-sm mt-1">ou cliquez pour sélectionner</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="px-3 py-1.5 bg-[#E8832A]/10 border border-[#E8832A]/30 text-[#E8832A] rounded font-['JetBrains_Mono'] text-xs">
-                    .GPX
-                  </span>
-                  <span className="px-3 py-1.5 bg-[#3DB2E0]/10 border border-[#3DB2E0]/30 text-[#3DB2E0] rounded font-['JetBrains_Mono'] text-xs">
-                    .FIT
-                  </span>
+                  <span className="px-3 py-1.5 bg-amber/10 border border-amber/30 text-amber rounded font-mono text-xs">.GPX</span>
+                  <span className="px-3 py-1.5 bg-glacier/10 border border-glacier/30 text-glacier rounded font-mono text-xs">.FIT</span>
                 </div>
               </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".gpx,.fit"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+              <input ref={fileInputRef} type="file" accept=".gpx,.fit" onChange={handleFileSelect} className="hidden" />
             </div>
           )}
 
           {/* Info Box */}
-          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-4">
+          <div className="hw-card-dark p-4">
             <div className="flex items-start gap-3">
               <ZapIcon color="#E8832A" size={20} />
               <div>
-                <p className="text-[#E8832A] font-['Inter'] text-sm font-medium">
-                  Formats supportés
-                </p>
-                <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
-                  Les fichiers GPX et FIT contiennent les données GPS, cardio, cadence et élévation
-                  nécessaires pour une analyse complète.
+                <p className="text-amber text-sm font-medium">Formats supportés</p>
+                <p className="text-steel text-xs mt-1">
+                  Les fichiers GPX et FIT contiennent les données GPS, cardio, cadence et élévation nécessaires pour une analyse complète.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-          {/* Right Column: Select Activity */}
-          <div className="space-y-4">
-            {/* Header with date picker inline */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <TrendingUpIcon color="#F2F2F2" size={20} />
-                <h2 className="font-heading text-lg text-[#F2F2F2]">Sélectionner une activité</h2>
-              </div>
-              {/* Compact Date Picker */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  min={dateRange.min}
-                  max={dateRange.max}
-                  className="bg-[#3A3F47]/20 border border-[#3A3F47]/50 rounded px-2 py-1
-                    text-[#F2F2F2] font-['JetBrains_Mono'] text-xs
-                    focus:outline-none focus:border-[#E8832A]/50
-                    [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert
-                    cursor-pointer w-[130px]"
-                />
-                {selectedDate && (
-                  <button
-                    onClick={() => setSelectedDate('')}
-                    className="p-1 bg-[#3A3F47]/20 hover:bg-[#E8832A]/20 border border-[#3A3F47]/50
-                      hover:border-[#E8832A]/30 rounded transition-all duration-200"
-                    title="Effacer le filtre"
-                  >
-                    <XIcon className="text-[#3A3F47] hover:text-[#E8832A]" />
-                  </button>
-                )}
-              </div>
+        {/* Right Column: Select Activity */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <TrendingUpIcon color="#F2F2F2" size={20} />
+              <h2 className="font-heading text-lg text-mist">Sélectionner une activité</h2>
             </div>
-
-            {/* Activity count info */}
-            {selectedDate && (
-              <div className="text-[#E8832A] font-['Inter'] text-xs">
-                {filteredActivities.length === 0
-                  ? 'Aucune activité à cette date'
-                  : `${filteredActivities.length} activité${filteredActivities.length > 1 ? 's' : ''}`
-                }
-              </div>
-            )}
-
-            {/* Activities List */}
-            <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg overflow-hidden flex flex-col" style={{ height: uploadedFile ? '280px' : '340px' }}>
-              {isLoading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-8 h-8 border-2 border-[#E8832A]/30 border-t-[#E8832A] rounded-full animate-spin mx-auto" />
-                    <p className="text-[#3A3F47] font-['Inter'] text-sm mt-3">Chargement...</p>
-                  </div>
-                </div>
-              ) : error ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <p className="text-red-400 font-['Inter'] text-sm">{error}</p>
-                </div>
-              ) : filteredActivities.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <CalendarIcon className="w-10 h-10 mx-auto text-[#3A3F47]/50 mb-2" />
-                    <p className="text-[#3A3F47] font-['Inter'] text-sm">
-                      {selectedDate ? 'Aucune activité à cette date' : 'Aucune activité'}
-                    </p>
-                    {selectedDate && (
-                      <button
-                        onClick={() => setSelectedDate('')}
-                        className="mt-2 text-[#E8832A] font-['Inter'] text-xs hover:underline"
-                      >
-                        Voir toutes les activités
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin scrollbar-thumb-[#3A3F47]/50 scrollbar-track-transparent">
-                  {filteredActivities.map((activity) => {
-                    const isSelected = selectedActivity?.id === activity.id;
-                    const activityColor = sportColor(activity.sport_type);
-                    const distanceKm = activity.distance_km || activity.distance;
-                    return (
-                      <button
-                        key={activity.id}
-                        onClick={() => handleActivitySelect(activity)}
-                        className={`w-full bg-[#0B0C10] border rounded-lg p-3
-                          transition-all duration-200 flex items-center justify-between group
-                          ${isSelected
-                            ? 'border-[#4CAF50]/50 bg-[#4CAF50]/5'
-                            : 'border-[#3A3F47]/30 hover:border-[#3A3F47] hover:bg-[#3A3F47]/5'
-                          }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="p-1.5 rounded"
-                            style={{
-                              backgroundColor: `${activityColor}15`,
-                              border: `1px solid ${activityColor}30`
-                            }}
-                          >
-                            {isSelected ? (
-                              <CheckIcon className="text-[#4CAF50]" />
-                            ) : (
-                              <MapPinIcon color={activityColor} size={16} />
-                            )}
-                          </div>
-                          <div className="text-left">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[#F2F2F2] font-['Inter'] text-sm font-medium line-clamp-1">
-                                {activity.name}
-                              </span>
-                              <span
-                                className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] shrink-0"
-                                style={{
-                                  backgroundColor: `${activityColor}20`,
-                                  color: activityColor
-                                }}
-                              >
-                                {sportLabel(activity.sport_type)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
-                              <span>{formatDateDisplay(activity.start_date)}</span>
-                              <span className="text-[#3A3F47]/50">•</span>
-                              <span>{distanceKm.toFixed(1)} km</span>
-                              <span className="text-[#3A3F47]/50">•</span>
-                              <span>{activity.moving_time_hms || formatDuration(activity.moving_time)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        {isSelected ? (
-                          <CheckIcon className="w-4 h-4 text-[#4CAF50] shrink-0" />
-                        ) : (
-                          <ChevronRightIcon className="w-4 h-4 text-[#3A3F47] group-hover:text-[#F2F2F2] transition-colors shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* Compact Date Picker */}
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                min={dateRange.min}
+                max={dateRange.max}
+                className="bg-steel/20 border border-steel/50 rounded px-2 py-1 text-mist font-mono text-xs focus:outline-none focus:border-amber/50 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert cursor-pointer w-[130px]"
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  className="p-1 bg-steel/20 hover:bg-amber/20 border border-steel/50 hover:border-amber/30 rounded transition-all duration-200"
+                  title="Effacer le filtre"
+                >
+                  <XIcon className="text-steel hover:text-amber" />
+                </button>
               )}
             </div>
+          </div>
 
-            {/* Info Box */}
-            <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <DatabaseIcon color="#E8832A" size={16} />
-                <div>
-                  <p className="text-[#E8832A] font-['Inter'] text-xs font-medium">
-                    {activities.length} activité{activities.length > 1 ? 's' : ''} enregistrée{activities.length > 1 ? 's' : ''}
-                  </p>
-                  <p className="text-[#3A3F47] font-['Inter'] text-[10px] mt-0.5">
-                    Sélectionnez une activité pour lancer l'analyse.
-                  </p>
+          {selectedDate && (
+            <div className="text-amber text-xs">
+              {filteredActivities.length === 0
+                ? 'Aucune activité à cette date'
+                : `${filteredActivities.length} activité${filteredActivities.length > 1 ? 's' : ''}`
+              }
+            </div>
+          )}
+
+          {/* Activities List */}
+          <div
+            className="bg-charcoal border border-steel/30 rounded-lg overflow-hidden flex flex-col"
+            style={{ height: uploadedFile ? '280px' : '340px' }}
+          >
+            {isLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-amber/30 border-t-amber rounded-full animate-spin mx-auto" />
+                  <p className="text-steel text-sm mt-3">Chargement...</p>
                 </div>
+              </div>
+            ) : error ? (
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            ) : filteredActivities.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <CalendarIcon className="w-10 h-10 mx-auto text-steel/50 mb-2" />
+                  <p className="text-steel text-sm">
+                    {selectedDate ? 'Aucune activité à cette date' : 'Aucune activité'}
+                  </p>
+                  {selectedDate && (
+                    <button
+                      onClick={() => setSelectedDate('')}
+                      className="mt-2 text-amber text-xs hover:underline"
+                    >
+                      Voir toutes les activités
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {filteredActivities.map((activity) => {
+                  const isSelected = selectedActivity?.id === activity.id;
+                  const activityColor = sportColor(activity.sport_type);
+                  const distanceKm = activity.distance_km || activity.distance;
+                  return (
+                    <button
+                      key={activity.id}
+                      onClick={() => handleActivitySelect(activity)}
+                      className={`w-full bg-charcoal border rounded-lg p-3 transition-all duration-200 flex items-center justify-between group ${
+                        isSelected ? 'border-moss/50 bg-moss/5' : 'border-steel/30 hover:border-steel hover:bg-steel/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="p-1.5 rounded"
+                          style={{ backgroundColor: `${activityColor}15`, border: `1px solid ${activityColor}30` }}
+                        >
+                          {isSelected ? (
+                            <CheckIcon className="text-moss" />
+                          ) : (
+                            <MapPinIcon color={activityColor} size={16} />
+                          )}
+                        </div>
+                        <div className="text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="text-mist text-sm font-medium line-clamp-1">{activity.name}</span>
+                            <span
+                              className="px-1.5 py-0.5 rounded font-mono text-[9px] shrink-0"
+                              style={{ backgroundColor: `${activityColor}20`, color: activityColor }}
+                            >
+                              {sportLabel(activity.sport_type)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-steel font-mono text-[10px]">
+                            <span>{formatDateDisplay(activity.start_date)}</span>
+                            <span className="text-steel/50">•</span>
+                            <span>{distanceKm.toFixed(1)} km</span>
+                            <span className="text-steel/50">•</span>
+                            <span>{activity.moving_time_hms || formatDuration(activity.moving_time)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {isSelected ? (
+                        <CheckIcon className="w-4 h-4 text-moss shrink-0" />
+                      ) : (
+                        <ChevronRightIcon className="w-4 h-4 text-steel group-hover:text-mist transition-colors shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Info Box */}
+          <div className="hw-card-dark p-3">
+            <div className="flex items-start gap-2">
+              <DatabaseIcon color="#E8832A" size={16} />
+              <div>
+                <p className="text-amber text-xs font-medium">
+                  {activities.length} activité{activities.length > 1 ? 's' : ''} enregistrée{activities.length > 1 ? 's' : ''}
+                </p>
+                <p className="text-steel text-[10px] mt-0.5">Sélectionnez une activité pour lancer l'analyse.</p>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
       {/* Launch Analysis Button */}
-      <div className="flex flex-col items-center gap-4 py-6 border-t border-b border-[#3A3F47]/30">
+      <div className="flex flex-col items-center gap-4 py-6 border-t border-b border-steel/30">
         {canLaunchAnalysis ? (
           <>
             <div className="flex items-center gap-3 text-sm">
-              <CheckIcon className="text-[#4CAF50]" />
-              <span className="text-[#F2F2F2] font-['Inter']">
-                {selectedActivity
-                  ? `Activité sélectionnée : ${selectedActivity.name}`
-                  : `Fichier sélectionné : ${uploadedFile?.name}`
-                }
+              <CheckIcon className="text-moss" />
+              <span className="text-mist">
+                {selectedActivity ? `Activité sélectionnée : ${selectedActivity.name}` : `Fichier sélectionné : ${uploadedFile?.name}`}
               </span>
-              <button
-                onClick={handleReset}
-                className="text-[#3A3F47] hover:text-[#E8832A] font-['Inter'] transition-colors"
-              >
+              <button onClick={handleReset} className="text-steel hover:text-amber transition-colors">
                 (modifier)
               </button>
             </div>
             {!analysisStarted ? (
               <button
                 onClick={handleLaunchAnalysis}
-                className="flex items-center gap-3 px-8 py-3 bg-[#E8832A] hover:bg-[#E8832A]/90
-                  text-[#0B0C10] font-['Inter'] font-medium rounded-lg
-                  transition-all duration-300 hover:-translate-y-0.5
-                  hover:shadow-[0_4px_20px_rgba(232,131,42,0.4)]"
+                className="flex items-center gap-3 px-8 py-3 bg-amber hover:bg-amber/90 text-charcoal font-medium rounded-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(232,131,42,0.4)]"
               >
                 <PlayIcon className="w-5 h-5" />
                 Lancer l'analyse
               </button>
             ) : (
-              <div className="flex items-center gap-2 text-[#4CAF50] font-['Inter'] text-sm">
+              <div className="flex items-center gap-2 text-moss text-sm">
                 <CheckIcon className="w-4 h-4" />
                 Analyse en cours d'affichage
               </div>
@@ -576,17 +498,16 @@ export function PerformancePage() {
           </>
         ) : (
           <div className="text-center">
-            <p className="text-[#3A3F47] font-['Inter'] text-sm">
+            <p className="text-steel text-sm">
               Sélectionnez une activité ou importez un fichier pour lancer l'analyse
             </p>
           </div>
         )}
       </div>
 
-      {/* Analysis View - Only show when analysis is started */}
+      {/* Analysis View */}
       {analysisStarted && (
         <div ref={analysisRef} className="space-y-6 pt-4">
-          {/* Loading State */}
           {analysisStatus === 'loading' && (
             <AnalysisLoader
               activityName={uploadedFile ? uploadedFile.name : selectedActivity?.name}
@@ -594,11 +515,10 @@ export function PerformancePage() {
             />
           )}
 
-          {/* Error State */}
           {analysisStatus === 'error' && (
-            <div className="bg-[#0B0C10] border border-[#e74c3c]/30 rounded-lg p-8">
+            <div className="hw-card-dark p-8">
               <div className="flex flex-col items-center gap-4">
-                <div className="p-4 bg-[#e74c3c]/10 border border-[#e74c3c]/30 rounded-lg">
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
@@ -606,17 +526,12 @@ export function PerformancePage() {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-[#e74c3c] font-['Inter'] font-medium">
-                    Erreur lors de l'analyse
-                  </p>
-                  <p className="text-[#3A3F47] font-['Inter'] text-sm mt-1">
-                    {analysisError || 'Une erreur inattendue s\'est produite'}
-                  </p>
+                  <p className="text-red-400 font-medium">Erreur lors de l'analyse</p>
+                  <p className="text-steel text-sm mt-1">{analysisError || 'Une erreur inattendue s\'est produite'}</p>
                 </div>
                 <button
                   onClick={handleLaunchAnalysis}
-                  className="px-4 py-2 bg-[#e74c3c]/10 border border-[#e74c3c]/30 text-[#e74c3c] rounded-lg
-                    font-['Inter'] text-sm hover:bg-[#e74c3c]/20 transition-colors"
+                  className="px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm hover:bg-red-500/20 transition-colors"
                 >
                   Réessayer
                 </button>
@@ -624,12 +539,8 @@ export function PerformancePage() {
             </div>
           )}
 
-          {/* Success State - Trail Analysis Dashboard */}
           {analysisStatus === 'success' && analysisResult && (
-            <TrailAnalysisDashboard
-              data={analysisResult}
-              color={color}
-            />
+            <TrailAnalysisDashboard data={analysisResult} color={color} />
           )}
         </div>
       )}
@@ -665,36 +576,24 @@ function AnalysisLoader({ activityName, isFile }: { activityName?: string; isFil
 
   const minutes = Math.floor(elapsed / 60);
   const seconds = elapsed % 60;
-  const timeStr = minutes > 0
-    ? `${minutes}:${seconds.toString().padStart(2, '0')}`
-    : `${seconds}s`;
+  const timeStr = minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `${seconds}s`;
 
   return (
-    <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-12">
+    <div className="hw-card-dark p-12">
       <div className="flex flex-col items-center gap-5">
         <div className="relative">
-          <div className="w-16 h-16 border-4 border-[#3A3F47]/30 border-t-[#E8832A] rounded-full animate-spin" />
+          <div className="w-16 h-16 border-4 border-steel/30 border-t-amber rounded-full animate-spin" />
           <div className="absolute inset-0 flex items-center justify-center">
             <ChartBarIcon color="#E8832A" size={24} />
           </div>
         </div>
         <div className="text-center space-y-2">
-          <p className="text-[#F2F2F2] font-['Inter'] font-medium">
-            Analyse en cours...
-          </p>
-          <p className="text-[#E8832A] font-['Inter'] text-sm font-medium">
-            {ANALYSIS_STEPS[stepIndex]}
-          </p>
-          <p className="text-[#3A3F47] font-['Inter'] text-sm">
-            {isFile ? `Traitement de ${activityName}` : `Analyse de ${activityName}`}
-          </p>
-          <p className="text-[#3A3F47]/60 font-['Inter'] text-xs font-mono mt-2">
-            {timeStr}
-          </p>
+          <p className="text-mist font-medium">Analyse en cours...</p>
+          <p className="text-amber text-sm font-medium">{ANALYSIS_STEPS[stepIndex]}</p>
+          <p className="text-steel text-sm">{isFile ? `Traitement de ${activityName}` : `Analyse de ${activityName}`}</p>
+          <p className="font-mono text-xs text-steel/60 mt-2">{timeStr}</p>
           {elapsed >= 15 && (
-            <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
-              L'analyse peut prendre jusqu'à 2 minutes pour les activités longues
-            </p>
+            <p className="text-steel text-xs mt-1">L'analyse peut prendre jusqu'à 2 minutes pour les activités longues</p>
           )}
         </div>
       </div>

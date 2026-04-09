@@ -16,16 +16,11 @@ const GOAL_TYPES: { value: GoalType; label: string }[] = [
   { value: 'discovery', label: 'Découverte' },
 ];
 
-const inputClass =
-  'w-full bg-[#131417] border border-[#3A3F47]/50 rounded-lg px-3 py-2 text-mist text-sm focus:outline-none focus:border-amber/50 transition-colors';
-const labelClass = 'block text-[10px] font-mono uppercase tracking-widest text-mist/40 mb-1';
+const inputCls = 'w-full bg-charcoal-light/50 border border-steel/50 rounded-lg px-3 py-2 text-mist text-sm focus:outline-none focus:border-amber/50 transition-colors';
+const labelCls = 'block font-mono text-[10px] uppercase tracking-widest text-mist/40 mb-1';
 
 export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalProps) {
-  const [form, setForm] = useState<EventFormData>({
-    name: '',
-    date: initialDate ?? '',
-    type: 'Trail',
-  });
+  const [form, setForm] = useState<EventFormData>({ name: '', date: initialDate ?? '', type: 'Trail' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +47,7 @@ export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-[#0B0C10] border border-[#3A3F47]/40 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="bg-charcoal border border-steel/40 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -69,90 +64,43 @@ export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalP
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nom */}
           <div>
-            <label className={labelClass}>Nom *</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={e => set('name', e.target.value)}
-              placeholder="Ultra-Trail du Mont-Blanc"
-              className={inputClass}
-              required
-            />
+            <label className={labelCls}>Nom *</label>
+            <input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ultra-Trail du Mont-Blanc" className={inputCls} required />
           </div>
 
-          {/* Date + Type */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass}>Date *</label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={e => set('date', e.target.value)}
-                className={inputClass}
-                required
-              />
+              <label className={labelCls}>Date *</label>
+              <input type="date" value={form.date} onChange={e => set('date', e.target.value)} className={inputCls} required />
             </div>
             <div>
-              <label className={labelClass}>Type *</label>
-              <select
-                value={form.type}
-                onChange={e => set('type', e.target.value as EventType)}
-                className={inputClass}
-              >
+              <label className={labelCls}>Type *</label>
+              <select value={form.type} onChange={e => set('type', e.target.value as EventType)} className={inputCls}>
                 {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Distance + Dénivelé */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass}>Distance (km)</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                value={form.distance_km ?? ''}
-                onChange={e => set('distance_km', e.target.value ? parseFloat(e.target.value) : undefined)}
-                placeholder="42.2"
-                className={inputClass}
-              />
+              <label className={labelCls}>Distance (km)</label>
+              <input type="number" step="0.1" min="0" value={form.distance_km ?? ''} onChange={e => set('distance_km', e.target.value ? parseFloat(e.target.value) : undefined)} placeholder="42.2" className={inputCls} />
             </div>
             <div>
-              <label className={labelClass}>Dénivelé (m)</label>
-              <input
-                type="number"
-                min="0"
-                value={form.elevation_m ?? ''}
-                onChange={e => set('elevation_m', e.target.value ? parseInt(e.target.value) : undefined)}
-                placeholder="2500"
-                className={inputClass}
-              />
+              <label className={labelCls}>Dénivelé (m)</label>
+              <input type="number" min="0" value={form.elevation_m ?? ''} onChange={e => set('elevation_m', e.target.value ? parseInt(e.target.value) : undefined)} placeholder="2500" className={inputCls} />
             </div>
           </div>
 
-          {/* Lieu */}
           <div>
-            <label className={labelClass}>Lieu</label>
-            <input
-              type="text"
-              value={form.location ?? ''}
-              onChange={e => set('location', e.target.value || undefined)}
-              placeholder="Chamonix, France"
-              className={inputClass}
-            />
+            <label className={labelCls}>Lieu</label>
+            <input type="text" value={form.location ?? ''} onChange={e => set('location', e.target.value || undefined)} placeholder="Chamonix, France" className={inputCls} />
           </div>
 
-          {/* Objectif */}
           <div>
-            <label className={labelClass}>Objectif</label>
-            <select
-              value={form.goal_type ?? ''}
-              onChange={e => set('goal_type', e.target.value || undefined)}
-              className={inputClass}
-            >
+            <label className={labelCls}>Objectif</label>
+            <select value={form.goal_type ?? ''} onChange={e => set('goal_type', e.target.value || undefined)} className={inputCls}>
               <option value="">— Aucun —</option>
               {GOAL_TYPES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
             </select>
@@ -160,20 +108,11 @@ export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalP
 
           {error && <p className="text-red-400 text-xs">{error}</p>}
 
-          {/* Actions */}
           <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 rounded-lg border border-[#3A3F47]/50 text-mist/60 text-sm hover:text-mist hover:border-[#3A3F47] transition-colors"
-            >
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-steel/50 text-mist/60 text-sm hover:text-mist hover:border-steel transition-colors">
               Annuler
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || !form.name || !form.date}
-              className="flex-1 px-4 py-2 rounded-lg bg-amber text-charcoal text-sm font-semibold hover:bg-amber/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="submit" disabled={isSubmitting || !form.name || !form.date} className="flex-1 px-4 py-2 rounded-lg bg-amber text-charcoal text-sm font-semibold hover:bg-amber-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {isSubmitting ? 'Création...' : 'Créer'}
             </button>
           </div>

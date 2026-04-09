@@ -240,45 +240,38 @@ export function KPIPage() {
 
           {/* Activity Distribution Chart */}
           {chartData && (
-            <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
-              {/* Background effects */}
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#3DB2E0]/5 rounded-full blur-3xl" />
+            <div className="hw-card-dark p-6">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-glacier/5 rounded-full blur-3xl pointer-events-none" />
 
               <div className="relative space-y-6">
                 {/* Header */}
-                <div className="flex items-start justify-between pb-4 border-b border-[#3A3F47]/30">
+                <div className="flex items-start justify-between pb-4 border-b border-steel/30">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 border rounded" style={{ backgroundColor: '#3DB2E010', borderColor: '#3DB2E030' }}>
+                    <div className="p-2 bg-glacier/10 border border-glacier/30 rounded">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
                         <path d="M22 12A10 10 0 0 0 12 2v10z" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-heading text-[#F2F2F2]">Nombre d'activites par sport</h3>
-                      <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
-                        Repartition des activites
-                      </p>
+                      <h3 className="font-heading text-mist">Nombre d'activites par sport</h3>
+                      <p className="text-steel text-xs mt-1">Repartition des activites</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Chart with labels */}
                 <div className="relative">
-                  {/* Chart container */}
                   <div className="h-[220px] flex items-center justify-center">
                     <div className="relative w-[180px] h-[180px]">
                       <Suspense fallback={<div className="w-full h-full rounded-full bg-steel/10 animate-pulse" />}>
                         <HRZonesDoughnut chartData={chartData} />
                       </Suspense>
-                      {/* Center total */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-2xl font-bold font-mono text-[#F2F2F2]">
+                        <span className="text-2xl font-bold font-mono text-mist">
                           {chartData.datasets[0].data.reduce((a: number, b: number) => a + b, 0)}
                         </span>
-                        <span className="text-[10px] text-[#3A3F47] font-mono uppercase tracking-wider">
-                          activites
-                        </span>
+                        <span className="font-mono text-[10px] text-steel uppercase tracking-wider">activites</span>
                       </div>
                     </div>
                   </div>
@@ -294,27 +287,12 @@ export function KPIPage() {
                         <div
                           key={label}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all hover:scale-105"
-                          style={{
-                            backgroundColor: `${color}15`,
-                            borderColor: `${color}40`,
-                          }}
+                          style={{ backgroundColor: `${color}15`, borderColor: `${color}40` }}
                         >
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: color }}
-                          />
-                          <span className="text-[#F2F2F2] font-['Inter'] text-xs">
-                            {label}
-                          </span>
-                          <span
-                            className="font-['JetBrains_Mono'] text-xs font-semibold"
-                            style={{ color }}
-                          >
-                            {value}
-                          </span>
-                          <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
-                            ({percentage}%)
-                          </span>
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                          <span className="text-mist text-xs">{label}</span>
+                          <span className="font-mono text-xs font-semibold" style={{ color }}>{value}</span>
+                          <span className="font-mono text-[10px] text-steel">({percentage}%)</span>
                         </div>
                       );
                     })}
@@ -322,14 +300,12 @@ export function KPIPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-[#3A3F47]/30">
+                <div className="flex items-center justify-between pt-4 border-t border-steel/30">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#3DB2E0]" />
-                    <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
-                      SPORT_DISTRIBUTION
-                    </span>
+                    <div className="w-2 h-2 rounded-full bg-glacier" />
+                    <span className="font-mono text-xs text-steel">SPORT_DISTRIBUTION</span>
                   </div>
-                  <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                  <span className="font-mono text-xs text-steel">
                     {selectedYear ? `ANNEE ${selectedYear}` : 'TOUTES ANNEES'}
                   </span>
                 </div>
@@ -565,7 +541,7 @@ function TrailRecordItem({ label, value, unit, date, activityId, color = '#C96A1
                 <span className="text-xs leading-none tracking-tighter">···</span>
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 z-30 bg-[#1A1D23] border border-[#3A3F47]/50 rounded-lg shadow-xl min-w-[160px] py-1">
+                <div className="absolute right-0 top-full mt-1 z-30 bg-charcoal border border-steel/50 rounded-lg shadow-xl min-w-[160px] py-1">
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onExclude(); }}
                     className="w-full text-left px-3 py-2 text-xs text-red-400/50 hover:text-white hover:bg-red-500 transition-colors rounded-lg"

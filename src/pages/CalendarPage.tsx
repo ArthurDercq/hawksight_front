@@ -5,161 +5,106 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EventModal } from '@/components/ui/EventModal';
 import type { CalendarDay, CalendarWeek } from '@/hooks';
 import type { TrainingEvent } from '@/types';
-import { SectionTitle } from '@/components/ui/SectionTitle';
 import { SPORT_META, sportColor } from '@/services/utils/constants';
 
 const MONTH_NAMES = [
-  'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
-
 const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
-// SVG Icons
-const CalendarIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-
+// ── Icons ─────────────────────────────────────────────────────────────────────
 const ChevronLeftIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="15 18 9 12 15 6" />
   </svg>
 );
-
 const ChevronRightIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="9 18 15 12 9 6" />
   </svg>
 );
+const PlusIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
 
-
+// ── Page ──────────────────────────────────────────────────────────────────────
 export function CalendarPage() {
   const { currentDate, activities, isLoading, error, previousMonth, nextMonth, goToToday } = useCalendar();
   const { events, createEvent } = useEvents();
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [modalInitialDate, setModalInitialDate] = useState<string | undefined>();
 
-  const weeks = useMemo(() => {
-    return generateCalendarWeeks(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      activities,
-      events
-    );
-  }, [currentDate, activities]);
+  const weeks = useMemo(
+    () => generateCalendarWeeks(currentDate.getFullYear(), currentDate.getMonth(), activities, events),
+    [currentDate, activities, events],
+  );
 
   const monthYear = `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto px-6">
-        <SectionTitle
-          icon={<CalendarIcon />}
-          title="Calendrier"
-          className="mb-6"
-        />
-        <div className="flex items-center justify-center py-12">
-          <Spinner message="Chargement du calendrier..." />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-6">
-        <SectionTitle
-          icon={<CalendarIcon />}
-          title="Calendrier"
-          className="mb-6"
-        />
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6 text-center">
-          <p className="text-red-400">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const openEventModal = (date?: string) => {
+    setModalInitialDate(date);
+    setEventModalOpen(true);
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-6">
-      {/* Header */}
-      <SectionTitle
-        icon={<CalendarIcon />}
-        title="Calendrier"
-        className="mb-6"
-      />
-
-      <div className="card-glass rounded-lg p-4 sm:p-6 relative overflow-hidden">
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between mb-6 relative">
-          <button
-            onClick={previousMonth}
-            className="inline-flex items-center gap-1 px-3 py-2 text-mist/60 hover:text-mist hover:bg-steel/20 rounded-lg transition-all hover:-translate-x-0.5"
-          >
-            <ChevronLeftIcon />
-            Precedent
-          </button>
-          <div className="text-center">
-            <h2 className="font-heading text-xl font-semibold text-mist">{monthYear}</h2>
-            <button
-              onClick={goToToday}
-              className="text-sm text-amber hover:text-amber-light font-medium transition-colors"
-            >
-              Aujourd'hui
+    <div className="max-w-[1280px] mx-auto px-7">
+      {/* ── Header ── */}
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <p className="hw-section-label mb-1">· Calendrier ·</p>
+          <h1 className="hw-page-title">{monthYear}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="hw-btn-ghost" onClick={goToToday}>Aujourd'hui</button>
+          <div className="hw-btn-group">
+            <button className="hw-btn-group-item" onClick={previousMonth} aria-label="Mois précédent">
+              <ChevronLeftIcon />
             </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { setModalInitialDate(undefined); setEventModalOpen(true); }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber/10 border border-amber/30 text-amber text-sm hover:bg-amber/20 transition-all"
-            >
-              + Événement
-            </button>
-            <button
-              onClick={nextMonth}
-              className="inline-flex items-center gap-1 px-3 py-2 text-mist/60 hover:text-mist hover:bg-steel/20 rounded-lg transition-all hover:translate-x-0.5"
-            >
-              Suivant
+            <div className="hw-btn-group-divider" />
+            <button className="hw-btn-group-item" onClick={nextMonth} aria-label="Mois suivant">
               <ChevronRightIcon />
             </button>
           </div>
+          <button className="hw-btn-amber" onClick={() => openEventModal()}>
+            <PlusIcon /> Événement
+          </button>
         </div>
+      </div>
 
-        {/* Calendar Grid */}
-        <div className="overflow-x-auto relative">
-          <div className="min-w-[700px]">
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-8 gap-1 mb-2">
-              {WEEKDAYS.map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-sm font-semibold text-glacier py-2 bg-charcoal/50 rounded"
-                >
-                  {day}
-                </div>
-              ))}
-              <div className="text-center text-sm font-semibold text-glacier py-2 bg-charcoal/50 rounded">
-                Semaine
+      {/* ── Content ── */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Spinner message="Chargement du calendrier..." />
+        </div>
+      ) : error ? (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-md p-6 text-center">
+          <span className="font-mono text-xs text-red-400">{error}</span>
+        </div>
+      ) : (
+        <div className="hw-card-dark-lg">
+          {/* Weekday headers */}
+          <div className="grid gap-1 mb-1.5" style={{ gridTemplateColumns: 'repeat(7, 1fr) 90px' }}>
+            {WEEKDAYS.map((day) => (
+              <div key={day} className="text-center font-mono text-[9px] font-semibold text-glacier uppercase tracking-[1.5px] py-1.5">
+                {day}
               </div>
+            ))}
+            <div className="text-center font-mono text-[9px] font-semibold text-steel uppercase tracking-[1.5px] py-1.5">
+              S·W
             </div>
+          </div>
 
-            {/* Weeks */}
-            {weeks.map((week, weekIndex) => (
-              <CalendarWeekRow
-                key={weekIndex}
-                week={week}
-                onAddEvent={(date) => { setModalInitialDate(date); setEventModalOpen(true); }}
-              />
+          {/* Weeks */}
+          <div className="flex flex-col gap-1">
+            {weeks.map((week, i) => (
+              <CalendarWeekRow key={i} week={week} onAddEvent={openEventModal} />
             ))}
           </div>
         </div>
-      </div>
+      )}
 
       <EventModal
         open={eventModalOpen}
@@ -171,133 +116,134 @@ export function CalendarPage() {
   );
 }
 
+// ── Week row ──────────────────────────────────────────────────────────────────
 interface CalendarWeekRowProps {
   week: CalendarWeek;
-  onAddEvent?: (date: string) => void;
+  onAddEvent: (date: string) => void;
 }
 
 function CalendarWeekRow({ week, onAddEvent }: CalendarWeekRowProps) {
   const { stats } = week;
 
-  // Format time as XhYY (totalTime is in minutes from activity.moving_time)
-  const hours = Math.floor(stats.totalTime / 60);
-  const minutes = Math.floor(stats.totalTime % 60);
-  const timeFormatted = stats.totalTime > 0
-    ? `${hours}h${minutes.toString().padStart(2, '0')}`
-    : '-';
+  const h = Math.floor(stats.totalTime / 60);
+  const m = Math.floor(stats.totalTime % 60);
+  const time   = stats.totalTime > 0 ? `${h}h${m.toString().padStart(2, '0')}` : '—';
+  const dist   = stats.totalDistance > 0 ? stats.totalDistance.toFixed(1) : '—';
 
-  const distanceFormatted = stats.totalDistance > 0
-    ? `${stats.totalDistance.toFixed(1)} km`
-    : '-';
+  const paceRaw = stats.runTrailDistance > 0 ? stats.runTrailTime / stats.runTrailDistance : 0;
+  const pm = Math.floor(paceRaw);
+  const ps = Math.round((paceRaw - pm) * 60);
+  const pace = paceRaw > 0 ? `${pm}:${ps.toString().padStart(2, '0')}` : '—';
 
-  // Average pace for Run & Trail only (time in minutes, distance in km)
-  // Pace = total_minutes / distance_km gives minutes per km
-  const avgPaceMinPerKm = stats.runTrailDistance > 0
-    ? stats.runTrailTime / stats.runTrailDistance
-    : 0;
-  const paceMinutes = Math.floor(avgPaceMinPerKm);
-  const paceSeconds = Math.round((avgPaceMinPerKm - paceMinutes) * 60);
-  const paceFormatted = avgPaceMinPerKm > 0
-    ? `${paceMinutes}:${paceSeconds.toString().padStart(2, '0')}`
-    : '-';
+  const hasActivity = stats.totalDistance > 0;
 
   return (
-    <div className="grid grid-cols-8 gap-1 mb-1">
-      {week.days.map((day, dayIndex) => (
-        <CalendarDayCell key={dayIndex} day={day} onAddEvent={onAddEvent} />
+    <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr) 90px' }}>
+      {week.days.map((day, i) => (
+        <CalendarDayCell key={i} day={day} onAddEvent={onAddEvent} />
       ))}
-      {/* Week Stats */}
-      <div className="bg-charcoal border border-steel/20 rounded p-2 text-xs">
-        <div className="space-y-1">
-          <div className="flex justify-between">
-            <span className="text-mist/50">Dist:</span>
-            <span className="text-amber font-mono">{distanceFormatted}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-mist/50">Temps:</span>
-            <span className="text-mist font-mono">{timeFormatted}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-mist/50">Allure:</span>
-            <span className="text-glacier font-mono">{paceFormatted}</span>
-          </div>
+
+      {/* Week summary */}
+      <div className={hasActivity ? 'hw-cal-week-stats hw-cal-week-stats--active' : 'hw-cal-week-stats'}>
+        <div className="flex justify-between items-baseline">
+          <span className="font-mono text-[8px] text-steel">km</span>
+          <span className={`font-mono text-[11px] font-semibold tabular-nums ${hasActivity ? 'text-amber' : 'text-steel'}`}>{dist}</span>
+        </div>
+        <div className="h-px bg-steel/20" />
+        <div className="flex justify-between items-baseline">
+          <span className="font-mono text-[8px] text-steel">tps</span>
+          <span className={`font-mono text-[10px] tabular-nums ${hasActivity ? 'text-mist' : 'text-steel'}`}>{time}</span>
+        </div>
+        <div className="flex justify-between items-baseline">
+          <span className="font-mono text-[8px] text-steel">/km</span>
+          <span className={`font-mono text-[10px] tabular-nums ${hasActivity ? 'text-glacier' : 'text-steel'}`}>{pace}</span>
         </div>
       </div>
     </div>
   );
 }
 
+// ── Day cell ──────────────────────────────────────────────────────────────────
 interface CalendarDayCellProps {
   day: CalendarDay;
-}
-
-interface CalendarDayCellProps {
-  day: CalendarDay;
-  onAddEvent?: (date: string) => void;
+  onAddEvent: (date: string) => void;
 }
 
 function CalendarDayCell({ day, onAddEvent }: CalendarDayCellProps) {
   const { date, isCurrentMonth, isToday, activities, events } = day;
+  const [hovered, setHovered] = useState(false);
 
   const uniqueSports = [...new Set(activities.map((a) => a.sport_type))];
-  const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const dateKey = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+
+  const cellClass = isToday
+    ? 'hw-cal-day hw-cal-day--today'
+    : !isCurrentMonth
+    ? 'hw-cal-day hw-cal-day--other-month'
+    : 'hw-cal-day';
 
   return (
     <div
-      className={`
-        min-h-[100px] rounded-lg p-2 transition-all group
-        ${isCurrentMonth ? 'bg-steel/25 hover:bg-steel/40' : 'bg-steel/10 opacity-50'}
-        ${isToday ? 'border-2 border-amber bg-amber/10' : 'border border-transparent'}
-        ${events.length > 0 ? 'ring-1 ring-[#7B6BC8]/30' : ''}
-      `}
+      className={cellClass}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {/* Day Number + add button */}
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-sm font-semibold ${isToday ? 'text-amber' : isCurrentMonth ? 'text-mist' : 'text-mist/40'}`}>
+      {/* Day number + add button */}
+      <div className="flex items-center justify-between mb-1.5">
+        <span className={`font-mono text-[11px] ${isToday ? 'font-bold text-amber' : isCurrentMonth ? 'font-medium text-mist' : 'text-steel'}`}>
           {date.getDate()}
         </span>
-        {isCurrentMonth && onAddEvent && (
+        {isCurrentMonth && hovered && (
           <button
             onClick={() => onAddEvent(dateKey)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-mist/30 hover:text-amber text-base leading-none"
+            className="flex items-center justify-center w-4 h-4 rounded bg-amber/10 border border-amber/20 text-amber cursor-pointer"
             title="Ajouter un événement"
           >
-            +
+            <PlusIcon />
           </button>
         )}
       </div>
 
       {/* Event badges */}
       {events.map((event: TrainingEvent) => (
-        <div
-          key={event.id}
-          className="text-[10px] px-1.5 py-0.5 rounded font-medium w-full truncate mb-1 flex items-center gap-1"
-          style={{ backgroundColor: 'rgba(123,107,200,0.2)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.4)' }}
-          title={event.name}
-        >
-          <span>🏁</span>
+        <div key={event.id} className="hw-event-badge mb-1 text-[9px]" title={event.name}>
+          <span className="shrink-0">🏁</span>
           <span className="truncate">{event.name}</span>
         </div>
       ))}
 
-      {/* Sport Badges */}
-      <div className="flex flex-wrap gap-1">
-        {uniqueSports.map((sport) => {
-          const meta = SPORT_META[sport] ?? { bg: 'rgba(255,255,255,0.1)', color: '#F2F2F2' };
-          const sportActivities = activities.filter((a) => a.sport_type === sport);
-          return (
-            <Link
-              key={sport}
-              to={`/activity/${sportActivities[0]?.id}`}
-              className="text-[10px] px-1.5 py-0.5 rounded font-medium transition-all hover:scale-105"
-              style={{ backgroundColor: meta.bg, color: sportColor(sport), border: `1px solid ${sportColor(sport)}40` }}
-              title={sportActivities.map((a) => a.name).join(', ')}
-            >
-              {sport}
-            </Link>
-          );
-        })}
-      </div>
+      {/* Sport badges */}
+      {uniqueSports.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {uniqueSports.map((sport) => {
+            const meta  = SPORT_META[sport] ?? { bg: 'rgba(255,255,255,0.08)' };
+            const col   = sportColor(sport);
+            const count = activities.filter((a) => a.sport_type === sport).length;
+            const first = activities.find((a) => a.sport_type === sport);
+            return (
+              <Link
+                key={sport}
+                to={`/activity/${first?.id}`}
+                className="hw-sport-badge"
+                style={{ background: meta.bg, color: col, borderColor: `${col}30`, border: `1px solid ${col}30` }}
+                title={activities.filter((a) => a.sport_type === sport).map((a) => a.name).join(', ')}
+              >
+                <span className="w-1 h-1 rounded-full shrink-0" style={{ background: col }} />
+                {sport}{count > 1 ? ` ×${count}` : ''}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Today accent bar */}
+      {isToday && (
+        <div className="absolute bottom-0 left-[20%] right-[20%] h-0.5 bg-amber/70 rounded-t" />
+      )}
     </div>
   );
 }

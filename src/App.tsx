@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from '@/context';
-import { Navbar, Sidebar, Footer } from '@/components/layout';
+import { Sidebar, Footer } from '@/components/layout';
 import { Spinner } from '@/components/ui/Spinner';
 
 const HomePage = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
@@ -116,12 +116,7 @@ function AppLayout() {
   const isLogin = pathname === '/login';
 
   if (isLanding) {
-    return (
-      <>
-        <Navbar />
-        <AppRoutes />
-      </>
-    );
+    return <AppRoutes />;
   }
 
   if (isLogin) {

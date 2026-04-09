@@ -15,25 +15,23 @@ import type { ActivityFormData, TrainingEvent } from '@/types';
 import { sportColor, sportLabel } from '@/services/utils/constants';
 import { formatDateLong } from '@/services/utils/formatters';
 
+// ── Icons ─────────────────────────────────────────────────────────────────────
 const ArrowLeftIcon = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
   </svg>
 );
-
 const EditIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
-
 const AnalyticsIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
   </svg>
 );
-
 const ExplorationIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20A14.5 14.5 0 0 0 12 2" /><line x1="2" y1="12" x2="22" y2="12" />
@@ -42,16 +40,19 @@ const ExplorationIcon = () => (
 
 const isTrail = (sport: string) => sport === 'Trail';
 
-// Shared style constants (Style A)
-const chartCard = {
-  background: '#0B0C10',
-  border: '1px solid rgba(58,63,71,0.3)',
-  borderRadius: '10px',
-  padding: '18px',
-  position: 'relative' as const,
-  overflow: 'hidden' as const,
-};
+// Shared chart card className
+const chartCard = 'hw-card-dark-lg';
 
+// ── Back link — used in loading/error states ──────────────────────────────────
+function BackLink() {
+  return (
+    <Link to="/activities" className="inline-flex items-center gap-1.5 font-mono text-[11px] text-steel no-underline mb-4 hover:text-mist/60 transition-colors">
+      <ArrowLeftIcon /> Retour aux activités
+    </Link>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export function ActivityDetailPage() {
   const { id } = useParams();
   const activityId = id ? parseInt(id, 10) : null;
@@ -64,13 +65,8 @@ export function ActivityDetailPage() {
   const [linkingEvent, setLinkingEvent] = useState(false);
   const [linkedEvent, setLinkedEvent] = useState<{ id: string; name: string; type: string } | null>(null);
 
-  useEffect(() => {
-    eventsApi.getEvents().then(setEvents).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    setLinkedEvent(race ?? null);
-  }, [race]);
+  useEffect(() => { eventsApi.getEvents().then(setEvents).catch(() => {}); }, []);
+  useEffect(() => { setLinkedEvent(race ?? null); }, [race]);
 
   const handleExportPNG = async () => {
     if (!posterRef.current || !activity) return;
@@ -87,9 +83,7 @@ export function ActivityDetailPage() {
           URL.revokeObjectURL(url);
         }
       });
-    } catch (err) {
-      console.error('Error exporting PNG:', err);
-    }
+    } catch (err) { console.error('Error exporting PNG:', err); }
   };
 
   const handleLinkEvent = async (eventId: string) => {
@@ -100,61 +94,40 @@ export function ActivityDetailPage() {
       const ev = events.find(e => e.id === eventId);
       if (ev) setLinkedEvent({ id: ev.id, name: ev.name, type: ev.type });
       setShowEventPicker(false);
-    } catch (err) {
-      console.error('Erreur liaison event:', err);
-    } finally {
-      setLinkingEvent(false);
-    }
+    } catch (err) { console.error('Erreur liaison event:', err); }
+    finally { setLinkingEvent(false); }
   };
 
   const handleUnlinkEvent = async () => {
     if (!linkedEvent) return;
     setLinkingEvent(true);
-    try {
-      await eventsApi.unlinkActivity(linkedEvent.id);
-      setLinkedEvent(null);
-    } finally {
-      setLinkingEvent(false);
-    }
+    try { await eventsApi.unlinkActivity(linkedEvent.id); setLinkedEvent(null); }
+    finally { setLinkingEvent(false); }
   };
 
   const handleSaveEdit = async (data: ActivityFormData): Promise<boolean> => {
     if (!activity) return false;
     const success = await updateActivity(activity.id, data);
-    if (success) {
-      setShowEditModal(false);
-      refetch();
-    }
+    if (success) { setShowEditModal(false); refetch(); }
     return success;
   };
 
+  // ── Loading / Error states ──────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px' }}>
-        <Link
-          to="/activities"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', textDecoration: 'none', marginBottom: '16px' }}
-        >
-          <ArrowLeftIcon /> Retour aux activités
-        </Link>
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-          <Spinner message="Chargement des détails..." />
-        </div>
+      <div className="max-w-[1280px] mx-auto px-7">
+        <BackLink />
+        <div className="flex justify-center py-12"><Spinner message="Chargement des détails..." /></div>
       </div>
     );
   }
 
   if (error || !activity) {
     return (
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px' }}>
-        <Link
-          to="/activities"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', textDecoration: 'none', marginBottom: '16px' }}
-        >
-          <ArrowLeftIcon /> Retour aux activités
-        </Link>
-        <div style={{ background: 'rgba(232,66,66,0.1)', border: '1px solid rgba(232,66,66,0.3)', borderRadius: '8px', padding: '24px', textAlign: 'center' }}>
-          <p style={{ color: '#E84242', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>{error || 'Activité non trouvée'}</p>
+      <div className="max-w-[1280px] mx-auto px-7">
+        <BackLink />
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 text-center">
+          <p className="font-mono text-sm text-red-500">{error || 'Activité non trouvée'}</p>
         </div>
       </div>
     );
@@ -165,73 +138,56 @@ export function ActivityDetailPage() {
   const trail = isTrail(activity.sport_type);
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="max-w-[1280px] mx-auto px-7 flex flex-col gap-5">
 
-      {/* Back + Header */}
+      {/* ── Back + Header ── */}
       <div>
-        <Link
-          to="/activities"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', textDecoration: 'none', marginBottom: '4px', transition: 'color 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(242,242,242,0.6)')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#3A3F47')}
-        >
-          <ArrowLeftIcon /> Retour aux activités
-        </Link>
-
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <BackLink />
+        <div className="flex items-start justify-between">
           <div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#F2F2F2', marginBottom: '6px' }}>
-              {activity.name || 'Activité sans titre'}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="hw-page-title mb-1.5">{activity.name || 'Activité sans titre'}</div>
+            <div className="flex items-center gap-2.5 flex-wrap">
               {/* Sport badge */}
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: '20px',
-                fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px',
-                backgroundColor: `${activitySportColor}26`, color: activitySportColor, border: `1px solid ${activitySportColor}59`,
-              }}>
+              <span
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider"
+                style={{ backgroundColor: `${activitySportColor}26`, color: activitySportColor, border: `1px solid ${activitySportColor}59` }}
+              >
                 {sportLabel(activity.sport_type)}
               </span>
               {/* Date */}
-              <span style={{ fontSize: '11px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace' }}>
-                {formatDateLong(activity.start_date)}
-              </span>
-              {/* Event badge */}
+              <span className="font-mono text-[11px] text-steel">{formatDateLong(activity.start_date)}</span>
+              {/* Event */}
               {linkedEvent ? (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 9px', borderRadius: '20px', fontSize: '10px', color: '#3DB2E0', background: 'rgba(61,178,224,0.1)', border: '1px solid rgba(61,178,224,0.3)', fontFamily: 'JetBrains Mono, monospace' }}>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[10px] text-glacier bg-glacier/10 border border-glacier/30">
                   🏁 {linkedEvent.name}
                   <button
                     onClick={handleUnlinkEvent}
                     disabled={linkingEvent}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3DB2E0', opacity: 0.5, padding: 0, lineHeight: 1 }}
+                    className="bg-transparent border-none cursor-pointer text-glacier/50 hover:text-glacier/90 p-0 leading-none transition-colors"
                     title="Délier"
                   >✕</button>
                 </span>
               ) : (
-                <div style={{ position: 'relative' }}>
+                <div className="relative">
                   <button
                     onClick={() => setShowEventPicker(v => !v)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 9px', borderRadius: '20px', fontSize: '10px', color: '#3A3F47', border: '1px solid rgba(58,63,71,0.3)', background: 'none', cursor: 'pointer', fontFamily: 'JetBrains Mono, monospace', transition: 'all 0.15s' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(58,63,71,0.6)'; e.currentTarget.style.color = 'rgba(242,242,242,0.6)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(58,63,71,0.3)'; e.currentTarget.style.color = '#3A3F47'; }}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-mono text-[10px] text-steel border border-steel/30 bg-transparent cursor-pointer hover:border-steel/60 hover:text-mist/60 transition-colors"
                   >
                     🏁 Lier un événement
                   </button>
                   {showEventPicker && (
-                    <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 20, background: '#0B0C10', border: '1px solid rgba(58,63,71,0.4)', borderRadius: '8px', minWidth: '200px', maxHeight: '192px', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                    <div className="absolute top-full left-0 mt-1 z-20 bg-charcoal border border-steel/40 rounded-lg min-w-[200px] max-h-48 overflow-y-auto shadow-2xl">
                       {events.length === 0 ? (
-                        <p style={{ padding: '8px 12px', fontSize: '11px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace' }}>Aucun événement</p>
+                        <p className="px-3 py-2 font-mono text-[11px] text-steel">Aucun événement</p>
                       ) : events.map(ev => (
                         <button
                           key={ev.id}
                           onClick={() => handleLinkEvent(ev.id)}
                           disabled={linkingEvent}
-                          style={{ width: '100%', textAlign: 'left', padding: '8px 12px', fontSize: '11px', color: 'rgba(242,242,242,0.7)', background: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(58,63,71,0.2)')}
-                          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                          className="w-full text-left px-3 py-2 font-mono text-[11px] text-mist/70 bg-transparent border-none cursor-pointer hover:bg-steel/20 transition-colors"
                         >
-                          <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.name}</div>
-                          <div style={{ fontSize: '9px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px' }}>{new Date(ev.date).toLocaleDateString('fr-FR')} · {ev.type}</div>
+                          <div className="font-medium truncate">{ev.name}</div>
+                          <div className="text-[9px] text-steel mt-0.5">{new Date(ev.date).toLocaleDateString('fr-FR')} · {ev.type}</div>
                         </button>
                       ))}
                     </div>
@@ -240,22 +196,19 @@ export function ActivityDetailPage() {
               )}
             </div>
           </div>
-
           {/* Edit button */}
           <button
             onClick={() => setShowEditModal(true)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', color: 'rgba(242,242,242,0.4)', border: '1px solid rgba(58,63,71,0.35)', background: 'transparent', cursor: 'pointer', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'rgba(242,242,242,0.8)'; e.currentTarget.style.borderColor = 'rgba(58,63,71,0.7)'; e.currentTarget.style.background = 'rgba(58,63,71,0.1)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(242,242,242,0.4)'; e.currentTarget.style.borderColor = 'rgba(58,63,71,0.35)'; e.currentTarget.style.background = 'transparent'; }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] text-mist/40 border border-steel/35 bg-transparent cursor-pointer hover:text-mist/80 hover:border-steel/70 hover:bg-steel/10 transition-all"
           >
             <EditIcon /> Modifier
           </button>
         </div>
       </div>
 
-      {/* ROW 1 : Poster + Trail Stats */}
+      {/* ── Row 1 : Poster + Trail Stats / Exploration + HR Zones ── */}
       {hasStreams && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid grid-cols-2 gap-4">
           <ActivityPoster
             activity={activity}
             streams={streams}
@@ -267,134 +220,117 @@ export function ActivityDetailPage() {
           {trail && trailStats ? (
             <TrailStatsCard trailStats={trailStats} sportColor={activitySportColor} />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="flex flex-col gap-4">
               {explorationRate && (
                 <ExplorationCard explorationRate={explorationRate} sportColor={activitySportColor} />
               )}
-              <HRZonesChart activity={activity} streams={streams} />
+              <div className={chartCard}>
+                <HRZonesChart activity={activity} streams={streams} />
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Section separator — Analyses détaillées */}
+      {/* ── Section separator — Analyses détaillées ── */}
       {hasStreams && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', paddingTop: '20px', borderTop: '1px solid rgba(61,178,224,0.2)', marginTop: '4px', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '-1px', left: 0, width: '100px', height: '1px', background: 'linear-gradient(90deg, #3DB2E0, transparent)' }} />
-          <div style={{ position: 'relative', padding: '7px', background: 'rgba(61,178,224,0.1)', border: '1px solid rgba(61,178,224,0.3)', borderRadius: '7px', color: '#3DB2E0', flexShrink: 0 }}>
+        <div className="hw-section-sep flex items-start gap-3.5 mt-1">
+          <div className="absolute top-0 left-0 w-24 h-px bg-gradient-to-r from-glacier to-transparent" />
+          <div className="relative p-1.5 bg-glacier/10 border border-glacier/30 rounded-lg text-glacier shrink-0">
             <AnalyticsIcon />
           </div>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: '#F2F2F2' }}>Analyses détaillées</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
-              <div style={{ width: '64px', height: '1px', background: 'linear-gradient(90deg, #3DB2E0, transparent)' }} />
-              <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#3DB2E0' }} />
+            <div className="text-[15px] font-semibold text-mist">Analyses détaillées</div>
+            <div className="flex items-center gap-1 mt-1.5">
+              <div className="w-16 h-px bg-gradient-to-r from-glacier to-transparent" />
+              <div className="w-1 h-1 rounded-full bg-glacier" />
             </div>
           </div>
         </div>
       )}
 
-      {/* ROW 2 : Elevation + Pace */}
+      {/* ── Row 2 : Elevation + Pace ── */}
       {hasStreams && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          {/* Elevation profile */}
-          <div style={{ ...chartCard }}>
-            <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
-            <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
+        <div className="grid grid-cols-2 gap-4">
+          <div className={chartCard}>
+            <span className="hw-br hw-br-tl hw-br-glacier" />
+            <span className="hw-br hw-br-br hw-br-glacier-dim" />
             <ElevationProfileChart streams={streams} sportType={activity.sport_type} totalElevationGain={activity.total_elevation_gain} />
           </div>
-          {/* Pace profile */}
-          <div style={{ ...chartCard }}>
-            <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.4)' }} />
-            <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(232,131,42,0.3)' }} />
+          <div className={chartCard}>
+            <span className="hw-br hw-br-tl hw-br-amber" />
+            <span className="hw-br hw-br-br hw-br-amber-dark" />
             <PaceProfileChart activity={activity} streams={streams} />
           </div>
         </div>
       )}
 
-      {/* ROW 3 : HR Profile + HR Zones + Exploration (trail only) */}
+      {/* ── Row 3 : HR Profile + HR Zones + Exploration (trail) ── */}
       {hasStreams && activity.has_heartrate && (
-        <div style={{ display: 'grid', gridTemplateColumns: trail && explorationRate ? '1fr 1fr 1fr' : '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
-          {/* HR Profile */}
-          <div style={{ ...chartCard }}>
-            <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
-            <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(109,170,117,0.3)' }} />
+        <div
+          className="grid gap-4 mb-8"
+          style={{ gridTemplateColumns: trail && explorationRate ? '1fr 1fr 1fr' : '1fr 1fr' }}
+        >
+          <div className={chartCard}>
+            <span className="hw-br hw-br-tl hw-br-moss" />
+            <span className="hw-br hw-br-br hw-br-moss" />
             <HeartRateProfileChart activity={activity} streams={streams} />
           </div>
-          {/* HR Zones */}
-          <div style={{ ...chartCard }}>
-            <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
-            <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
+          <div className={chartCard}>
+            <span className="hw-br hw-br-tl hw-br-glacier" />
+            <span className="hw-br hw-br-br hw-br-glacier-dim" />
             <HRZonesChart activity={activity} streams={streams} />
           </div>
-          {/* Exploration (trail only) */}
           {trail && explorationRate && (
             <ExplorationCard explorationRate={explorationRate} sportColor={activitySportColor} />
           )}
         </div>
       )}
 
-      {/* No streams fallback */}
+      {/* ── No streams fallback ── */}
       {!hasStreams && (
-        <div style={{ ...chartCard, padding: '48px', textAlign: 'center' }}>
-          <p style={{ color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>Pas de données de streams pour cette activité</p>
+        <div className="hw-card-dark-lg p-12 text-center">
+          <p className="font-mono text-xs text-steel">Pas de données de streams pour cette activité</p>
         </div>
       )}
 
-      {/* Edit modal */}
       {showEditModal && (
-        <ActivityModal
-          activity={activity}
-          onClose={() => setShowEditModal(false)}
-          onSave={handleSaveEdit}
-        />
+        <ActivityModal activity={activity} onClose={() => setShowEditModal(false)} onSave={handleSaveEdit} />
       )}
     </div>
   );
 }
 
-// Exploration card — standalone component used in row 1 (non-trail) and row 3 (trail)
+// ── Exploration card ──────────────────────────────────────────────────────────
 function ExplorationCard({ explorationRate, sportColor }: {
   explorationRate: { exploration_rate: number | null; new_cells: number; total_cells: number };
   sportColor: string;
 }) {
   return (
-    <div style={{
-      background: '#0B0C10', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '10px', padding: '18px', position: 'relative', overflow: 'hidden',
-    }}>
+    <div className="hw-card-dark-lg">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(58,63,71,0.25)', marginBottom: '14px' }}>
-        <div style={{ padding: '8px', background: 'rgba(61,178,224,0.1)', border: '1px solid rgba(61,178,224,0.3)', borderRadius: '7px', color: '#3DB2E0', flexShrink: 0 }}>
+      <div className="flex items-center gap-3 pb-3 border-b border-steel/25 mb-3.5">
+        <div className="p-2 bg-glacier/10 border border-glacier/30 rounded-lg text-glacier shrink-0">
           <ExplorationIcon />
         </div>
         <div>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: '#F2F2F2' }}>Exploration</div>
-          <div style={{ fontSize: '10px', color: '#3A3F47', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px' }}>Territoire découvert</div>
+          <div className="text-sm font-semibold text-mist">Exploration</div>
+          <div className="font-mono text-[10px] text-steel mt-0.5">Territoire découvert</div>
         </div>
       </div>
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-        <div>
-          <div style={{ fontSize: '8px', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1.5px', fontFamily: 'JetBrains Mono, monospace', marginBottom: '2px' }}>Taux</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: sportColor, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}>
-            {explorationRate.exploration_rate != null ? `${Math.round(explorationRate.exploration_rate)}%` : '--'}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Taux', value: explorationRate.exploration_rate != null ? `${Math.round(explorationRate.exploration_rate)}%` : '--', sub: 'nouveau territoire', color: sportColor },
+          { label: 'Conquis', value: `${explorationRate.new_cells}`, sub: 'nouvelles zones', color: '#F2F2F2' },
+          { label: 'Surface', value: `${(explorationRate.total_cells * 0.737).toFixed(1)}`, sub: 'km² couverts', color: '#F2F2F2' },
+        ].map(({ label, value, sub, color }) => (
+          <div key={label}>
+            <div className="font-mono text-[8px] text-steel uppercase tracking-[1.5px] mb-0.5">{label}</div>
+            <div className="text-2xl font-bold font-mono tabular-nums" style={{ color }}>{value}</div>
+            <div className="text-[9px] text-mist/30 mt-0.5">{sub}</div>
           </div>
-          <div style={{ fontSize: '9px', color: 'rgba(242,242,242,0.3)', marginTop: '1px' }}>nouveau territoire</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '8px', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1.5px', fontFamily: 'JetBrains Mono, monospace', marginBottom: '2px' }}>Conquis</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#F2F2F2', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}>
-            {explorationRate.new_cells}
-          </div>
-          <div style={{ fontSize: '9px', color: 'rgba(242,242,242,0.3)', marginTop: '1px' }}>nouvelles zones</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '8px', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1.5px', fontFamily: 'JetBrains Mono, monospace', marginBottom: '2px' }}>Surface</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#F2F2F2', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}>
-            {(explorationRate.total_cells * 0.737).toFixed(1)}
-          </div>
-          <div style={{ fontSize: '9px', color: 'rgba(242,242,242,0.3)', marginTop: '1px' }}>km² couverts</div>
-        </div>
+        ))}
       </div>
     </div>
   );

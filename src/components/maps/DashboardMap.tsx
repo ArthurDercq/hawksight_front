@@ -41,6 +41,7 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [newThisMonth, setNewThisMonth] = useState<number | null>(null);
 
   // Init map once
   useEffect(() => {
@@ -55,6 +56,7 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
       zoom: 7.2,
       interactive: true,
       attributionControl: false,
+      projection: 'mercator',
     });
     mapRef.current = map;
 
@@ -146,6 +148,13 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
         if (fillSource) fillSource.setData(cachedGeoJSON as unknown as GeoJSON.FeatureCollection);
         if (heatSource) heatSource.setData(polygonsToCentroidPoints(cachedGeoJSON) as GeoJSON.FeatureCollection);
 
+        const now = new Date();
+        const count = cachedGeoJSON.features.filter(f => {
+          const d = f.properties.first_seen ? new Date(f.properties.first_seen) : null;
+          return d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }).length;
+        setNewThisMonth(count);
+
         setDataLoaded(true);
       } catch {
         // Silencieux — la carte reste affichée sans données
@@ -187,15 +196,21 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
           <>
             <div>
               <p style={{ fontSize: '26px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{explorationStats.total_cells}</p>
-              <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>cellules</p>
+              <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>territoires</p>
             </div>
             <div>
               <p style={{ fontSize: '26px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{Math.round(explorationStats.surface_km2)} km²</p>
               <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>surface</p>
             </div>
             <div>
-              <p style={{ fontSize: '26px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>+{Math.round(explorationStats.new_cells_per_month)}</p>
-              <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>nouvelles</p>
+              {newThisMonth === 0 ? (
+                <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 1.4 }}>Aucune nouvelle<br />zone ce mois</p>
+              ) : (
+                <>
+                  <p style={{ fontSize: '26px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>+{newThisMonth ?? '—'}</p>
+                  <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>ce mois</p>
+                </>
+              )}
             </div>
           </>
         ) : mapLoaded && !dataLoaded ? (

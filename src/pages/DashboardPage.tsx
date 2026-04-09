@@ -41,33 +41,17 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-// Corner bracket — 14×14px, using hw-br utilities from index.css
-function CornerBrackets({ tlColor, trColor, blColor, brColor }: {
-  tlColor?: string; trColor?: string; blColor?: string; brColor?: string;
-}) {
-  return (
-    <>
-      <span className="hw-br hw-br-tl" style={tlColor ? { borderColor: tlColor } : undefined} />
-      <span className="hw-br hw-br-tr" style={trColor ? { borderColor: trColor } : undefined} />
-      <span className="hw-br hw-br-bl" style={blColor ? { borderColor: blColor } : undefined} />
-      <span className="hw-br hw-br-br" style={brColor ? { borderColor: brColor } : undefined} />
-    </>
-  );
-}
-
 export function DashboardPage() {
   const { lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
   const { nextEvent, createEvent } = useEvents();
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const { isDemo, canSync } = usePermissions();
 
-  // Trail profile — fetch léger en background, non bloquant
   const [trailProfile, setTrailProfile] = useState<TrailProfile | null>(null);
   useEffect(() => {
     trailApi.getProfile().then(setTrailProfile).catch(() => null);
   }, []);
 
-  // Trail records — fetch en background
   const [trailRecords, setTrailRecords] = useState<Record<string, TrailRecord[]>>({});
   useEffect(() => {
     kpiApi.getRecords().then(d => setTrailRecords(d.trailRecords)).catch(() => null);
@@ -108,22 +92,16 @@ export function DashboardPage() {
       {isDemo && <DemoBanner />}
 
       {/* ── ROW 0 : Score Trail + Carte ── */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: '280px 1fr', minHeight: '280px' }}>
+      <div className="grid gap-3 min-h-[280px]" style={{ gridTemplateColumns: '280px 1fr' }}>
 
         {/* Score Trail */}
-        <div
-          className="relative overflow-hidden flex flex-col"
-          style={{
-            background: '#0B0C10',
-            border: '1px solid rgba(58,63,71,0.3)',
-            borderRadius: '8px',
-            padding: '20px',
-            minHeight: '280px',
-          }}
-        >
-          {/* Radial amber glow at top-left */}
+        <div className="relative overflow-hidden flex flex-col bg-charcoal border border-steel/30 rounded-lg p-5 min-h-[280px]">
+          {/* Radial amber glow */}
           <span className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, rgba(232,131,42,0.06) 0%, transparent 65%)' }} />
-          <CornerBrackets tlColor="rgba(232,131,42,0.45)" trColor="rgba(232,131,42,0.45)" blColor="rgba(232,131,42,0.45)" brColor="rgba(232,131,42,0.45)" />
+          <span className="hw-br hw-br-tl hw-br-amber" />
+          <span className="hw-br hw-br-tr hw-br-amber" />
+          <span className="hw-br hw-br-bl hw-br-amber" />
+          <span className="hw-br hw-br-br hw-br-amber" />
 
           {/* Eyebrow */}
           <div className="flex items-center justify-between mb-1.5">
@@ -134,37 +112,29 @@ export function DashboardPage() {
           {/* Big score */}
           {trailProfile ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
-                <p
-                  className="tabular-nums"
-                  style={{ fontSize: '84px', fontWeight: 800, lineHeight: 0.95, color: '#E8832A', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}
-                >
+              <div className="flex items-end gap-1">
+                <p className="font-mono text-[84px] font-black leading-none text-amber tabular-nums">
                   {Math.round(trailProfile.trail_score_final)}
                 </p>
-                <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(232,131,42,0.4)', fontFamily: 'JetBrains Mono, monospace', paddingBottom: '10px' }}>/100</span>
+                <span className="font-mono text-[13px] text-amber/40 pb-2.5">/100</span>
               </div>
               <div className="hw-grad-sep" />
             </>
           ) : (
             <>
-              <p
-                className="tabular-nums"
-                style={{ fontSize: '84px', fontWeight: 800, lineHeight: 0.95, color: 'rgba(58,63,71,0.4)', fontFamily: 'JetBrains Mono, monospace' }}
-              >
-                --
-              </p>
+              <p className="font-mono text-[84px] font-black leading-none text-steel/40 tabular-nums">--</p>
               <div className="hw-grad-sep" />
             </>
           )}
 
-          {/* Profil dominant — bas droite, comme le mockup */}
-          <div className="absolute" style={{ bottom: '20px', right: '20px', textAlign: 'right' }}>
-            {trailProfile ? (
+          {/* Profil dominant */}
+          <div className="absolute bottom-5 right-5 text-right">
+            {trailProfile && (
               <>
-                <p style={{ fontSize: '13px', color: '#6DAA75', letterSpacing: '0.5px', fontWeight: 600 }}>{trailProfile.dominant_profile}</p>
-                <p style={{ fontSize: '9px', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px' }}>Profil dominant</p>
+                <p className="text-[13px] font-semibold text-moss tracking-[0.5px]">{trailProfile.dominant_profile}</p>
+                <p className="font-mono text-[9px] text-steel uppercase tracking-[1px] mt-0.5">Profil dominant</p>
               </>
-            ) : null}
+            )}
           </div>
         </div>
 
@@ -181,47 +151,45 @@ export function DashboardPage() {
 
         {/* Cette semaine */}
         <div className="hw-card-weekly">
-
           <div className="flex items-center justify-between mb-3">
             <span className="hw-card-title">Cette semaine</span>
             {weeklySummary && (
-              <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: weeklySummary.prevWeekComparison >= 0 ? '#6DAA75' : '#fc8181' }}>
+              <span className={`font-mono text-[11px] ${weeklySummary.prevWeekComparison >= 0 ? 'text-moss' : 'text-red-400'}`}>
                 {weeklySummary.prevWeekComparison >= 0 ? '↑' : '↓'} {Math.abs(weeklySummary.prevWeekComparison).toFixed(0)}%
               </span>
             )}
           </div>
 
           {weeklySummary ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="hw-label">Distance</p>
-                <p className="hw-value" style={{ color: '#E8832A' }}>{weeklySummary.totalDistance.toFixed(1)} <span style={{ fontSize: '10px', color: 'rgba(232,131,42,0.6)' }}>km</span></p>
+                <p className="hw-value text-amber">{weeklySummary.totalDistance.toFixed(1)} <span className="text-[10px] text-amber/60">km</span></p>
               </div>
               <div>
                 <p className="hw-label">Temps</p>
-                <p className="hw-value" style={{ color: '#F2F2F2' }}>{formatTime(weeklySummary.totalTime)}</p>
+                <p className="hw-value text-mist">{formatTime(weeklySummary.totalTime)}</p>
               </div>
               <div>
                 <p className="hw-label">Dénivelé</p>
-                <p className="hw-value" style={{ color: '#3DB2E0' }}>{Math.round(weeklySummary.totalElevation)} <span style={{ fontSize: '10px', color: 'rgba(61,178,224,0.6)' }}>m</span></p>
+                <p className="hw-value text-glacier">{Math.round(weeklySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
               </div>
               <div>
                 <p className="hw-label">Sessions</p>
-                <p className="hw-value" style={{ color: '#6DAA75' }}>{weeklySummary.sessionCount}</p>
+                <p className="hw-value text-moss">{weeklySummary.sessionCount}</p>
               </div>
             </div>
           ) : (
-            <p style={{ color: 'rgba(242,242,242,0.3)', fontSize: '12px' }}>Pas de données</p>
+            <p className="text-mist/30 text-xs">Pas de données</p>
           )}
         </div>
 
         {/* Ce mois */}
         <div className="hw-card-monthly">
-
           <div className="flex items-center justify-between mb-3">
             <span className="hw-card-title">{currentMonth}</span>
             {monthlySummary && (
-              <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: monthlySummary.trend >= 0 ? '#6DAA75' : '#fc8181' }}>
+              <span className={`font-mono text-[11px] ${monthlySummary.trend >= 0 ? 'text-moss' : 'text-red-400'}`}>
                 {monthlySummary.trend >= 0 ? '↑' : '↓'} {Math.abs(monthlySummary.trend).toFixed(0)}%
               </span>
             )}
@@ -229,68 +197,64 @@ export function DashboardPage() {
 
           {monthlySummary ? (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+              <div className="grid grid-cols-3 gap-2.5 mb-3">
                 <div>
                   <p className="hw-label">Distance</p>
-                  <p className="hw-value" style={{ color: '#E8832A' }}>{monthlySummary.totalDistance.toFixed(1)} <span style={{ fontSize: '10px', color: 'rgba(232,131,42,0.6)' }}>km</span></p>
+                  <p className="hw-value text-amber">{monthlySummary.totalDistance.toFixed(1)} <span className="text-[10px] text-amber/60">km</span></p>
                 </div>
                 <div>
                   <p className="hw-label">D+</p>
-                  <p className="hw-value" style={{ color: '#3DB2E0' }}>{Math.round(monthlySummary.totalElevation)} <span style={{ fontSize: '10px', color: 'rgba(61,178,224,0.6)' }}>m</span></p>
+                  <p className="hw-value text-glacier">{Math.round(monthlySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
                 </div>
                 <div>
                   <p className="hw-label">Sessions</p>
-                  <p className="hw-value" style={{ color: '#6DAA75' }}>{monthlySummary.sessionCount}</p>
+                  <p className="hw-value text-moss">{monthlySummary.sessionCount}</p>
                 </div>
               </div>
               <div>
                 <div className="hw-pb-bg">
                   <div className="hw-pb-fill" style={{ width: `${monthlySummary.monthProgress}%` }} />
                 </div>
-                <div className="flex justify-between" style={{ marginTop: '5px' }}>
-                  <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)' }}>Progression</span>
-                  <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.25)' }}>{monthlySummary.daysPassed}/{monthlySummary.daysInMonth}j</span>
+                <div className="flex justify-between mt-1.5">
+                  <span className="font-mono text-[9px] text-mist/25">Progression</span>
+                  <span className="font-mono text-[9px] text-mist/25">{monthlySummary.daysPassed}/{monthlySummary.daysInMonth}j</span>
                 </div>
               </div>
             </>
           ) : (
-            <p style={{ color: 'rgba(242,242,242,0.3)', fontSize: '12px' }}>Pas de données</p>
+            <p className="text-mist/30 text-xs">Pas de données</p>
           )}
         </div>
 
         {/* Prochain événement */}
-        <div className="hw-card" style={{ border: '1px solid rgba(61,178,224,0.25)' }}>
-          {/* Top stripe amber→glacier */}
+        <div className="hw-card border-glacier/25">
+          {/* Top stripe */}
           <span className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none" style={{ background: 'linear-gradient(90deg, #E8832A, #3DB2E0, transparent)' }} />
 
           <div className="flex items-center justify-between mb-2.5">
-            <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(61,178,224,0.7)', textTransform: 'uppercase', letterSpacing: '2px' }}>
-              Prochain Événement
-            </p>
-            {nextEvent && (
-              <span className="hw-ev-badge">J-{getDaysUntil(nextEvent.date)}</span>
-            )}
+            <p className="font-mono text-[9px] text-glacier/70 uppercase tracking-[2px]">Prochain Événement</p>
+            {nextEvent && <span className="hw-ev-badge">J-{getDaysUntil(nextEvent.date)}</span>}
           </div>
 
           {nextEvent ? (
             <>
-              <p style={{ fontSize: '16px', fontWeight: 700, color: '#F2F2F2', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nextEvent.name}</p>
+              <p className="text-base font-bold text-mist truncate mb-0.5">{nextEvent.name}</p>
               {(nextEvent.location || nextEvent.date) && (
-                <p style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <p className="font-mono text-[10px] text-steel mb-3.5 uppercase tracking-[1px]">
                   {[nextEvent.location, new Date(nextEvent.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()].filter(Boolean).join(' · ')}
                 </p>
               )}
-              <div style={{ display: 'flex', gap: '18px', marginBottom: '14px' }}>
+              <div className="flex gap-[18px] mb-3.5">
                 {nextEvent.distance_km && (
                   <div>
-                    <p style={{ fontSize: '22px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{nextEvent.distance_km}</p>
-                    <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>km</p>
+                    <p className="font-mono text-[22px] font-bold text-glacier tabular-nums leading-none">{nextEvent.distance_km}</p>
+                    <p className="font-mono text-[9px] text-steel uppercase tracking-[1px] mt-0.5">km</p>
                   </div>
                 )}
                 {nextEvent.elevation_m && (
                   <div>
-                    <p style={{ fontSize: '22px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{nextEvent.elevation_m.toLocaleString('fr-FR')}</p>
-                    <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>m D+</p>
+                    <p className="font-mono text-[22px] font-bold text-glacier tabular-nums leading-none">{nextEvent.elevation_m.toLocaleString('fr-FR')}</p>
+                    <p className="font-mono text-[9px] text-steel uppercase tracking-[1px] mt-0.5">m D+</p>
                   </div>
                 )}
               </div>
@@ -298,11 +262,14 @@ export function DashboardPage() {
             </>
           ) : (
             <div className="flex flex-col gap-2 pt-1">
-              <p style={{ color: 'rgba(242,242,242,0.25)', fontSize: '12px' }}>Aucun événement planifié</p>
-              <button onClick={() => setEventModalOpen(true)} style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: '#E8832A', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <p className="text-mist/25 text-xs">Aucun événement planifié</p>
+              <button
+                onClick={() => setEventModalOpen(true)}
+                className="font-mono text-[10px] text-amber text-left bg-transparent border-none cursor-pointer p-0"
+              >
                 + Ajouter un événement
               </button>
-              <Link to="/calendar" className="hw-link" style={{ marginTop: '4px' }}>Calendrier →</Link>
+              <Link to="/calendar" className="hw-link mt-1">Calendrier →</Link>
             </div>
           )}
         </div>
@@ -312,28 +279,20 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 gap-3">
 
         {/* Activités récentes */}
-        <div className="hw-card" style={{ border: '1px solid rgba(232,131,42,0.25)', maxHeight: '320px', overflow: 'hidden' }}>
-          <CornerBrackets
-            tlColor="rgba(232,131,42,0.45)" trColor="rgba(232,131,42,0.45)"
-            blColor="rgba(232,131,42,0.45)" brColor="rgba(232,131,42,0.45)"
-          />
+        <div className="hw-card border-amber/25 max-h-[320px] overflow-hidden">
+          <span className="hw-br hw-br-tl hw-br-amber" />
+          <span className="hw-br hw-br-tr hw-br-amber" />
+          <span className="hw-br hw-br-bl hw-br-amber" />
+          <span className="hw-br hw-br-br hw-br-amber" />
+
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="hw-card-title">Activités récentes</span>
               <button
                 onClick={syncData}
                 disabled={isSyncing || !canSync}
-                className="flex items-center"
-                style={{
-                  padding: '3px 6px',
-                  borderRadius: '4px',
-                  background: 'rgba(58,63,71,0.3)',
-                  border: '1px solid rgba(58,63,71,0.5)',
-                  color: isSyncing ? '#3DB2E0' : 'rgba(242,242,242,0.4)',
-                  cursor: isSyncing || !canSync ? 'not-allowed' : 'pointer',
-                  opacity: !canSync ? 0.4 : 1,
-                  transition: 'all 0.15s',
-                }}
+                className={`flex items-center px-1.5 py-0.5 rounded bg-steel/30 border border-steel/50 transition-all ${isSyncing || !canSync ? 'cursor-not-allowed' : 'cursor-pointer'} ${!canSync ? 'opacity-40' : ''}`}
+                style={{ color: isSyncing ? '#3DB2E0' : 'rgba(242,242,242,0.4)' }}
                 title={canSync ? 'Synchroniser mes données' : 'Indisponible en mode démo'}
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isSyncing ? 'animate-spin' : ''}>
@@ -346,54 +305,50 @@ export function DashboardPage() {
 
           {/* Dernière activité — featured block */}
           {lastActivity && (
-            <Link
-              to={`/activity/${lastActivity.id}`}
-              className="hw-act-featured block"
-              style={{ display: 'block' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                <div style={{ width: '3px', height: '36px', borderRadius: '2px', background: sportBarColor(lastActivity.type ?? ''), flexShrink: 0 }} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(232,131,42,0.7)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '2px' }}>
+            <Link to={`/activity/${lastActivity.id}`} className="hw-act-featured block">
+              <div className="flex items-start gap-2 mb-2">
+                <div className="w-[3px] h-9 rounded-sm shrink-0" style={{ background: sportBarColor(lastActivity.type ?? '') }} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-[8px] text-amber/70 uppercase tracking-[2px] mb-0.5">
                     Dernière activité · {lastActivity.type}
                     {lastActivity.denivele_m ? ` · +${lastActivity.denivele_m}m D+` : ''}
                   </p>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#F2F2F2', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lastActivity.name}</p>
-                  <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47' }}>{formatActivityDate(lastActivity.date)}</p>
+                  <p className="text-[13px] font-semibold text-mist truncate">{lastActivity.name}</p>
+                  <p className="font-mono text-[9px] text-steel">{formatActivityDate(lastActivity.date)}</p>
                 </div>
                 {lastActivity.race && (
-                  <span style={{ flexShrink: 0, fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
+                  <span className="hw-event-badge shrink-0 text-[8px]">
                     🏁 {lastActivity.race.name}
                   </span>
                 )}
               </div>
               {/* Featured stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              <div className="grid grid-cols-4 gap-2">
                 <div>
-                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>Distance</p>
-                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#E8832A' }}>{lastActivity.distance_km.toFixed(1)}<span style={{ fontSize: '8px', color: 'rgba(232,131,42,0.5)', marginLeft: '2px' }}>km</span></p>
+                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">Distance</p>
+                  <p className="font-mono text-sm font-bold tabular-nums text-amber">{lastActivity.distance_km.toFixed(1)}<span className="text-[8px] text-amber/50 ml-0.5">km</span></p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>Temps</p>
-                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#F2F2F2' }}>{lastActivity.duree_hms}</p>
+                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">Temps</p>
+                  <p className="font-mono text-sm font-bold tabular-nums text-mist">{lastActivity.duree_hms}</p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>D+</p>
-                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#3DB2E0' }}>{lastActivity.denivele_m}<span style={{ fontSize: '8px', color: 'rgba(61,178,224,0.5)', marginLeft: '2px' }}>m</span></p>
+                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">D+</p>
+                  <p className="font-mono text-sm font-bold tabular-nums text-glacier">{lastActivity.denivele_m}<span className="text-[8px] text-glacier/50 ml-0.5">m</span></p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', marginBottom: '2px', textTransform: 'uppercase' }}>{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
-                  <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#6DAA75' }}>
+                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
+                  <p className="font-mono text-sm font-bold tabular-nums text-moss">
                     {lastActivity.type === 'Bike' ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'}` : formatPace(lastActivity.allure_min_per_km)}
                   </p>
                 </div>
               </div>
               {lastActivityExploration && lastActivityExploration.total_cells > 0 && (
-                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', borderRadius: '4px', background: 'rgba(61,178,224,0.05)', border: '1px solid rgba(61,178,224,0.15)' }}>
+                <div className="mt-2 flex items-center gap-2 px-2 py-1 rounded bg-glacier/5 border border-glacier/15">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>
-                  <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(61,178,224,0.7)' }}>{lastActivityExploration.label}</span>
+                  <span className="font-mono text-[9px] text-glacier/70">{lastActivityExploration.label}</span>
                   {lastActivityExploration.exploration_rate !== null && (
-                    <span style={{ marginLeft: 'auto', fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3DB2E0', fontWeight: 700 }}>{lastActivityExploration.exploration_rate.toFixed(0)}%</span>
+                    <span className="ml-auto font-mono text-[9px] text-glacier font-bold">{lastActivityExploration.exploration_rate.toFixed(0)}%</span>
                   )}
                 </div>
               )}
@@ -407,20 +362,16 @@ export function DashboardPage() {
               const isBike = activity.type === 'Bike';
               const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : formatPace(activity.allure_min_per_km);
               return (
-                <Link
-                  key={activity.id}
-                  to={`/activity/${activity.id}`}
-                  className="hw-act-row"
-                >
-                  <div style={{ width: '3px', height: '28px', borderRadius: '2px', flexShrink: 0, background: color }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '12px', fontWeight: 500, color: '#F2F2F2', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.name}</p>
-                    <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', marginTop: '1px' }}>{activity.type?.toUpperCase()} · {formatActivityDate(activity.date)}</p>
+                <Link key={activity.id} to={`/activity/${activity.id}`} className="hw-act-row">
+                  <div className="w-[3px] h-7 rounded-sm shrink-0" style={{ background: color }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-mist truncate">{activity.name}</p>
+                    <p className="font-mono text-[9px] text-steel mt-px">{activity.type?.toUpperCase()} · {formatActivityDate(activity.date)}</p>
                   </div>
-                  <div style={{ display: 'flex', gap: '14px', marginLeft: 'auto', flexShrink: 0 }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '11px', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: 'rgba(242,242,242,0.6)' }}>{activity.distance_km.toFixed(1)} km</p>
-                      <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47' }}>{pace}{isBike ? ' km/h' : '/km'}</p>
+                  <div className="flex gap-3.5 ml-auto shrink-0 text-right">
+                    <div>
+                      <p className="font-mono text-[11px] font-semibold tabular-nums text-mist/60">{activity.distance_km.toFixed(1)} km</p>
+                      <p className="font-mono text-[9px] text-steel">{pace}{isBike ? ' km/h' : '/km'}</p>
                     </div>
                   </div>
                 </Link>
@@ -430,14 +381,13 @@ export function DashboardPage() {
         </div>
 
         {/* Records Trail */}
-        <div className="hw-card-records" style={{ maxHeight: '320px', overflow: 'hidden' }}>
-          {/* TL/TR amber, BL/BR amber-dark */}
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
-          <span className="hw-br hw-br-tr" style={{ borderColor: 'rgba(232,131,42,0.5)' }} />
-          <span className="hw-br hw-br-bl" style={{ borderColor: 'rgba(200,106,26,0.35)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(200,106,26,0.35)' }} />
+        <div className="hw-card-records max-h-[320px] overflow-hidden">
+          <span className="hw-br hw-br-tl hw-br-amber" />
+          <span className="hw-br hw-br-tr hw-br-amber" />
+          <span className="hw-br hw-br-bl hw-br-amber-dark" />
+          <span className="hw-br hw-br-br hw-br-amber-dark" />
 
-          <div className="flex items-center justify-between" style={{ marginBottom: '14px' }}>
+          <div className="flex items-center justify-between mb-3.5">
             <span className="hw-card-title">Records Trail</span>
             <Link to="/kpi" className="hw-link">Voir tout →</Link>
           </div>
@@ -453,7 +403,7 @@ export function DashboardPage() {
             ];
             const hasAny = TRAIL_LABELS.some(([key]) => (trailRecords[key]?.length ?? 0) > 0);
             if (!hasAny) {
-              return <p style={{ color: 'rgba(242,242,242,0.25)', fontSize: '12px' }}>Pas de records disponibles</p>;
+              return <p className="text-mist/25 text-xs">Pas de records disponibles</p>;
             }
             return (
               <div>
@@ -464,12 +414,12 @@ export function DashboardPage() {
                   return (
                     <div key={key} className="hw-rec-row">
                       <div>
-                        <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(242,242,242,0.3)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{label}</p>
+                        <p className="font-mono text-[9px] text-mist/30 uppercase tracking-[1.5px]">{label}</p>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', color: '#E8832A', display: 'inline' }}>{display}</p>
-                        {unit && <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(232,131,42,0.55)', marginLeft: '2px' }}>{unit}</span>}
-                        {rec.date && <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', marginTop: '2px' }}>{new Date(rec.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+                      <div className="text-right">
+                        <p className="font-mono text-sm font-bold tabular-nums text-amber inline">{display}</p>
+                        {unit && <span className="font-mono text-[9px] text-amber/55 ml-0.5">{unit}</span>}
+                        {rec.date && <p className="font-mono text-[9px] text-steel mt-0.5">{new Date(rec.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
                       </div>
                     </div>
                   );
