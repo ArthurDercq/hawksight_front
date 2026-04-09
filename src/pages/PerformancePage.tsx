@@ -3,7 +3,8 @@ import { SectionTitle } from '@/components/ui/SectionTitle';
 import { useActivities } from '@/hooks/useActivities';
 import { TrailAnalysisDashboard } from '@/components/analysis';
 import { analysisApi } from '@/services/api/analysis';
-import type { Activity, SportType } from '@/types';
+import type { Activity } from '@/types';
+import { sportColor, sportLabel } from '@/services/utils/constants';
 import type { TrailAnalysisResult, AnalysisStatus } from '@/types/analysis';
 
 // SVG Icons (inline to avoid lucide-react dependency)
@@ -83,24 +84,6 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Sport type colors and labels
-const SPORT_COLORS: Record<SportType, string> = {
-  Run: '#E8832A',
-  Trail: '#C96A1A',
-  Bike: '#3DB2E0',
-  Swim: '#6DAA75',
-  Hike: '#6DAA75',
-  WeightTraining: '#3A3F47',
-};
-
-const SPORT_LABELS: Record<SportType, string> = {
-  Run: 'Course',
-  Trail: 'Trail',
-  Bike: 'Vélo',
-  Swim: 'Natation',
-  Hike: 'Randonnée',
-  WeightTraining: 'Muscu',
-};
 
 // Helper: Format date for display
 const formatDateDisplay = (dateString: string): string => {
@@ -174,7 +157,7 @@ export function PerformancePage() {
     };
   }, [activities]);
 
-  const color = selectedActivity ? SPORT_COLORS[selectedActivity.sport_type] : '#E8832A';
+  const color = selectedActivity ? sportColor(selectedActivity.sport_type) : '#E8832A';
 
   // Check if ready to launch analysis
   const canLaunchAnalysis = selectedActivity !== null || uploadedFile !== null;
@@ -474,7 +457,7 @@ export function PerformancePage() {
                 <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin scrollbar-thumb-[#3A3F47]/50 scrollbar-track-transparent">
                   {filteredActivities.map((activity) => {
                     const isSelected = selectedActivity?.id === activity.id;
-                    const sportColor = SPORT_COLORS[activity.sport_type] || '#E8832A';
+                    const activityColor = sportColor(activity.sport_type);
                     const distanceKm = activity.distance_km || activity.distance;
                     return (
                       <button
@@ -491,14 +474,14 @@ export function PerformancePage() {
                           <div
                             className="p-1.5 rounded"
                             style={{
-                              backgroundColor: `${sportColor}15`,
-                              border: `1px solid ${sportColor}30`
+                              backgroundColor: `${activityColor}15`,
+                              border: `1px solid ${activityColor}30`
                             }}
                           >
                             {isSelected ? (
                               <CheckIcon className="text-[#4CAF50]" />
                             ) : (
-                              <MapPinIcon color={sportColor} size={16} />
+                              <MapPinIcon color={activityColor} size={16} />
                             )}
                           </div>
                           <div className="text-left">
@@ -509,11 +492,11 @@ export function PerformancePage() {
                               <span
                                 className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] shrink-0"
                                 style={{
-                                  backgroundColor: `${sportColor}20`,
-                                  color: sportColor
+                                  backgroundColor: `${activityColor}20`,
+                                  color: activityColor
                                 }}
                               >
-                                {SPORT_LABELS[activity.sport_type]}
+                                {sportLabel(activity.sport_type)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 mt-1 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">

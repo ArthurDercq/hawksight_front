@@ -7,6 +7,7 @@ import { EventModal } from '@/components/ui/EventModal';
 import { DashboardMap } from '@/components/maps';
 import { trailApi, kpiApi } from '@/services/api';
 import type { TrailProfile, TrailRecord } from '@/types';
+import { sportBarColor } from '@/services/utils/constants';
 
 const DashboardChartsSection = lazy(() =>
   import('./DashboardChartsSection').then(m => ({ default: m.DashboardChartsSection }))
@@ -17,14 +18,6 @@ const MONTH_NAMES = [
   'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'
 ];
 
-const SPORT_COLORS: Record<string, string> = {
-  Run: '#3DB2E0',
-  Trail: '#C96A1A',
-  Bike: '#7B6BC8',
-  Swim: '#8B92A0',
-  WeightTraining: '#9ca3af',
-  Hike: '#5A5F6C',
-};
 
 function ChartsPlaceholder(props: React.ComponentProps<typeof DashboardChartsSection>) {
   const [ref, inView] = useInView();
@@ -359,7 +352,7 @@ export function DashboardPage() {
               style={{ display: 'block' }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                <div style={{ width: '3px', height: '36px', borderRadius: '2px', background: SPORT_COLORS[lastActivity.type || ''] || '#C96A1A', flexShrink: 0 }} />
+                <div style={{ width: '3px', height: '36px', borderRadius: '2px', background: sportBarColor(lastActivity.type ?? ''), flexShrink: 0 }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ fontSize: '8px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(232,131,42,0.7)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '2px' }}>
                     Dernière activité · {lastActivity.type}
@@ -410,7 +403,7 @@ export function DashboardPage() {
           {/* Autres activités récentes */}
           <div>
             {[...recentActivities].reverse().slice(1, 3).map((activity) => {
-              const color = SPORT_COLORS[activity.type || ''] || '#3DB2E0';
+              const color = sportBarColor(activity.type ?? '');
               const isBike = activity.type === 'Bike';
               const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : formatPace(activity.allure_min_per_km);
               return (

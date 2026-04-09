@@ -5,6 +5,7 @@ import { kpiApi } from '@/services/api';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
 import type { TrailRecord } from '@/types';
+import { sportBarColor } from '@/services/utils/constants';
 
 const ActivityGridPosters = lazy(() =>
   import('@/components/activity/ActivityGridPosters').then(m => ({ default: m.ActivityGridPosters }))
@@ -99,14 +100,6 @@ const METRICS: MetricConfig[] = [
   { icon: ElevationIcon, label: 'D+ a velo', key: 'total_dplus_bike', unit: 'm', color: '#5A5F6C' },
 ];
 
-const SPORT_COLORS: Record<string, string> = {
-  Run: '#3DB2E0',
-  Trail: '#1E6A8F',
-  Bike: '#7B6BC8',
-  Swim: '#8B92A0',
-  WeightTraining: '#9477D9',
-  Hike: '#5A5F6C',
-};
 
 // Standard record distances
 const RECORD_DISTANCES = ['5 km', '10 km', 'Semi', '30 km', 'Marathon', '50 km', 'Plus longue'];
@@ -162,7 +155,7 @@ export function KPIPage() {
 
     const labels = mainSports.map(s => s.label);
     const data = mainSports.map(s => s.value);
-    const colors = labels.map((sport) => SPORT_COLORS[sport] || '#6B7280'); // Gray for "Autres"
+    const colors = labels.map((sport) => sport === 'Autres' ? '#6B7280' : sportBarColor(sport));
 
     return {
       labels,

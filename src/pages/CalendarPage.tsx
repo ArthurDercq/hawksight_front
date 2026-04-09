@@ -4,8 +4,9 @@ import { useCalendar, generateCalendarWeeks, useEvents } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
 import { EventModal } from '@/components/ui/EventModal';
 import type { CalendarDay, CalendarWeek } from '@/hooks';
-import type { SportType, TrainingEvent } from '@/types';
+import type { TrainingEvent } from '@/types';
 import { SectionTitle } from '@/components/ui/SectionTitle';
+import { SPORT_META, sportColor } from '@/services/utils/constants';
 
 const MONTH_NAMES = [
   'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -36,14 +37,6 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
-const SPORT_COLORS: Record<SportType, { bg: string; color: string }> = {
-  Run: { bg: 'rgba(232, 131, 42, 0.2)', color: '#E8832A' },
-  Trail: { bg: 'rgba(232, 131, 42, 0.2)', color: '#E8832A' },
-  Bike: { bg: 'rgba(61, 178, 224, 0.2)', color: '#3DB2E0' },
-  Swim: { bg: 'rgba(109, 170, 117, 0.2)', color: '#6DAA75' },
-  Hike: { bg: 'rgba(109, 170, 117, 0.2)', color: '#6DAA75' },
-  WeightTraining: { bg: 'rgba(58, 63, 71, 0.3)', color: '#9ca3af' },
-};
 
 export function CalendarPage() {
   const { currentDate, activities, isLoading, error, previousMonth, nextMonth, goToToday } = useCalendar();
@@ -290,14 +283,14 @@ function CalendarDayCell({ day, onAddEvent }: CalendarDayCellProps) {
       {/* Sport Badges */}
       <div className="flex flex-wrap gap-1">
         {uniqueSports.map((sport) => {
-          const sportColor = SPORT_COLORS[sport] || { bg: 'rgba(255,255,255,0.1)', color: '#F2F2F2' };
+          const meta = SPORT_META[sport] ?? { bg: 'rgba(255,255,255,0.1)', color: '#F2F2F2' };
           const sportActivities = activities.filter((a) => a.sport_type === sport);
           return (
             <Link
               key={sport}
               to={`/activity/${sportActivities[0]?.id}`}
               className="text-[10px] px-1.5 py-0.5 rounded font-medium transition-all hover:scale-105"
-              style={{ backgroundColor: sportColor.bg, color: sportColor.color, border: `1px solid ${sportColor.color}40` }}
+              style={{ backgroundColor: meta.bg, color: sportColor(sport), border: `1px solid ${sportColor(sport)}40` }}
               title={sportActivities.map((a) => a.name).join(', ')}
             >
               {sport}

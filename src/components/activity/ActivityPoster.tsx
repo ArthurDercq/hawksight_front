@@ -1,6 +1,9 @@
 import { useMemo, useState, RefObject } from "react";
-import type { Activity, ActivityStream, SportType, ActivityExplorationRate } from "@/types";
+import type { Activity, ActivityStream, ActivityExplorationRate } from "@/types";
 import { buildStaticMapUrl } from "@/services/mapbox/staticMap";
+import { sportColor } from "@/services/utils/constants";
+import { projectCoordsToSVG, createSmoothPath } from "@/services/utils/chartHelpers";
+import { formatDurationCompact } from "@/services/utils/formatters";
 
 const DownloadIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -19,55 +22,9 @@ interface ActivityPosterProps {
   onExportPNG?: () => void;
 }
 
-const SPORT_COLORS: Record<SportType, string> = {
-  Run: "#E8832A",
-  Trail: "#E8832A",
-  Bike: "#3DB2E0",
-  Swim: "#6DAA75",
-  Hike: "#6DAA75",
-  WeightTraining: "#3A3F47",
-};
-
-function projectCoordsToSVG(
-  coords: { lat: number; lon: number }[],
-  padding: number = 10
-): { points: { x: number; y: number }[]; bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number } } {
-  if (coords.length === 0) return { points: [], bounds: { minLat: 0, maxLat: 0, minLon: 0, maxLon: 0 } };
-  const lats = coords.map(c => c.lat);
-  const lons = coords.map(c => c.lon);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-  const latRange = maxLat - minLat || 0.001;
-  const lonRange = maxLon - minLon || 0.001;
-  const usableRange = 100 - 2 * padding;
-  const points = coords.map(({ lat, lon }) => ({
-    x: padding + ((lon - minLon) / lonRange) * usableRange,
-    y: padding + ((maxLat - lat) / latRange) * usableRange,
-  }));
-  return { points, bounds: { minLat, maxLat, minLon, maxLon } };
-}
-
-function createSmoothPath(points: { x: number; y: number }[]): string {
-  if (points.length < 2) return "";
-  let path = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length - 1; i++) {
-    const xc = (points[i].x + points[i + 1].x) / 2;
-    const yc = (points[i].y + points[i + 1].y) / 2;
-    path += ` Q ${points[i].x} ${points[i].y}, ${xc} ${yc}`;
-  }
-  if (points.length > 1) path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
-  return path;
-}
-
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) return `${hours}h${minutes.toString().padStart(2, "0")}`;
-  return `${minutes}min`;
-}
 
 export function ActivityPoster({ activity, streams, posterRef, explorationRate, onExportPNG }: ActivityPosterProps) {
-  const color = SPORT_COLORS[activity.sport_type] || "#E8832A";
+  const color = sportColor(activity.sport_type);
   const [mapImageError, setMapImageError] = useState(false);
 
   const gpsCoords = useMemo(() =>
@@ -93,7 +50,7 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
   const hasGPSData = points.length > 0;
 
   const distance = activity.distance_km || activity.distance || 0;
-  const duration = activity.moving_time_hms ?? formatDuration(activity.moving_time);
+  const duration = activity.moving_time_hms ?? formatDurationCompact(activity.moving_time);
   const isBike = activity.sport_type === "Bike";
   const pace = isBike
     ? (activity.average_speed != null ? activity.average_speed.toFixed(1) : "--")
