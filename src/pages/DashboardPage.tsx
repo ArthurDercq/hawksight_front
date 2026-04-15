@@ -357,7 +357,7 @@ export function DashboardPage() {
 
           {/* Autres activités récentes */}
           <div>
-            {[...recentActivities].reverse().slice(1, 3).map((activity) => {
+            {recentActivities.slice(1, 3).map((activity) => {
               const color = sportBarColor(activity.type ?? '');
               const isBike = activity.type === 'Bike';
               const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : formatPace(activity.allure_min_per_km);

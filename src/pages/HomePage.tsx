@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
+import explorationMapImg from '@/assets/exploration-map.png';
 import { motion, useMotionValue, useTransform, animate, MotionValue } from 'motion/react';
 import { useAuth } from '@/context';
 import { useEffect, useRef } from 'react';
-import explorationMapImg from '@/assets/exploration-map.png';
 import { Logo } from '@/components/ui';
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -26,25 +26,20 @@ const MountainIcon = () => (
     <path d="m8 3 4 8 5-5 2 8" /><path d="M4 14l3-3 4 4 5-5 4 4" /><line x1="2" y1="21" x2="22" y2="21" />
   </svg>
 );
-const GlobeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </svg>
-);
 
-// ── GPS trace path (style trail de montagne) ───────────────────────────────────
-const GPS_PATH = "M 60 380 C 80 340, 100 320, 130 300 C 160 280, 170 260, 185 235 C 200 210, 210 195, 230 175 C 250 155, 260 140, 280 125 C 300 110, 315 100, 340 88 C 365 76, 375 70, 400 62 C 425 54, 440 52, 465 48 C 490 44, 510 46, 535 50 C 560 54, 575 62, 600 72 C 625 82, 638 92, 660 105 C 682 118, 690 128, 710 145 C 730 162, 738 175, 755 195 C 772 215, 778 230, 792 252 C 806 274, 810 290, 820 315";
+// ── GPS trace path (profil de montagne) ───────────────────────────────────────
+// Départ bas-gauche → montée douce → grand sommet centré → descente → petite bosse
+const GPS_PATH = "M -20 500 C 5 496, 17 492, 30 490 C 55 486, 67 478, 80 470 C 105 458, 117 448, 130 440 C 155 420, 167 410, 180 400 C 205 375, 217 362, 230 350 C 255 320, 267 305, 280 290 C 305 255, 317 237, 330 220 C 355 180, 367 160, 380 140 C 400 105, 410 87, 420 70 C 432 48, 441 34, 450 20 C 459 34, 468 48, 480 70 C 490 87, 500 105, 520 140 C 533 160, 545 180, 570 220 C 583 237, 595 255, 620 290 C 633 305, 645 320, 670 350 C 683 362, 695 375, 720 400 C 733 410, 745 420, 770 440 C 783 448, 795 458, 820 470 C 832 474, 841 462, 850 440 C 862 448, 871 454, 880 460 C 892 466, 901 478, 910 490";
 
 // ── Hex grid (réutilisé depuis Sidebar) ───────────────────────────────────────
 const HEX_ROWS: { y: number; xs: number[]; opacity: number }[] = [
-  { y: 520, xs: [80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 840], opacity: 0.18 },
-  { y: 486, xs: [60, 100, 140, 180, 220, 260, 300, 340, 380, 420, 460, 500, 540, 580, 620, 660, 700, 740, 780, 820], opacity: 0.14 },
-  { y: 452, xs: [80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 840], opacity: 0.11 },
-  { y: 418, xs: [60, 100, 140, 180, 220, 260, 300, 340, 380, 420, 460, 500, 540, 580, 620, 660, 700, 740, 780, 820], opacity: 0.08 },
-  { y: 384, xs: [80, 160, 240, 320, 400, 480, 560, 640, 720, 800], opacity: 0.06 },
-  { y: 350, xs: [120, 280, 440, 600, 760], opacity: 0.04 },
-  { y: 316, xs: [200, 440, 680], opacity: 0.02 },
+  { y: 520, xs: [80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 840], opacity: 0.28 },
+  { y: 486, xs: [60, 100, 140, 180, 220, 260, 300, 340, 380, 420, 460, 500, 540, 580, 620, 660, 700, 740, 780, 820], opacity: 0.22 },
+  { y: 452, xs: [80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 840], opacity: 0.17 },
+  { y: 418, xs: [60, 100, 140, 180, 220, 260, 300, 340, 380, 420, 460, 500, 540, 580, 620, 660, 700, 740, 780, 820], opacity: 0.13 },
+  { y: 384, xs: [80, 160, 240, 320, 400, 480, 560, 640, 720, 800], opacity: 0.09 },
+  { y: 350, xs: [120, 280, 440, 600, 760], opacity: 0.06 },
+  { y: 316, xs: [200, 440, 680], opacity: 0.04 },
 ];
 
 function HexBackground() {
@@ -73,15 +68,39 @@ function HexBackground() {
 }
 
 // ── GPS Trace animée ───────────────────────────────────────────────────────────
-// Keypoints le long du path pour animer le dot
+// Keypoints : montée douce → grand sommet → descente → petite bosse
 const PATH_POINTS = [
-  { x: 60, y: 380 }, { x: 100, y: 340 }, { x: 130, y: 300 }, { x: 165, y: 270 },
-  { x: 195, y: 235 }, { x: 215, y: 205 }, { x: 240, y: 180 }, { x: 268, y: 155 },
-  { x: 295, y: 130 }, { x: 325, y: 108 }, { x: 360, y: 90 },  { x: 400, y: 74 },
-  { x: 440, y: 60 },  { x: 480, y: 52 },  { x: 520, y: 50 },  { x: 560, y: 54 },
-  { x: 600, y: 64 },  { x: 638, y: 80 },  { x: 670, y: 100 }, { x: 700, y: 122 },
-  { x: 728, y: 148 }, { x: 750, y: 178 }, { x: 770, y: 210 }, { x: 790, y: 245 },
-  { x: 810, y: 280 }, { x: 820, y: 315 },
+  // montée douce (aile gauche)
+  { x: -20, y: 500 },
+  { x: 30,  y: 490 },
+  { x: 80,  y: 470 },
+  { x: 130, y: 440 },
+  { x: 180, y: 400 },
+  { x: 230, y: 350 },
+  { x: 280, y: 290 },
+  { x: 330, y: 220 },
+
+  // montée raide vers pic (signature)
+  { x: 380, y: 140 },
+  { x: 420, y: 70 },
+  { x: 450, y: 20 },   // sommet centré
+
+  // descente rapide (symétrie aile droite)
+  { x: 480, y: 70 },
+  { x: 520, y: 140 },
+  { x: 570, y: 220 },
+  { x: 620, y: 290 },
+  { x: 670, y: 350 },
+  { x: 720, y: 400 },
+
+  // retour baseline
+  { x: 770, y: 440 },
+  { x: 820, y: 470 },
+
+  // petite bosse finale
+  { x: 850, y: 440 },
+  { x: 880, y: 460 },
+  { x: 910, y: 490 },
 ];
 
 function useDotPosition(pathLength: MotionValue<number>) {
@@ -94,20 +113,28 @@ function useDotPosition(pathLength: MotionValue<number>) {
 }
 
 function AnimatedTrace() {
-  const pathLength = useMotionValue(0);
-  const { dotX, dotY } = useDotPosition(pathLength);
+  const drawLength  = useMotionValue(0); // 0→1 : dessin orange
+  const eraseLength = useMotionValue(0); // 0→1 : effaceur qui grandit depuis le début
+  const drawOpacity = useMotionValue(1); // 1→0 : fade out du glow résiduel en fin d'effacement
+
+  const { dotX, dotY }         = useDotPosition(drawLength);
+  const { dotX: eX, dotY: eY } = useDotPosition(eraseLength);
+
   const ref = useRef(false);
 
   useEffect(() => {
     if (ref.current) return;
     ref.current = true;
-    const loop = () => {
-      animate(pathLength, 1, { duration: 4, ease: 'easeInOut' }).then(() => {
-        setTimeout(() => { pathLength.set(0); loop(); }, 800);
-      });
-    };
-    loop();
-  }, [pathLength]);
+    // Phase 1 : dessin en 5s
+    animate(drawLength, 1, { duration: 5, ease: 'easeInOut' }).then(() => {
+      // Phase 2 : pause 0.4s puis effacement en 4s
+      setTimeout(() => {
+        animate(eraseLength, 1, { duration: 4, ease: 'easeInOut' });
+        // Fade out du glow résiduel sur la fin de l'effacement
+        animate(drawOpacity, 0, { duration: 4, ease: 'easeIn', delay: 2 });
+      }, 100);
+    });
+  }, [drawLength, eraseLength, drawOpacity]);
 
   return (
     <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 900 540" preserveAspectRatio="xMidYMid slice">
@@ -122,16 +149,165 @@ function AnimatedTrace() {
         </filter>
       </defs>
 
-      {/* Glow layer */}
-      <motion.path d={GPS_PATH} stroke="#E8832A" strokeWidth="8" fill="none" strokeLinecap="round" opacity={0.12} style={{ pathLength }} filter="url(#lp-glow-strong)" />
-      {/* Main trace */}
-      <motion.path d={GPS_PATH} stroke="#E8832A" strokeWidth="1.5" fill="none" strokeLinecap="round" style={{ pathLength }} filter="url(#lp-glow)" />
-      {/* Moving dot — outer glow */}
-      <motion.circle r="7" fill="#E8832A" opacity={0.3} filter="url(#lp-glow-strong)" style={{ x: dotX, y: dotY }} />
-      {/* Moving dot — core */}
-      <motion.circle r="4" fill="#E8832A" style={{ x: dotX, y: dotY }} filter="url(#lp-glow)" />
-      {/* Moving dot — white center */}
-      <motion.circle r="1.8" fill="#fff" style={{ x: dotX, y: dotY }} />
+      {/* ── Trait orange complet (base) ── */}
+      <motion.path d={GPS_PATH} stroke="#E8832A" strokeWidth="8"   fill="none" strokeLinecap="round" style={{ pathLength: drawLength, opacity: useTransform(drawOpacity, v => v * 0.12) }} filter="url(#lp-glow-strong)" />
+      <motion.path d={GPS_PATH} stroke="#E8832A" strokeWidth="1.5" fill="none" strokeLinecap="round" style={{ pathLength: drawLength, opacity: drawOpacity }} filter="url(#lp-glow)" />
+
+      {/* ── Trait effaceur : même path, couleur bg, grandit depuis le début ── */}
+      <motion.path d={GPS_PATH} stroke="#0B0C10" strokeWidth="40"  fill="none" strokeLinecap="round" style={{ pathLength: eraseLength }} />
+      <motion.path d={GPS_PATH} stroke="#0B0C10" strokeWidth="20"  fill="none" strokeLinecap="round" style={{ pathLength: eraseLength }} />
+
+      {/* ── Dot dessin (visible pendant phase 1) ── */}
+      <motion.circle r="7"   fill="#E8832A" opacity={0.3} filter="url(#lp-glow-strong)" style={{ x: dotX, y: dotY }} />
+      <motion.circle r="4"   fill="#E8832A" filter="url(#lp-glow)" style={{ x: dotX, y: dotY }} />
+      <motion.circle r="1.8" fill="#fff"    style={{ x: dotX, y: dotY }} />
+
+      {/* ── Dot effacement (visible pendant phase 2, suit l'effaceur) ── */}
+      <motion.circle r="7"   fill="#E8832A" opacity={0.3} filter="url(#lp-glow-strong)" style={{ x: eX, y: eY }} />
+      <motion.circle r="4"   fill="#E8832A" filter="url(#lp-glow)" style={{ x: eX, y: eY }} />
+      <motion.circle r="1.8" fill="#fff"    style={{ x: eX, y: eY }} />
+    </svg>
+  );
+}
+
+// ── Radar Chart ───────────────────────────────────────────────────────────────
+// 5 axes : Endurance(78) Dénivelé(85) Régularité(62) Vitesse(71) Technicité(90)
+const RADAR_AXES = [
+  { label: 'Endurance',   score: 0.78, elite: 0.88 },
+  { label: 'Dénivelé',    score: 0.85, elite: 0.82 },
+  { label: 'Régularité',  score: 0.62, elite: 0.80 },
+  { label: 'Vitesse',     score: 0.71, elite: 0.92 },
+  { label: 'Technicité',  score: 0.90, elite: 0.85 },
+];
+const N = RADAR_AXES.length;
+const CX = 160, CY = 160, R = 120;
+
+function radarPoint(i: number, r: number): [number, number] {
+  const angle = (Math.PI * 2 * i) / N - Math.PI / 2;
+  return [CX + r * Math.cos(angle), CY + r * Math.sin(angle)];
+}
+
+function radarPolygon(scores: number[]): string {
+  return scores.map((s, i) => radarPoint(i, s * R).join(',')).join(' ');
+}
+
+function RadarChart() {
+  const progress = useMotionValue(0);
+  const ref = useRef<SVGSVGElement>(null);
+  const triggered = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !triggered.current) {
+          triggered.current = true;
+          animate(progress, 1, { duration: 1.4, ease: 'easeOut' });
+        }
+      },
+      { threshold: 0.4 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [progress]);
+
+  // Polygone animé via useTransform
+  const playerPoly = useTransform(progress, v =>
+    radarPolygon(RADAR_AXES.map(a => a.score * v))
+  );
+  const elitePoly = useTransform(progress, v =>
+    radarPolygon(RADAR_AXES.map(a => a.elite * v))
+  );
+
+  const rings = [0.25, 0.5, 0.75, 1];
+
+  return (
+    <svg ref={ref} width="320" height="320" viewBox="0 0 320 320">
+      <defs>
+        <filter id="radar-glow">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="radar-glow-soft">
+          <feGaussianBlur stdDeviation="8" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      {/* Anneaux de référence */}
+      {rings.map(r => (
+        <polygon key={r}
+          points={radarPolygon(Array(N).fill(r))}
+          fill="none" stroke="rgba(58,63,71,0.35)" strokeWidth={r === 1 ? 0.8 : 0.5}
+        />
+      ))}
+
+      {/* Axes */}
+      {RADAR_AXES.map((_, i) => {
+        const [x, y] = radarPoint(i, R);
+        return <line key={i} x1={CX} y1={CY} x2={x} y2={y} stroke="rgba(58,63,71,0.4)" strokeWidth="0.6" />;
+      })}
+
+      {/* Polygone élite (pointillés glacier) */}
+      <motion.polygon
+        points={elitePoly as unknown as string}
+        fill="rgba(61,178,224,0.04)"
+        stroke="rgba(61,178,224,0.35)"
+        strokeWidth="1"
+        strokeDasharray="3 3"
+      />
+
+      {/* Polygone joueur — glow fort */}
+      <motion.polygon
+        points={playerPoly as unknown as string}
+        fill="rgba(61,178,224,0.12)"
+        stroke="rgba(61,178,224,0)"
+        strokeWidth="0"
+        filter="url(#radar-glow-soft)"
+      />
+      {/* Polygone joueur — contour net */}
+      <motion.polygon
+        points={playerPoly as unknown as string}
+        fill="rgba(61,178,224,0.10)"
+        stroke="rgba(61,178,224,0.9)"
+        strokeWidth="1.5"
+        filter="url(#radar-glow)"
+      />
+
+      {/* Points sur les sommets */}
+      {RADAR_AXES.map((a, i) => {
+        const [x, y] = radarPoint(i, a.score * R);
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r="5" fill="rgba(61,178,224,0.25)" filter="url(#radar-glow)" />
+            <circle cx={x} cy={y} r="2.5" fill="#3DB2E0" filter="url(#radar-glow)" />
+            <circle cx={x} cy={y} r="1" fill="#fff" />
+          </g>
+        );
+      })}
+
+      {/* Labels axes */}
+      {RADAR_AXES.map((a, i) => {
+        const [x, y] = radarPoint(i, R + 22);
+        const anchor = x < CX - 5 ? 'end' : x > CX + 5 ? 'start' : 'middle';
+        return (
+          <text key={i} x={x} y={y + 4} textAnchor={anchor}
+            fontSize="8" fontFamily="'JetBrains Mono', monospace" fill="rgba(242,242,242,0.45)"
+            letterSpacing="1.5"
+          >
+            {a.label.toUpperCase()}
+          </text>
+        );
+      })}
+
+      {/* Score central */}
+      <text x={CX} y={CY - 6} textAnchor="middle" fontSize="22" fontFamily="Poppins, sans-serif" fontWeight="700" fill="#3DB2E0">
+        79
+      </text>
+      <text x={CX} y={CY + 10} textAnchor="middle" fontSize="7" fontFamily="'JetBrains Mono', monospace" fill="rgba(61,178,224,0.5)" letterSpacing="2">
+        SCORE
+      </text>
     </svg>
   );
 }
@@ -255,17 +431,20 @@ export function HomePage() {
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute rounded-full blur-2xl" style={{ width: '45%', height: '40%', top: '20%', left: '15%', background: 'radial-gradient(circle, rgba(232,131,42,0.35) 0%, transparent 70%)' }} />
                 <div className="absolute rounded-full blur-xl" style={{ width: '30%', height: '30%', top: '35%', left: '50%', background: 'radial-gradient(circle, rgba(232,131,42,0.25) 0%, transparent 70%)' }} />
+                <div className="absolute rounded-full blur-2xl" style={{ width: '35%', height: '30%', top: '55%', left: '25%', background: 'radial-gradient(circle, rgba(61,178,224,0.18) 0%, transparent 70%)' }} />
+                <div className="absolute rounded-full blur-xl" style={{ width: '20%', height: '20%', top: '10%', left: '60%', background: 'radial-gradient(circle, rgba(232,131,42,0.20) 0%, transparent 70%)' }} />
+                <div className="absolute rounded-full blur-3xl" style={{ width: '50%', height: '45%', top: '30%', left: '30%', background: 'radial-gradient(circle, rgba(232,131,42,0.10) 0%, transparent 70%)' }} />
               </div>
 
               {/* Stats overlay */}
               <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
                 <div className="bg-charcoal/90 backdrop-blur-sm border border-amber/30 rounded-lg px-4 py-3">
                   <p className="font-mono text-[8px] text-steel uppercase tracking-[2px] mb-1">Couverture</p>
-                  <p className="font-mono text-3xl font-bold text-amber tabular-nums">8%</p>
+                  <p className="font-heading text-3xl font-bold text-amber tabular-nums">8%</p>
                 </div>
                 <div className="bg-charcoal/90 backdrop-blur-sm border border-glacier/30 rounded-lg px-4 py-3">
                   <p className="font-mono text-[8px] text-steel uppercase tracking-[2px] mb-1">Surface</p>
-                  <p className="font-mono text-3xl font-bold text-glacier tabular-nums">847 km²</p>
+                  <p className="font-heading text-3xl font-bold text-glacier tabular-nums">847 km²</p>
                 </div>
               </div>
             </div>
@@ -281,7 +460,6 @@ export function HomePage() {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber/10 border border-amber/30 rounded-full">
-              <GlobeIcon />
               <span className="font-mono text-[10px] text-amber uppercase tracking-[2px]">La Conquête</span>
             </div>
 
@@ -320,7 +498,6 @@ export function HomePage() {
             transition={{ duration: 0.8 }}
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-glacier/10 border border-glacier/30 rounded-full">
-              <ElevationIcon />
               <span className="font-mono text-[10px] text-glacier uppercase tracking-[2px]">La Stratégie</span>
             </div>
 
@@ -359,32 +536,234 @@ export function HomePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <div className="hw-card-dark-lg p-0 overflow-hidden">
+            <div className="hw-card-dark-lg p-0 overflow-hidden" style={{ background: '#07080B' }}>
               <span className="hw-br hw-br-tl hw-br-glacier" />
               <span className="hw-br hw-br-tr hw-br-glacier" />
               <span className="hw-br hw-br-bl hw-br-glacier-dim" />
               <span className="hw-br hw-br-br hw-br-glacier-dim" />
 
-              <img
-                src="https://images.unsplash.com/photo-1621361607621-aa46e79bd017?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmFpbCUyMHJ1bm5pbmclMjBtb3VudGFpbiUyMHBhdGh8ZW58MXx8fHwxNzcyMzkwMzYzfDA&ixlib=rb-4.1.0&q=80&w=1080"
-                alt="Trail Analysis"
-                className="w-full aspect-square object-cover opacity-35"
-              />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, #0B0C10 10%, transparent 50%)' }} />
+              {/* ── Dashboard HUD ── */}
+              <div className="p-5 flex flex-col gap-3">
 
-              <div className="absolute bottom-5 left-5 right-5 grid grid-cols-2 gap-3">
-                <div className="bg-charcoal/90 backdrop-blur-sm border border-amber/30 rounded-lg p-3">
-                  <p className="font-mono text-[8px] text-steel uppercase tracking-[2px] mb-1">Dénivelé +</p>
-                  <p className="font-mono text-2xl font-bold text-amber tabular-nums">1 247 m</p>
+                {/* Header HUD */}
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-mono text-[8px] text-steel uppercase tracking-[2px]">Trail · Grand Ballon</span>
+                  <span className="font-mono text-[8px] text-glacier/60 uppercase tracking-[1px]">14 Apr 2026</span>
                 </div>
-                <div className="bg-charcoal/90 backdrop-blur-sm border border-glacier/30 rounded-lg p-3">
-                  <p className="font-mono text-[8px] text-steel uppercase tracking-[2px] mb-1">FC Moy</p>
-                  <p className="font-mono text-2xl font-bold text-glacier tabular-nums">142 bpm</p>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: 'Distance', value: '28.4', unit: 'km',  color: 'text-amber' },
+                    { label: 'D+',       value: '1 247', unit: 'm',  color: 'text-glacier' },
+                    { label: 'Temps',    value: '4:12',  unit: 'h',  color: 'text-mist' },
+                    { label: 'FC Moy',   value: '142',   unit: 'bpm',color: 'text-moss' },
+                  ].map(({ label, value, unit, color }) => (
+                    <div key={label} className="bg-charcoal/60 border border-steel/20 rounded-md p-2">
+                      <p className="font-mono text-[7px] text-steel/60 uppercase tracking-[1px] mb-0.5">{label}</p>
+                      <p className={`font-heading text-base font-bold tabular-nums leading-none ${color}`}>{value}<span className="font-mono text-[7px] text-steel/50 ml-0.5">{unit}</span></p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Elevation chart SVG */}
+                <div className="bg-charcoal/40 border border-steel/15 rounded-md p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-[7px] text-steel uppercase tracking-[2px]">Profil Dénivelé</span>
+                    <span className="font-mono text-[7px] text-amber/60">+1247m / -1198m</span>
+                  </div>
+                  <svg width="100%" height="64" viewBox="0 0 320 64" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="elev-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#E8832A" stopOpacity="0.4"/>
+                        <stop offset="100%" stopColor="#E8832A" stopOpacity="0.02"/>
+                      </linearGradient>
+                      <filter id="elev-glow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+                    <path d="M0 60 C20 58,35 52,50 44 C65 36,75 28,90 18 C100 11,108 6,118 4 C128 2,132 8,142 14 C152 20,158 26,170 32 C182 38,190 42,202 36 C214 30,220 20,232 12 C242 5,248 2,256 4 C264 6,270 14,280 22 C290 30,298 40,310 50 L320 56 L320 64 L0 64 Z"
+                      fill="url(#elev-grad)" />
+                    <path d="M0 60 C20 58,35 52,50 44 C65 36,75 28,90 18 C100 11,108 6,118 4 C128 2,132 8,142 14 C152 20,158 26,170 32 C182 38,190 42,202 36 C214 30,220 20,232 12 C242 5,248 2,256 4 C264 6,270 14,280 22 C290 30,298 40,310 50 L320 56"
+                      fill="none" stroke="#E8832A" strokeWidth="1.2" strokeLinecap="round" filter="url(#elev-glow)" />
+                  </svg>
+                </div>
+
+                {/* HR zones bar */}
+                <div className="bg-charcoal/40 border border-steel/15 rounded-md p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-[7px] text-steel uppercase tracking-[2px]">Zones FC</span>
+                    <span className="font-mono text-[7px] text-glacier/60">2h34 en Z3-Z4</span>
+                  </div>
+                  <div className="flex gap-0.5 h-3 rounded-sm overflow-hidden">
+                    {[
+                      { w: '8%',  color: '#6DAA75' },
+                      { w: '14%', color: '#3DB2E0' },
+                      { w: '28%', color: '#E8832A' },
+                      { w: '32%', color: '#E8832A', opacity: 0.6 },
+                      { w: '18%', color: '#fc8181' },
+                    ].map((z, i) => (
+                      <div key={i} className="h-full rounded-sm" style={{ width: z.w, background: z.color, opacity: z.opacity ?? 1 }} />
+                    ))}
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    {['Z1','Z2','Z3','Z4','Z5'].map(z => (
+                      <span key={z} className="font-mono text-[6px] text-steel/40">{z}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pace line */}
+                <div className="bg-charcoal/40 border border-steel/15 rounded-md p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-[7px] text-steel uppercase tracking-[2px]">Allure</span>
+                    <span className="font-mono text-[7px] text-moss/60">Moy 8'54''/km</span>
+                  </div>
+                  <svg width="100%" height="36" viewBox="0 0 320 36" preserveAspectRatio="none">
+                    <defs>
+                      <filter id="pace-glow"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+                    <path d="M0 20 C15 18,25 14,40 16 C55 18,60 24,75 20 C90 16,95 10,110 12 C125 14,130 22,145 18 C160 14,165 8,180 10 C195 12,200 20,215 24 C230 28,235 22,250 18 C265 14,275 16,290 20 C300 23,308 26,320 24"
+                      fill="none" stroke="#6DAA75" strokeWidth="1.2" strokeLinecap="round" filter="url(#pace-glow)" />
+                  </svg>
                 </div>
               </div>
             </div>
             <div className="absolute -inset-6 bg-glacier/5 rounded-3xl blur-3xl -z-10 pointer-events-none" />
           </motion.div>
+        </div>
+      </section>
+
+      {/* ── Section Profil Trailer ── */}
+      <section className="relative py-32 px-6 overflow-hidden">
+        {/* Séparateur top */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-32 bg-gradient-to-b from-transparent via-steel/30 to-transparent pointer-events-none" />
+        {/* Glow ambiant centré */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(61,178,224,0.04) 0%, transparent 60%)' }} />
+
+        <div className="max-w-7xl mx-auto">
+
+          {/* Header centré */}
+          <motion.div
+            className="text-center mb-20"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+          >
+            <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 bg-glacier/10 border border-glacier/30 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-glacier animate-pulse" />
+              <span className="font-mono text-[10px] text-glacier uppercase tracking-[2px]">Profil Trailer</span>
+            </div>
+            <h2 className="font-heading font-bold text-4xl md:text-6xl text-mist leading-tight mb-6">
+              Ton ADN de trailer,<br /><span className="text-glacier">révélé par tes données.</span>
+            </h2>
+            <p className="font-mono text-[11px] text-steel uppercase tracking-[2px] max-w-2xl mx-auto leading-relaxed">
+              HawkSight analyse l'ensemble de tes sorties pour construire ton profil unique.<br />
+              5 dimensions. Des centaines de sorties. Une seule vérité.
+            </p>
+          </motion.div>
+
+          {/* Layout : axes à gauche, radar au centre, axes à droite */}
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center">
+
+            {/* Axes gauche */}
+            <motion.div
+              className="flex flex-col gap-8"
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+            >
+              {[
+                { label: 'Endurance', score: 78, color: '#E8832A', desc: 'Capacité à maintenir l\'effort sur la durée. Calculée sur tes sorties longues et le maintien de la FC.' },
+                { label: 'Dénivelé', score: 85, color: '#3DB2E0', desc: 'Efficacité en montée et descente. Ratio VAP / vitesse à plat et gestion des descentes techniques.' },
+                { label: 'Régularité', score: 62, color: '#6DAA75', desc: 'Constance de l\'effort et de l\'allure. Écart-type de pace et gestion des relances après ravito.' },
+              ].map(({ label, score, color, desc }, i) => (
+                <div key={label} className="text-right">
+                  <div className="flex items-center justify-end gap-3 mb-1.5">
+                    <div>
+                      <p className="font-mono text-[9px] uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
+                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/50 ml-0.5">/100</span></p>
+                    </div>
+                    <div className="w-1 h-10 rounded-full shrink-0" style={{ background: `linear-gradient(to bottom, ${color}, ${color}40)` }} />
+                  </div>
+                  <p className="font-mono text-[9px] text-steel/60 leading-relaxed max-w-xs ml-auto">{desc}</p>
+                  {/* Barre de score */}
+                  <div className="mt-2 h-0.5 bg-steel/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: color }}
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${score}%` }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.2, delay: 0.4 + i * 0.15, ease: 'easeOut' }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Radar SVG central */}
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, scale: 0.85 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, delay: 0.1, ease: 'easeOut' }}
+            >
+              <RadarChart />
+            </motion.div>
+
+            {/* Axes droite */}
+            <motion.div
+              className="flex flex-col gap-8"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+            >
+              {[
+                { label: 'Vitesse', score: 71, color: '#E8832A', desc: 'Vitesse de pointe et capacité à relancer. Basée sur tes fractions rapides et tes temps aux portions plates.' },
+                { label: 'Technicité', score: 90, color: '#3DB2E0', desc: 'Aisance sur terrain varié. Analysée via la variance de cadence sur terrain accidenté et les descentes.' },
+              ].map(({ label, score, color, desc }, i) => (
+                <div key={label}>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <div className="w-1 h-10 rounded-full shrink-0" style={{ background: `linear-gradient(to bottom, ${color}, ${color}40)` }} />
+                    <div>
+                      <p className="font-mono text-[9px] uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
+                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/50 ml-0.5">/100</span></p>
+                    </div>
+                  </div>
+                  <p className="font-mono text-[9px] text-steel/60 leading-relaxed max-w-xs">{desc}</p>
+                  <div className="mt-2 h-0.5 bg-steel/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: color }}
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${score}%` }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.2, delay: 0.4 + i * 0.15, ease: 'easeOut' }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Baseline */}
+          <motion.div
+            className="text-center mt-16 flex flex-col items-center gap-3"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.5 }}
+          >
+            <div className="flex items-center gap-6 font-mono text-[9px] text-steel/50 uppercase tracking-[2px]">
+              <div className="flex items-center gap-2"><div className="w-6 h-px bg-glacier/60" /><span>Ton profil</span></div>
+              <div className="flex items-center gap-2"><div className="w-6 h-px border-t border-dashed border-steel/40" /><span>Référence élite</span></div>
+            </div>
+            <p className="font-mono text-[9px] text-steel/40 uppercase tracking-[1px]">Calculé sur 147 sorties · 1 842 km · 68 000 m D+</p>
+          </motion.div>
+
         </div>
       </section>
 
