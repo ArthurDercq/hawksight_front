@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context';
 import { Logo } from '@/components/ui';
+import { ENV } from '@/config/env';
 
 // Icons — 15×15 comme le mockup
 const DashboardIcon = () => (
@@ -72,6 +73,12 @@ const UserIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
     <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+const AdminIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7l-9-5z"/>
   </svg>
 );
 
@@ -222,6 +229,46 @@ export function Sidebar() {
             })}
           </div>
         ))}
+
+        {/* Admin backoffice — visible uniquement pour role=admin */}
+        {currentUser?.role === 'admin' && (
+          <>
+            <div style={{ height: '1px', background: 'rgba(58,63,71,0.25)', margin: '8px 6px' }} />
+            <a
+              href={`${ENV.API_BASE_URL}/bo/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '9px',
+                padding: '9px 10px',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                cursor: 'pointer',
+                border: '1px solid rgba(61,178,224,0.15)',
+                background: 'rgba(61,178,224,0.06)',
+                color: '#3DB2E0',
+                transition: 'all 0.15s',
+                fontSize: '12px',
+                fontWeight: 500,
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(61,178,224,0.12)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(61,178,224,0.3)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(61,178,224,0.06)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(61,178,224,0.15)';
+              }}
+            >
+              <span style={{ width: '18px', textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AdminIcon />
+              </span>
+              Backoffice
+            </a>
+          </>
+        )}
 
         {/* Divider + Profil — juste après Trails, sans spacer */}
         <div style={{ height: '1px', background: 'rgba(58,63,71,0.25)', margin: '8px 6px' }} />

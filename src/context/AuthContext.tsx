@@ -7,7 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   currentUser: CurrentUser | null;
-  login: (username: string, password: string, rememberMe?: boolean) => Promise<true | string>;
+  loginWithStravaCode: (code: string) => Promise<true | 403 | string>;
   logout: () => void;
 }
 
@@ -49,22 +49,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (username: string, password: string, rememberMe = false): Promise<true | string> => {
+  const loginWithStravaCode = useCallback(async (code: string): Promise<true | 403 | string> => {
     try {
-      const { access_token } = await authApi.login(username, password, rememberMe);
+      const { access_token } = await authApi.exchangeStravaCode(code);
       localStorage.setItem('eyesight_token', access_token);
       setToken(access_token);
       setCurrentUser(decodeUser(access_token));
       return true;
     } catch (error: unknown) {
-      console.error('Login failed:', error);
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number } };
-        if (axiosError.response?.status === 401) {
-          return 'Identifiants incorrects';
-        }
+        if (axiosError.response?.status === 403) return 403;
         if (axiosError.response?.status && axiosError.response.status >= 500) {
-          return 'Erreur serveur, veuillez reessayer';
+          return 'Erreur serveur, veuillez réessayer';
         }
       }
       if (error instanceof Error && error.message === 'Network Error') {
@@ -88,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!token,
         isLoading,
         currentUser,
-        login,
+        loginWithStravaCode,
         logout,
       }}
     >

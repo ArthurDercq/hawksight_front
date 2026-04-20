@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useDashboard, useDashboardCharts, usePermissions, useInView, useEvents } from '@/hooks';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { OnboardingScreen } from '@/components/ui/OnboardingScreen';
 import { DemoBanner } from '@/components/ui/DemoBanner';
 import { EventModal } from '@/components/ui/EventModal';
 import { DashboardMap } from '@/components/maps';
@@ -46,6 +48,7 @@ export function DashboardPage() {
   const { nextEvent, createEvent } = useEvents();
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const { isDemo, canSync } = usePermissions();
+  const { status: syncStatus, activitiesCount, hasFetched: syncFetched } = useSyncStatus();
 
   const [trailProfile, setTrailProfile] = useState<TrailProfile | null>(null);
   useEffect(() => {
@@ -69,7 +72,8 @@ export function DashboardPage() {
     isRefetchingRepartition, isRefetchingWeeklyPace, isRefetchingConquete,
   } = useDashboardCharts();
 
-  if (isLoading) {
+  // Pendant le chargement initial : spinner minimaliste
+  if (isLoading && !syncFetched) {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner message="Chargement du tableau de bord..." />
@@ -83,6 +87,12 @@ export function DashboardPage() {
         <p className="text-red-400">{error}</p>
       </div>
     );
+  }
+
+  // Onboarding uniquement si activities_count === 0 (source fiable : /auth/strava/sync-status)
+  // Un sync manuel avec données existantes reste sur le dashboard normal
+  if (syncFetched && activitiesCount === 0) {
+    return <OnboardingScreen status={syncStatus} hasData={false} />;
   }
 
   const currentMonth = MONTH_NAMES[new Date().getMonth()];

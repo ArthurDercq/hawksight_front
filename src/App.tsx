@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from '@/context';
 import { Sidebar, Footer } from '@/components/layout';
@@ -6,6 +6,8 @@ import { Spinner } from '@/components/ui/Spinner';
 
 const HomePage = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage').then(m => ({ default: m.AuthCallbackPage })));
+const InviteOnlyPage = lazy(() => import('@/pages/InviteOnlyPage').then(m => ({ default: m.InviteOnlyPage })));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ActivitiesPage = lazy(() => import('@/pages/ActivitiesPage').then(m => ({ default: m.ActivitiesPage })));
 const ActivityDetailPage = lazy(() => import('@/pages/ActivityDetailPage').then(m => ({ default: m.ActivityDetailPage })));
@@ -14,6 +16,12 @@ const CalendarPage = lazy(() => import('@/pages/CalendarPage').then(m => ({ defa
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const PerformancePage = lazy(() => import('@/pages/PerformancePage').then(m => ({ default: m.PerformancePage })));
 const ExplorationPage = lazy(() => import('@/pages/ExplorationPage').then(m => ({ default: m.ExplorationPage })));
+
+function StravaInviteRedirect() {
+  const [searchParams] = useSearchParams();
+  const invite = searchParams.get('invite');
+  return <Navigate to={invite ? `/login?invite=${invite}` : '/login'} replace />;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -36,6 +44,9 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/auth/strava/login" element={<StravaInviteRedirect />} />
+      <Route path="/invite-only" element={<InviteOnlyPage />} />
 
       {/* Protected routes */}
       <Route
@@ -113,13 +124,13 @@ function AppRoutes() {
 function AppLayout() {
   const { pathname } = useLocation();
   const isLanding = pathname === '/';
-  const isLogin = pathname === '/login';
+  const isPublicFullscreen = ['/login', '/auth/callback', '/auth/strava/login', '/invite-only'].includes(pathname);
 
   if (isLanding) {
     return <AppRoutes />;
   }
 
-  if (isLogin) {
+  if (isPublicFullscreen) {
     return (
       <div className="min-h-screen bg-charcoal text-mist font-body">
         <AppRoutes />

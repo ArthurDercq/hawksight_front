@@ -697,6 +697,20 @@ export function ProfilePage() {
                   <><SyncIcon spinning={isSyncing} /> {isSyncing ? 'Synchronisation...' : 'Synchroniser maintenant'}</>
                 )}
               </button>
+
+              {/* Compteurs activités / features */}
+              {(profile.activities_count !== undefined || profile.features_count !== undefined) && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20 text-center">
+                    <p className="font-mono text-lg font-bold text-mist tabular-nums">{profile.activities_count ?? '—'}</p>
+                    <p className="text-[9px] font-mono text-steel uppercase tracking-wider mt-0.5">Activités</p>
+                  </div>
+                  <div className="px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20 text-center">
+                    <p className="font-mono text-lg font-bold text-glacier tabular-nums">{profile.features_count ?? '—'}</p>
+                    <p className="text-[9px] font-mono text-steel uppercase tracking-wider mt-0.5">Analysées</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

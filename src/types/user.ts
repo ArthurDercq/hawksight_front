@@ -15,6 +15,23 @@ export interface UserProfile {
   last_sync_at?: string;
   is_active: boolean;
   role: UserRole;
+  // Champs étendus — retournés par /auth/strava/profile
+  firstname?: string;
+  lastname?: string;
+  profile_picture?: string;
+  city?: string;
+  country?: string;
+  activities_count?: number;
+  features_count?: number;
+}
+
+export interface StravaSyncStatus {
+  user_id: number;
+  strava_id: number;
+  last_sync_at: string | null;
+  activities_count: number;
+  features_count: number;
+  is_syncing: boolean;
 }
 
 export interface AuthToken {
