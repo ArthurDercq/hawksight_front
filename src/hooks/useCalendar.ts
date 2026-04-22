@@ -104,7 +104,17 @@ export interface CalendarWeek {
 
 export function getEventsForDate(events: TrainingEvent[], date: Date): TrainingEvent[] {
   const dateKey = formatDateKey(date);
-  return events.filter(e => e.date.slice(0, 10) === dateKey);
+  return events.filter(e => {
+    // e.date peut être "YYYY-MM-DD" ou "YYYY-MM-DDTHH:mm:ssZ"
+    // On prend toujours la partie date locale pour éviter le décalage UTC
+    const raw = e.date.slice(0, 10); // YYYY-MM-DD
+    // Si la string contient une timezone, on parse et on reformate en local
+    if (e.date.length > 10) {
+      const d = new Date(e.date);
+      return formatDateKey(d) === dateKey;
+    }
+    return raw === dateKey;
+  });
 }
 
 export function generateCalendarWeeks(

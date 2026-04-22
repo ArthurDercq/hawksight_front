@@ -431,7 +431,8 @@ function DetailRow({ label, value }: DetailRowProps) {
 export function ProfilePage() {
   const { profile, isLoading, error } = useProfile();
   const { kpis } = useKPI();
-  const { events, upcomingEvents, pastEvents, createEvent, deleteEvent, markCompleted } = useEvents();
+  const { events, upcomingEvents, pastEvents, createEvent, updateEvent, deleteEvent, markCompleted } = useEvents();
+  const [editingEvent, setEditingEvent] = useState<TrainingEvent | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -482,15 +483,6 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6">
-      {/* Page title */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 rounded-lg bg-[#7B6BC8]/10 border border-[#7B6BC8]/30 text-[#7B6BC8]">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-        <h1 className="font-heading text-2xl font-bold text-mist">Profil</h1>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
 
@@ -638,13 +630,13 @@ export function ProfilePage() {
               ) : (
                 <div className="space-y-2">
                   {upcomingEvents.map(event => (
-                    <EventRow key={event.id} event={event} onDelete={deleteEvent} onComplete={markCompleted} />
+                    <EventRow key={event.id} event={event} onDelete={deleteEvent} onComplete={markCompleted} onEdit={setEditingEvent} />
                   ))}
                   {pastEvents.length > 0 && (
                     <>
                       <div className="text-[10px] text-mist/30 font-mono uppercase tracking-wider pt-2 pb-1">Passés</div>
                       {pastEvents.map(event => (
-                        <EventRow key={event.id} event={event} past onDelete={deleteEvent} onComplete={markCompleted} />
+                        <EventRow key={event.id} event={event} past onDelete={deleteEvent} onComplete={markCompleted} onEdit={setEditingEvent} />
                       ))}
                     </>
                   )}
@@ -774,9 +766,10 @@ export function ProfilePage() {
       </div>
 
       <EventModal
-        open={eventModalOpen}
-        onClose={() => setEventModalOpen(false)}
-        onSubmit={createEvent}
+        open={eventModalOpen || editingEvent !== null}
+        onClose={() => { setEventModalOpen(false); setEditingEvent(null); }}
+        onSubmit={editingEvent ? (data) => updateEvent(editingEvent.id, data) : createEvent}
+        editEvent={editingEvent ?? undefined}
       />
     </div>
   );
@@ -789,9 +782,10 @@ interface EventRowProps {
   past?: boolean;
   onDelete: (id: string) => Promise<boolean>;
   onComplete: (id: string, done: boolean) => Promise<boolean>;
+  onEdit: (event: TrainingEvent) => void;
 }
 
-function EventRow({ event, past, onDelete, onComplete }: EventRowProps) {
+function EventRow({ event, past, onDelete, onComplete, onEdit }: EventRowProps) {
   const dateStr = new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   return (
     <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${past ? 'border-[#3A3F47]/15 bg-charcoal/20 opacity-60' : 'border-[#3A3F47]/30 bg-charcoal/40 hover:border-[#7B6BC8]/30'}`}>
@@ -829,6 +823,15 @@ function EventRow({ event, past, onDelete, onComplete }: EventRowProps) {
           </svg>
         </Link>
       )}
+      <button
+        onClick={() => onEdit(event)}
+        className="flex-shrink-0 text-mist/20 hover:text-amber transition-colors"
+        title="Modifier"
+      >
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+      </button>
       <button
         onClick={() => onDelete(event.id)}
         className="flex-shrink-0 text-mist/20 hover:text-red-400 transition-colors text-sm leading-none"

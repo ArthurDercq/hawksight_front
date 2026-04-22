@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import type { EventFormData, EventType, GoalType } from '@/types';
+import { useState, useEffect } from 'react';
+import type { EventFormData, EventType, GoalType, TrainingEvent } from '@/types';
 
 interface EventModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: EventFormData) => Promise<boolean>;
   initialDate?: string;
+  editEvent?: TrainingEvent; // si fourni → mode édition
 }
 
 const EVENT_TYPES: EventType[] = ['Run', 'Trail', 'Bike', 'Swim', 'Hike', 'Ultra', 'Other'];
@@ -19,10 +20,36 @@ const GOAL_TYPES: { value: GoalType; label: string }[] = [
 const inputCls = 'w-full bg-charcoal-light/50 border border-steel/50 rounded-lg px-3 py-2 text-mist text-sm focus:outline-none focus:border-amber/50 transition-colors';
 const labelCls = 'block font-mono text-[10px] uppercase tracking-widest text-mist/40 mb-1';
 
-export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalProps) {
-  const [form, setForm] = useState<EventFormData>({ name: '', date: initialDate ?? '', type: 'Trail' });
+function eventToForm(event: TrainingEvent): EventFormData {
+  return {
+    name: event.name,
+    date: event.date.slice(0, 10),
+    type: event.type,
+    distance_km: event.distance_km ?? undefined,
+    elevation_m: event.elevation_m ?? undefined,
+    location: event.location ?? undefined,
+    goal_type: event.goal_type ?? undefined,
+  };
+}
+
+export function EventModal({ open, onClose, onSubmit, initialDate, editEvent }: EventModalProps) {
+  const isEdit = !!editEvent;
+
+  const [form, setForm] = useState<EventFormData>(
+    editEvent ? eventToForm(editEvent) : { name: '', date: initialDate ?? '', type: 'Trail' }
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Resync form quand editEvent change (ex: on ouvre sur un event différent)
+  useEffect(() => {
+    if (editEvent) {
+      setForm(eventToForm(editEvent));
+    } else {
+      setForm({ name: '', date: initialDate ?? '', type: 'Trail' });
+    }
+    setError(null);
+  }, [editEvent, initialDate, open]);
 
   if (!open) return null;
 
@@ -40,7 +67,7 @@ export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalP
       setForm({ name: '', date: initialDate ?? '', type: 'Trail' });
       onClose();
     } else {
-      setError('Erreur lors de la création');
+      setError(isEdit ? 'Erreur lors de la modification' : 'Erreur lors de la création');
     }
   };
 
@@ -55,10 +82,15 @@ export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalP
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg bg-amber/10 border border-amber/30">
               <svg className="w-4 h-4 text-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+                {isEdit
+                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+                }
               </svg>
             </div>
-            <h2 className="font-heading font-semibold text-mist text-sm">Nouvel événement</h2>
+            <h2 className="font-heading font-semibold text-mist text-sm">
+              {isEdit ? 'Modifier l\'événement' : 'Nouvel événement'}
+            </h2>
           </div>
           <button onClick={onClose} className="text-mist/40 hover:text-mist transition-colors text-lg leading-none">×</button>
         </div>
@@ -113,7 +145,7 @@ export function EventModal({ open, onClose, onSubmit, initialDate }: EventModalP
               Annuler
             </button>
             <button type="submit" disabled={isSubmitting || !form.name || !form.date} className="flex-1 px-4 py-2 rounded-lg bg-amber text-charcoal text-sm font-semibold hover:bg-amber-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              {isSubmitting ? 'Création...' : 'Créer'}
+              {isSubmitting ? (isEdit ? 'Modification...' : 'Création...') : (isEdit ? 'Modifier' : 'Créer')}
             </button>
           </div>
         </form>
