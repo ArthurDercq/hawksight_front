@@ -442,7 +442,10 @@ export function ProfilePage() {
     setIsSyncing(true);
     setSyncDone(false);
     try {
-      await activitiesApi.syncAll();
+      await activitiesApi.triggerSync();
+      // Le job est en queue — useSyncStatus prend le relais via polling
+      // On notifie juste le dashboard pour qu'il rafraîchisse quand le job finit
+      window.dispatchEvent(new CustomEvent('activities-updated', { detail: { source: 'sync-trigger' } }));
       setSyncDone(true);
       setTimeout(() => setSyncDone(false), 3000);
     } catch (e) {
@@ -705,9 +708,15 @@ export function ProfilePage() {
                     <p className="font-mono text-lg font-bold text-mist tabular-nums">{profile.activities_count ?? '—'}</p>
                     <p className="text-[9px] font-mono text-steel uppercase tracking-wider mt-0.5">Activités</p>
                   </div>
-                  <div className="px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20 text-center">
+                  <div className="relative group px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20 text-center cursor-default">
                     <p className="font-mono text-lg font-bold text-glacier tabular-nums">{profile.features_count ?? '—'}</p>
                     <p className="text-[9px] font-mono text-steel uppercase tracking-wider mt-0.5">Analysées</p>
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 px-3 py-2 bg-[#0B0C10] border border-[#3A3F47]/50 rounded-lg text-left opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-card">
+                      <p className="text-[10px] font-mono text-mist/70 leading-relaxed">
+                        Activités avec données GPS complètes disponibles (vitesse, FC, altitude par seconde).
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiClient } from '@/services/api';
 import type { StravaSyncStatus } from '@/types';
 
@@ -18,40 +18,37 @@ export function useSyncStatus() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMounted = useRef(true);
 
+  const fetchStatus = useCallback(async () => {
+    try {
+      const [{ data: job }, { data: stravaStatus }] = await Promise.all([
+        apiClient.get<JobSyncStatus>('/sync/status'),
+        apiClient.get<StravaSyncStatus>('/auth/strava/sync-status'),
+      ]);
+      if (!isMounted.current) return;
+      setJobStatus(job);
+      setActivitiesCount(stravaStatus.activities_count);
+      setHasFetched(true);
+    } catch {
+      if (isMounted.current) setHasFetched(true);
+    }
+  }, []);
+
   useEffect(() => {
     isMounted.current = true;
-
-    const fetchStatus = async () => {
-      try {
-        // Fetch both in parallel
-        const [{ data: job }, { data: stravaStatus }] = await Promise.all([
-          apiClient.get<JobSyncStatus>('/sync/status'),
-          apiClient.get<StravaSyncStatus>('/auth/strava/sync-status'),
-        ]);
-        if (!isMounted.current) return;
-        setJobStatus(job);
-        setActivitiesCount(stravaStatus.activities_count);
-        setHasFetched(true);
-      } catch {
-        if (isMounted.current) setHasFetched(true);
-      }
-    };
 
     fetchStatus();
     intervalRef.current = setInterval(fetchStatus, POLL_INTERVAL);
 
+    // Relancer un fetch immédiat quand une sync est déclenchée manuellement
+    const onActivitiesUpdated = () => fetchStatus();
+    window.addEventListener('activities-updated', onActivitiesUpdated);
+
     return () => {
       isMounted.current = false;
       if (intervalRef.current) clearInterval(intervalRef.current);
+      window.removeEventListener('activities-updated', onActivitiesUpdated);
     };
-  }, []);
-
-  // Stop polling once sync is done and activities exist
-  useEffect(() => {
-    if (jobStatus && !jobStatus.is_syncing && activitiesCount !== null && activitiesCount > 0) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
-  }, [jobStatus, activitiesCount]);
+  }, [fetchStatus]);
 
   return { status: jobStatus, activitiesCount, hasFetched };
 }

@@ -92,6 +92,9 @@ export function OnboardingScreen({ status, hasData }: Props) {
   const isSyncing = status?.is_syncing ?? true;
   const hasError = status?.has_error ?? false;
   const jobProgress = status?.current_job?.progress ?? 0;
+  const isRateLimitPaused = isSyncing
+    && status?.current_job?.status === 'pending'
+    && jobProgress === 0;
 
   // Pendant le sync : monte progressivement jusqu'à 90% max (le vrai 100% = données présentes)
   // Sans job progress : animation indéterminée entre 10 et 60%
@@ -171,6 +174,8 @@ export function OnboardingScreen({ status, hasData }: Props) {
               <h2 className="font-heading font-bold text-lg text-mist">
                 {hasError
                   ? 'Une erreur est survenue'
+                  : isRateLimitPaused
+                  ? 'Pause Strava — reprise automatique'
                   : isSyncing
                   ? (JOB_MESSAGES[status?.current_job?.type ?? '']?.label ?? 'Import de tes activités Strava en cours…')
                   : hasData
@@ -181,6 +186,8 @@ export function OnboardingScreen({ status, hasData }: Props) {
             <p className="font-mono text-[11px] text-steel uppercase tracking-wider">
               {hasError
                 ? 'Contacte le support si le problème persiste'
+                : isRateLimitPaused
+                ? 'Limite API Strava atteinte — reprise dans ~15 min, cette page se met à jour automatiquement'
                 : isSyncing
                 ? (JOB_MESSAGES[status?.current_job?.type ?? '']?.sub ?? 'Première synchronisation — quelques minutes selon ton historique')
                 : hasData

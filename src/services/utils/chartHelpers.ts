@@ -1,6 +1,60 @@
 // ── Utilitaires partagés pour les graphiques SVG ────────────────────────────
 
 /**
+ * Largest-Triangle-Three-Buckets downsampling.
+ * Réduit un tableau à `threshold` points en préservant la forme visuelle.
+ * Seuil recommandé : 1000 points pour des charts Chart.js fluides.
+ */
+export function lttbDownsample<T>(
+  data: T[],
+  getValue: (item: T) => number,
+  threshold: number
+): T[] {
+  const n = data.length;
+  if (n <= threshold) return data;
+
+  const sampled: T[] = [data[0]];
+  const bucketSize = (n - 2) / (threshold - 2);
+  let a = 0;
+
+  for (let i = 0; i < threshold - 2; i++) {
+    const rangeStart = Math.floor((i + 1) * bucketSize) + 1;
+    const rangeEnd = Math.min(Math.floor((i + 2) * bucketSize) + 1, n - 1);
+
+    // Point moyen du bucket suivant (pour le calcul de l'aire)
+    let avgX = 0, avgY = 0, avgLen = 0;
+    for (let j = rangeStart; j < rangeEnd; j++) {
+      avgX += j;
+      avgY += getValue(data[j]);
+      avgLen++;
+    }
+    avgX /= avgLen;
+    avgY /= avgLen;
+
+    // Trouver le point du bucket courant qui forme le plus grand triangle
+    const bucketStart = Math.floor(i * bucketSize) + 1;
+    const bucketEnd = Math.min(Math.floor((i + 1) * bucketSize) + 1, n - 1);
+    const aY = getValue(data[a]);
+
+    let maxArea = -1;
+    let nextA = bucketStart;
+    for (let j = bucketStart; j < bucketEnd; j++) {
+      const area = Math.abs((a - avgX) * (getValue(data[j]) - aY) - (a - j) * (avgY - aY));
+      if (area > maxArea) {
+        maxArea = area;
+        nextA = j;
+      }
+    }
+
+    sampled.push(data[nextA]);
+    a = nextA;
+  }
+
+  sampled.push(data[n - 1]);
+  return sampled;
+}
+
+/**
  * Calcule des ticks "ronds" pour un axe Y.
  * Retourne `count` valeurs uniformément réparties entre min et max.
  */

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { BaseChart } from './BaseChart';
 import type { ActivityStream } from '@/types';
+import { lttbDownsample } from '@/services/utils/chartHelpers';
 
 interface ElevationChartProps {
   streams: ActivityStream[];
@@ -12,8 +13,9 @@ const COLORS = {
 
 export function ElevationChart({ streams }: ElevationChartProps) {
   const chartData = useMemo(() => {
-    const distances = streams.map((s) => (s.distance_m / 1000).toFixed(2));
-    const altitudes = streams.map((s) => s.altitude || 0);
+    const s = lttbDownsample(streams, s => s.altitude || 0, 1000);
+    const distances = s.map((s) => (s.distance_m / 1000).toFixed(2));
+    const altitudes = s.map((s) => s.altitude || 0);
 
     return {
       labels: distances,

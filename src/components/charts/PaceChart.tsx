@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { TooltipItem } from 'chart.js';
 import { BaseChart } from './BaseChart';
 import type { Activity, ActivityStream } from '@/types';
+import { lttbDownsample } from '@/services/utils/chartHelpers';
 
 interface PaceChartProps {
   activity: Activity;
@@ -14,8 +15,9 @@ const COLORS = {
 
 export function PaceChart({ activity, streams }: PaceChartProps) {
   const { chartData, hasData } = useMemo(() => {
-    const distances = streams.map((s) => (s.distance_m / 1000).toFixed(2));
-    const paces = streams.map((s) => {
+    const s = lttbDownsample(streams, s => s.velocity_smooth || 0, 1000);
+    const distances = s.map((s) => (s.distance_m / 1000).toFixed(2));
+    const paces = s.map((s) => {
       if (!s.velocity_smooth || s.velocity_smooth === 0) return null;
       const kmh = s.velocity_smooth * 3.6;
       return 60 / kmh; // min/km

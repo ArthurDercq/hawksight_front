@@ -69,17 +69,8 @@ export const activitiesApi = {
     });
   },
 
-  async syncActivities(): Promise<void> {
-    await apiClient.post('/activities/update_db');
-  },
-
-  async syncStreams(): Promise<void> {
-    await apiClient.post('/activities/update_streams', {}, { timeout: 30000 });
-  },
-
-  async syncAll(): Promise<void> {
-    await this.syncActivities();
-    await this.syncStreams();
-    invalidateActivities();
+  async triggerSync(): Promise<{ job_id: number }> {
+    const response = await apiClient.post<{ job_id: number }>('/sync/trigger');
+    return response.data;
   },
 };

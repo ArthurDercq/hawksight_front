@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { BaseChart } from './BaseChart';
 import type { ActivityStream } from '@/types';
+import { lttbDownsample } from '@/services/utils/chartHelpers';
 
 interface HeartrateChartProps {
   streams: ActivityStream[];
@@ -8,8 +9,9 @@ interface HeartrateChartProps {
 
 export function HeartrateChart({ streams }: HeartrateChartProps) {
   const { chartData, stats, hasData } = useMemo(() => {
-    const distances = streams.map((s) => (s.distance_m / 1000).toFixed(2));
-    const heartrates = streams.map((s) => s.heartrate || null);
+    const s = lttbDownsample(streams, s => s.heartrate || 0, 1000);
+    const distances = s.map((s) => (s.distance_m / 1000).toFixed(2));
+    const heartrates = s.map((s) => s.heartrate || null);
 
     const validHR = heartrates.filter((hr): hr is number => hr !== null);
     const hasValidData = validHR.length > 0;

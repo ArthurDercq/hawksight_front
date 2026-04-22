@@ -201,7 +201,7 @@ export function useDashboard(): UseDashboardReturn {
   const syncData = useCallback(async () => {
     setIsSyncing(true);
     try {
-      await activitiesApi.syncAll();
+      await activitiesApi.triggerSync();
       // syncAll() dispatch 'activities-updated' qui déclenche le refresh des graphiques
       // On force aussi le refresh des données du dashboard
       await fetchDashboardData(true);
