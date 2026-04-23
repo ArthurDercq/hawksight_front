@@ -1,8 +1,7 @@
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import explorationMapImg from '@/assets/exploration-map.png';
-import { motion, useMotionValue, useTransform, animate, MotionValue } from 'motion/react';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { useAuth } from '@/context';
-import { useEffect, useRef } from 'react';
 import { Logo } from '@/components/ui';
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -11,167 +10,175 @@ const ArrowRightIcon = () => (
     <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
   </svg>
 );
-const ElevationIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-  </svg>
-);
-const HeartIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-);
-const MountainIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m8 3 4 8 5-5 2 8" /><path d="M4 14l3-3 4 4 5-5 4 4" /><line x1="2" y1="21" x2="22" y2="21" />
-  </svg>
-);
 
-// ── GPS trace path (profil de montagne) ───────────────────────────────────────
-// Départ bas-gauche → montée douce → grand sommet centré → descente → petite bosse
-const GPS_PATH = "M -20 500 C 5 496, 17 492, 30 490 C 55 486, 67 478, 80 470 C 105 458, 117 448, 130 440 C 155 420, 167 410, 180 400 C 205 375, 217 362, 230 350 C 255 320, 267 305, 280 290 C 305 255, 317 237, 330 220 C 355 180, 367 160, 380 140 C 400 105, 410 87, 420 70 C 432 48, 441 34, 450 20 C 459 34, 468 48, 480 70 C 490 87, 500 105, 520 140 C 533 160, 545 180, 570 220 C 583 237, 595 255, 620 290 C 633 305, 645 320, 670 350 C 683 362, 695 375, 720 400 C 733 410, 745 420, 770 440 C 783 448, 795 458, 820 470 C 832 474, 841 462, 850 440 C 862 448, 871 454, 880 460 C 892 466, 901 478, 910 490";
+// ── Territory Hex Map ─────────────────────────────────────────────────────────
+type HexCell = { x: number; y: number };
 
-// ── Hex grid (réutilisé depuis Sidebar) ───────────────────────────────────────
-const HEX_ROWS: { y: number; xs: number[]; opacity: number }[] = [
-  { y: 520, xs: [80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 840], opacity: 0.28 },
-  { y: 486, xs: [60, 100, 140, 180, 220, 260, 300, 340, 380, 420, 460, 500, 540, 580, 620, 660, 700, 740, 780, 820], opacity: 0.22 },
-  { y: 452, xs: [80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 840], opacity: 0.17 },
-  { y: 418, xs: [60, 100, 140, 180, 220, 260, 300, 340, 380, 420, 460, 500, 540, 580, 620, 660, 700, 740, 780, 820], opacity: 0.13 },
-  { y: 384, xs: [80, 160, 240, 320, 400, 480, 560, 640, 720, 800], opacity: 0.09 },
-  { y: 350, xs: [120, 280, 440, 600, 760], opacity: 0.06 },
-  { y: 316, xs: [200, 440, 680], opacity: 0.04 },
+function buildHexGrid(cols: number, rows: number, size: number): HexCell[] {
+  const cells: HexCell[] = [];
+  const w = size * 2;
+  const h = Math.sqrt(3) * size;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x = col * w * 0.75 + size;
+      const y = row * h + (col % 2 === 1 ? h / 2 : 0) + size;
+      cells.push({ x, y });
+    }
+  }
+  return cells;
+}
+
+const EXPLORE_CENTERS = [
+  { x: 260, y: 155, r: 115, color: 'amber',   intensity: 1.0  },
+  { x: 430, y: 210, r: 85,  color: 'amber',   intensity: 0.72 },
+  { x: 340, y: 300, r: 65,  color: 'glacier', intensity: 0.6  },
 ];
 
-function HexBackground() {
+function hexExploreLevel(x: number, y: number): { color: string; fill: number } | null {
+  for (const c of EXPLORE_CENTERS) {
+    const d = Math.sqrt((x - c.x) ** 2 + (y - c.y) ** 2);
+    if (d < c.r) return { color: c.color, fill: (1 - d / c.r) * c.intensity };
+  }
+  return null;
+}
+
+function TerritoryHexMap() {
+  const cells = useMemo(() => buildHexGrid(18, 10, 26), []);
+  const ref = useRef<SVGSVGElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.2 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="xMidYMid slice" viewBox="0 0 900 540">
+    <svg ref={ref} viewBox="0 0 580 380" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
       <defs>
-        <polygon id="lp-hex" points="0,-20 17.3,-10 17.3,10 0,20 -17.3,10 -17.3,-10" />
+        <polygon id="th-hex" points="0,-26 22.5,-13 22.5,13 0,26 -22.5,13 -22.5,-13" />
+        <filter id="th-glow-a"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="th-glow-g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <radialGradient id="th-vignette" cx="50%" cy="50%" r="50%">
+          <stop offset="55%" stopColor="transparent"/>
+          <stop offset="100%" stopColor="#07080B"/>
+        </radialGradient>
       </defs>
-      {HEX_ROWS.map(({ y, xs, opacity }) =>
-        xs.map((x, i) => (
+      {cells.map((c, i) => {
+        const level = hexExploreLevel(c.x, c.y);
+        const isAmber   = level?.color === 'amber';
+        const isGlacier = level?.color === 'glacier';
+        const fill = level?.fill ?? 0;
+        return (
           <motion.use
-            key={`${x}-${y}`}
-            href="#lp-hex"
-            transform={`translate(${x},${y})`}
-            stroke={`rgba(232,131,42,${opacity})`}
-            strokeWidth="0.8"
-            fill="none"
+            key={i}
+            href="#th-hex"
+            transform={`translate(${c.x},${c.y})`}
+            fill={isAmber ? `rgba(232,131,42,${fill * 0.2})` : isGlacier ? `rgba(61,178,224,${fill * 0.16})` : 'none'}
+            stroke={isAmber ? `rgba(232,131,42,${0.25 + fill * 0.6})` : isGlacier ? `rgba(61,178,224,${0.2 + fill * 0.55})` : 'rgba(58,63,71,0.15)'}
+            strokeWidth={level ? 0.8 : 0.4}
+            filter={isAmber ? 'url(#th-glow-a)' : isGlacier ? 'url(#th-glow-g)' : undefined}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 0.05 * i + (540 - y) / 540 * 1.5 }}
+            animate={{ opacity: visible ? 1 : 0 }}
+            transition={{ duration: 0.5, delay: visible ? 0.02 * i : 0 }}
           />
-        ))
-      )}
+        );
+      })}
+      <rect width="580" height="380" fill="url(#th-vignette)" pointerEvents="none"/>
     </svg>
   );
 }
 
-// ── GPS Trace animée ───────────────────────────────────────────────────────────
-// Keypoints : montée douce → grand sommet → descente → petite bosse
-const PATH_POINTS = [
-  // montée douce (aile gauche)
-  { x: -20, y: 500 },
-  { x: 30,  y: 490 },
-  { x: 80,  y: 470 },
-  { x: 130, y: 440 },
-  { x: 180, y: 400 },
-  { x: 230, y: 350 },
-  { x: 280, y: 290 },
-  { x: 330, y: 220 },
-
-  // montée raide vers pic (signature)
-  { x: 380, y: 140 },
-  { x: 420, y: 70 },
-  { x: 450, y: 20 },   // sommet centré
-
-  // descente rapide (symétrie aile droite)
-  { x: 480, y: 70 },
-  { x: 520, y: 140 },
-  { x: 570, y: 220 },
-  { x: 620, y: 290 },
-  { x: 670, y: 350 },
-  { x: 720, y: 400 },
-
-  // retour baseline
-  { x: 770, y: 440 },
-  { x: 820, y: 470 },
-
-  // petite bosse finale
-  { x: 850, y: 440 },
-  { x: 880, y: 460 },
-  { x: 910, y: 490 },
-];
-
-function useDotPosition(pathLength: MotionValue<number>) {
-  const xs = PATH_POINTS.map(p => p.x);
-  const ys = PATH_POINTS.map(p => p.y);
-  const keys = PATH_POINTS.map((_, i) => i / (PATH_POINTS.length - 1));
-  const dotX = useTransform(pathLength, keys, xs);
-  const dotY = useTransform(pathLength, keys, ys);
-  return { dotX, dotY };
+// ── Contour Lines ─────────────────────────────────────────────────────────────
+function generateContours() {
+  const layers: { d: string; t: number; major: boolean }[] = [];
+  const count = 14;
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+    const radius = 200 + t * 620;
+    const cx = 900 + Math.sin(t * 1.8) * 30;
+    const cy = 420 + Math.cos(t * 1.3) * 18;
+    const pts: [number, number][] = [];
+    const N = 120;
+    for (let k = 0; k <= N; k++) {
+      const a = (k / N) * Math.PI * 2;
+      const r = radius
+        + Math.sin(a * 3 + i * 0.7 + 2.4) * (18 + t * 30)
+        + Math.sin(a * 5 - i * 0.4) * (10 + t * 14)
+        + Math.sin(a * 8 + i * 0.2) * (6 + t * 8)
+        + Math.sin(a * 2 - i * 0.9) * (24 + t * 20);
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.72]);
+    }
+    layers.push({
+      d: 'M ' + pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' L ') + ' Z',
+      t,
+      major: i % 4 === 0,
+    });
+  }
+  return layers;
 }
 
-function AnimatedTrace() {
-  const drawLength  = useMotionValue(0); // 0→1 : dessin orange
-  const eraseLength = useMotionValue(0); // 0→1 : effaceur qui grandit depuis le début
-  const drawOpacity = useMotionValue(1); // 1→0 : fade out du glow résiduel en fin d'effacement
-
-  const { dotX, dotY }         = useDotPosition(drawLength);
-  const { dotX: eX, dotY: eY } = useDotPosition(eraseLength);
-
-  const ref = useRef(false);
-
-  useEffect(() => {
-    if (ref.current) return;
-    ref.current = true;
-    // Phase 1 : dessin en 5s
-    animate(drawLength, 1, { duration: 5, ease: 'easeInOut' }).then(() => {
-      // Phase 2 : pause 0.4s puis effacement en 4s
-      setTimeout(() => {
-        animate(eraseLength, 1, { duration: 4, ease: 'easeInOut' });
-        // Fade out du glow résiduel sur la fin de l'effacement
-        animate(drawOpacity, 0, { duration: 4, ease: 'easeIn', delay: 2 });
-      }, 100);
-    });
-  }, [drawLength, eraseLength, drawOpacity]);
-
+function ContourLayer() {
+  const contours = useMemo(() => generateContours(), []);
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 900 540" preserveAspectRatio="xMidYMid slice">
+    <svg
+      viewBox="0 0 1800 900"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 w-full h-full pointer-events-none"
+    >
       <defs>
-        <filter id="lp-glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="lp-glow-strong">
-          <feGaussianBlur stdDeviation="8" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
+        <radialGradient id="topo-fade" cx="50%" cy="46%" r="70%">
+          <stop offset="0%" stopColor="#0B0C10" stopOpacity="0" />
+          <stop offset="55%" stopColor="#0B0C10" stopOpacity="0" />
+          <stop offset="100%" stopColor="#0B0C10" stopOpacity="0.95" />
+        </radialGradient>
+        <mask id="topo-mask">
+          <rect width="1800" height="900" fill="white" />
+          <rect width="1800" height="900" fill="url(#topo-fade)" />
+        </mask>
       </defs>
-
-      {/* ── Trait orange complet (base) ── */}
-      <motion.path d={GPS_PATH} stroke="#E8832A" strokeWidth="8"   fill="none" strokeLinecap="round" style={{ pathLength: drawLength, opacity: useTransform(drawOpacity, v => v * 0.12) }} filter="url(#lp-glow-strong)" />
-      <motion.path d={GPS_PATH} stroke="#E8832A" strokeWidth="1.5" fill="none" strokeLinecap="round" style={{ pathLength: drawLength, opacity: drawOpacity }} filter="url(#lp-glow)" />
-
-      {/* ── Trait effaceur : même path, couleur bg, grandit depuis le début ── */}
-      <motion.path d={GPS_PATH} stroke="#0B0C10" strokeWidth="40"  fill="none" strokeLinecap="round" style={{ pathLength: eraseLength }} />
-      <motion.path d={GPS_PATH} stroke="#0B0C10" strokeWidth="20"  fill="none" strokeLinecap="round" style={{ pathLength: eraseLength }} />
-
-      {/* ── Dot dessin (visible pendant phase 1) ── */}
-      <motion.circle r="7"   fill="#E8832A" opacity={0.3} filter="url(#lp-glow-strong)" style={{ x: dotX, y: dotY }} />
-      <motion.circle r="4"   fill="#E8832A" filter="url(#lp-glow)" style={{ x: dotX, y: dotY }} />
-      <motion.circle r="1.8" fill="#fff"    style={{ x: dotX, y: dotY }} />
-
-      {/* ── Dot effacement (visible pendant phase 2, suit l'effaceur) ── */}
-      <motion.circle r="7"   fill="#E8832A" opacity={0.3} filter="url(#lp-glow-strong)" style={{ x: eX, y: eY }} />
-      <motion.circle r="4"   fill="#E8832A" filter="url(#lp-glow)" style={{ x: eX, y: eY }} />
-      <motion.circle r="1.8" fill="#fff"    style={{ x: eX, y: eY }} />
+      <g mask="url(#topo-mask)" style={{ mixBlendMode: 'screen' }}>
+        {contours.map((c, i) => (
+          <path
+            key={i}
+            d={c.d}
+            fill="none"
+            stroke={
+              c.major
+                ? `rgba(232,131,42,${0.12 + c.t * 0.55})`
+                : `rgba(140,155,175,${0.08 + c.t * 0.22})`
+            }
+            strokeWidth={c.major ? 0.9 : 0.5}
+            style={{
+              opacity: 0,
+              animation: `topoFade 1.2s ${0.03 * i + 0.2}s ease-out forwards`,
+            }}
+          />
+        ))}
+      </g>
+      {/* Summit crosshair */}
+      <g transform="translate(900,420)" style={{ opacity: 0, animation: 'topoFade 0.8s 2.2s ease-out forwards' }}>
+        <circle r="3" fill="#E8832A" />
+        <circle r="14" fill="none" stroke="#E8832A" strokeWidth="0.8" opacity="0.6" />
+        <circle r="28" fill="none" stroke="#E8832A" strokeWidth="0.5" opacity="0.3" />
+        <line x1="-42" y1="0" x2="-18" y2="0" stroke="#E8832A" strokeWidth="0.8" opacity="0.7" />
+        <line x1="18" y1="0" x2="42" y2="0" stroke="#E8832A" strokeWidth="0.8" opacity="0.7" />
+        <line x1="0" y1="-42" x2="0" y2="-18" stroke="#E8832A" strokeWidth="0.8" opacity="0.7" />
+        <line x1="0" y1="18" x2="0" y2="42" stroke="#E8832A" strokeWidth="0.8" opacity="0.7" />
+      </g>
+      <style>{`
+        @keyframes topoFade {
+          from { opacity: 0; stroke-dasharray: 0 2400; }
+          to   { opacity: 1; stroke-dasharray: 2400 0; }
+        }
+      `}</style>
     </svg>
   );
 }
 
 // ── Radar Chart ───────────────────────────────────────────────────────────────
-// 5 axes : Endurance(78) Dénivelé(85) Régularité(62) Vitesse(71) Technicité(90)
 const RADAR_AXES = [
   { label: 'Endurance',   score: 0.78, elite: 0.88 },
   { label: 'Dénivelé',    score: 0.85, elite: 0.82 },
@@ -180,7 +187,7 @@ const RADAR_AXES = [
   { label: 'Technicité',  score: 0.90, elite: 0.85 },
 ];
 const N = RADAR_AXES.length;
-const CX = 160, CY = 160, R = 120;
+const CX = 200, CY = 200, R = 108;
 
 function radarPoint(i: number, r: number): [number, number] {
   const angle = (Math.PI * 2 * i) / N - Math.PI / 2;
@@ -212,7 +219,6 @@ function RadarChart() {
     return () => obs.disconnect();
   }, [progress]);
 
-  // Polygone animé via useTransform
   const playerPoly = useTransform(progress, v =>
     radarPolygon(RADAR_AXES.map(a => a.score * v))
   );
@@ -223,7 +229,7 @@ function RadarChart() {
   const rings = [0.25, 0.5, 0.75, 1];
 
   return (
-    <svg ref={ref} width="320" height="320" viewBox="0 0 320 320">
+    <svg ref={ref} width="400" height="400" viewBox="0 0 400 400">
       <defs>
         <filter id="radar-glow">
           <feGaussianBlur stdDeviation="4" result="b"/>
@@ -235,47 +241,21 @@ function RadarChart() {
         </filter>
       </defs>
 
-      {/* Anneaux de référence */}
       {rings.map(r => (
         <polygon key={r}
           points={radarPolygon(Array(N).fill(r))}
           fill="none" stroke="rgba(58,63,71,0.35)" strokeWidth={r === 1 ? 0.8 : 0.5}
         />
       ))}
-
-      {/* Axes */}
       {RADAR_AXES.map((_, i) => {
         const [x, y] = radarPoint(i, R);
         return <line key={i} x1={CX} y1={CY} x2={x} y2={y} stroke="rgba(58,63,71,0.4)" strokeWidth="0.6" />;
       })}
 
-      {/* Polygone élite (pointillés glacier) */}
-      <motion.polygon
-        points={elitePoly as unknown as string}
-        fill="rgba(61,178,224,0.04)"
-        stroke="rgba(61,178,224,0.35)"
-        strokeWidth="1"
-        strokeDasharray="3 3"
-      />
+      <motion.polygon points={elitePoly as unknown as string} fill="rgba(61,178,224,0.04)" stroke="rgba(61,178,224,0.35)" strokeWidth="1" strokeDasharray="3 3" />
+      <motion.polygon points={playerPoly as unknown as string} fill="rgba(61,178,224,0.12)" stroke="rgba(61,178,224,0)" strokeWidth="0" filter="url(#radar-glow-soft)" />
+      <motion.polygon points={playerPoly as unknown as string} fill="rgba(61,178,224,0.10)" stroke="rgba(61,178,224,0.9)" strokeWidth="1.5" filter="url(#radar-glow)" />
 
-      {/* Polygone joueur — glow fort */}
-      <motion.polygon
-        points={playerPoly as unknown as string}
-        fill="rgba(61,178,224,0.12)"
-        stroke="rgba(61,178,224,0)"
-        strokeWidth="0"
-        filter="url(#radar-glow-soft)"
-      />
-      {/* Polygone joueur — contour net */}
-      <motion.polygon
-        points={playerPoly as unknown as string}
-        fill="rgba(61,178,224,0.10)"
-        stroke="rgba(61,178,224,0.9)"
-        strokeWidth="1.5"
-        filter="url(#radar-glow)"
-      />
-
-      {/* Points sur les sommets */}
       {RADAR_AXES.map((a, i) => {
         const [x, y] = radarPoint(i, a.score * R);
         return (
@@ -286,28 +266,18 @@ function RadarChart() {
           </g>
         );
       })}
-
-      {/* Labels axes */}
       {RADAR_AXES.map((a, i) => {
         const [x, y] = radarPoint(i, R + 22);
         const anchor = x < CX - 5 ? 'end' : x > CX + 5 ? 'start' : 'middle';
         return (
-          <text key={i} x={x} y={y + 4} textAnchor={anchor}
-            fontSize="8" fontFamily="'JetBrains Mono', monospace" fill="rgba(242,242,242,0.45)"
-            letterSpacing="1.5"
-          >
+          <text key={i} x={x} y={y + 4} textAnchor={anchor} fontSize="8" fontFamily="'JetBrains Mono', monospace" fill="rgba(242,242,242,0.45)" letterSpacing="1.5">
             {a.label.toUpperCase()}
           </text>
         );
       })}
 
-      {/* Score central */}
-      <text x={CX} y={CY - 6} textAnchor="middle" fontSize="22" fontFamily="Poppins, sans-serif" fontWeight="700" fill="#3DB2E0">
-        79
-      </text>
-      <text x={CX} y={CY + 10} textAnchor="middle" fontSize="7" fontFamily="'JetBrains Mono', monospace" fill="rgba(61,178,224,0.5)" letterSpacing="2">
-        SCORE
-      </text>
+      <text x={CX} y={CY - 6} textAnchor="middle" fontSize="22" fontFamily="Poppins, sans-serif" fontWeight="700" fill="#3DB2E0">79</text>
+      <text x={CX} y={CY + 10} textAnchor="middle" fontSize="7" fontFamily="'JetBrains Mono', monospace" fill="rgba(61,178,224,0.5)" letterSpacing="2">SCORE</text>
     </svg>
   );
 }
@@ -321,327 +291,301 @@ export function HomePage() {
   return (
     <div className="bg-charcoal text-mist min-h-screen">
 
-      {/* ── Minimal header ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-charcoal/80 backdrop-blur-sm border-b border-steel/20">
+      {/* ── Header ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-2.5">
           <Logo size={26} />
           <span className="font-mono text-sm font-bold text-mist tracking-[1px]">HAWKSIGHT</span>
         </div>
-        <button onClick={handleCTA} className="hw-btn-amber py-1.5 px-4 text-xs">
-          {isAuthenticated ? 'Dashboard' : 'Connexion'} <ArrowRightIcon />
+        <button onClick={handleCTA} className="hw-btn-amber px-6 py-3.5 text-sm" style={{ color: '#F2F2F2', background: 'rgba(242,242,242,0.05)', borderColor: 'rgba(242,242,242,0.2)' }}>
+          Connexion <ArrowRightIcon />
         </button>
       </header>
 
       {/* ── HERO ── */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Hex grid background */}
-        <HexBackground />
+        <ContourLayer />
 
-        {/* GPS trace */}
-        <AnimatedTrace />
-
-        {/* Gradient vignette */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, #0B0C10 80%)' }} />
+        {/* Vignette */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 35%, #0B0C10 92%)' }} />
         <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none" style={{ background: 'linear-gradient(to top, #0B0C10, transparent)' }} />
+
+        {/* Corner brackets — top only, amber */}
+        <span className="hw-br hw-br-tl hw-br-amber" style={{ opacity: 0, animation: 'fadeIn 0.8s 0.3s ease-out forwards' }} />
+        <span className="hw-br hw-br-tr hw-br-amber" style={{ opacity: 0, animation: 'fadeIn 0.8s 0.3s ease-out forwards' }} />
 
         {/* Content */}
         <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-          {/* Eyebrow */}
           <motion.div
-            className="inline-flex items-center gap-2 mb-8 px-3 py-1.5 bg-amber/10 border border-amber/30 rounded-full"
+            className="inline-flex items-center gap-2.5 mb-10 px-3.5 py-1.5 bg-amber/10 border border-amber/30 rounded-full"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
-            <span className="font-mono text-[10px] text-amber uppercase tracking-[2px]">Trail Analytics</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-amber" style={{ boxShadow: '0 0 10px #E8832A' }} />
+            <span className="font-mono text-[10px] text-amber uppercase tracking-[3px]">Live · Trail Intelligence</span>
           </motion.div>
 
           <motion.h1
-            className="font-heading font-bold text-5xl md:text-7xl text-mist mb-6 tracking-tight leading-none"
+            className="font-heading font-bold text-5xl md:text-7xl text-mist mb-4 tracking-tight leading-none"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             Maîtrise<br />
-            <span className="text-amber">ton terrain.</span>
+            <span className="text-amber font-normal italic tracking-normal">ton terrain.</span>
           </motion.h1>
 
-          <motion.p
-            className="font-mono text-[13px] text-steel uppercase tracking-[3px] mb-12"
+          <motion.div
+            className="flex items-center justify-center gap-5 mb-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
+            transition={{ duration: 0.8, delay: 0.55 }}
           >
-            Analyse · Territoire · Performance
-          </motion.p>
+            <span className="h-px w-14" style={{ background: 'linear-gradient(90deg, transparent, #E8832A)' }} />
+            <span className="font-mono text-[10px] text-steel uppercase tracking-[3px]">Analyse · Territoire · Performance</span>
+            <span className="h-px w-14" style={{ background: 'linear-gradient(90deg, #E8832A, transparent)' }} />
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
+            transition={{ duration: 0.6, delay: 0.75 }}
+            className="flex items-center justify-center gap-5"
           >
-            <button
-              onClick={handleCTA}
-              className="hw-btn-amber px-10 py-3.5 text-sm"
-            >
-              {isAuthenticated ? 'Accéder au Dashboard' : 'Commencer'}
+            <button onClick={handleCTA} className="hw-btn-amber px-10 py-3.5 text-sm">
+              {isAuthenticated ? 'Accéder au Dashboard' : 'Accéder au terrain'}
               <ArrowRightIcon />
             </button>
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <div className="w-px h-12 bg-gradient-to-b from-transparent via-amber/60 to-transparent" />
-          <div className="w-1 h-1 rounded-full bg-amber/60" />
-        </motion.div>
-      </section>
-
-      {/* ── Section 1 — La Conquête ── */}
-      <section className="relative py-32 px-6">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-
-          {/* Visual */}
+        {/* Bottom HUD readouts */}
+        <div className="absolute bottom-8 left-12 right-12 flex items-end justify-between pointer-events-none">
           <motion.div
-            className="relative"
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
+            className="flex gap-10"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.0 }}
           >
-            <div className="hw-card-dark-lg p-0 overflow-hidden">
-              <span className="hw-br hw-br-tl hw-br-amber" />
-              <span className="hw-br hw-br-tr hw-br-amber" />
-              <span className="hw-br hw-br-bl hw-br-amber-dark" />
-              <span className="hw-br hw-br-br hw-br-amber-dark" />
-
-              <img
-                src={explorationMapImg}
-                alt="Coverage Map"
-                className="w-full aspect-square object-cover opacity-70"
-              />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, #0B0C10 10%, transparent 50%)' }} />
-
-              {/* Glow zones */}
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute rounded-full blur-2xl" style={{ width: '45%', height: '40%', top: '20%', left: '15%', background: 'radial-gradient(circle, rgba(232,131,42,0.35) 0%, transparent 70%)' }} />
-                <div className="absolute rounded-full blur-xl" style={{ width: '30%', height: '30%', top: '35%', left: '50%', background: 'radial-gradient(circle, rgba(232,131,42,0.25) 0%, transparent 70%)' }} />
-                <div className="absolute rounded-full blur-2xl" style={{ width: '35%', height: '30%', top: '55%', left: '25%', background: 'radial-gradient(circle, rgba(61,178,224,0.18) 0%, transparent 70%)' }} />
-                <div className="absolute rounded-full blur-xl" style={{ width: '20%', height: '20%', top: '10%', left: '60%', background: 'radial-gradient(circle, rgba(232,131,42,0.20) 0%, transparent 70%)' }} />
-                <div className="absolute rounded-full blur-3xl" style={{ width: '50%', height: '45%', top: '30%', left: '30%', background: 'radial-gradient(circle, rgba(232,131,42,0.10) 0%, transparent 70%)' }} />
+            {[
+              { label: 'LAT', value: '14.8097°N' },
+              { label: 'LON', value: '61.1681°W' },
+              { label: 'ELEV', value: '1 397 m' },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px] mb-1">{label}</p>
+                <p className="font-mono text-[13px] text-mist/80 font-medium tracking-wide">{value}</p>
               </div>
-
-              {/* Stats overlay */}
-              <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
-                <div className="bg-charcoal/90 backdrop-blur-sm border border-amber/30 rounded-lg px-4 py-3">
-                  <p className="font-mono text-[8px] text-steel uppercase tracking-[2px] mb-1">Couverture</p>
-                  <p className="font-heading text-3xl font-bold text-amber tabular-nums">8%</p>
-                </div>
-                <div className="bg-charcoal/90 backdrop-blur-sm border border-glacier/30 rounded-lg px-4 py-3">
-                  <p className="font-mono text-[8px] text-steel uppercase tracking-[2px] mb-1">Surface</p>
-                  <p className="font-heading text-3xl font-bold text-glacier tabular-nums">847 km²</p>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -inset-6 bg-amber/5 rounded-3xl blur-3xl -z-10 pointer-events-none" />
+            ))}
           </motion.div>
 
-          {/* Text */}
           <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-col items-center gap-2 absolute left-1/2 -translate-x-1/2 bottom-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber/10 border border-amber/30 rounded-full">
-              <span className="font-mono text-[10px] text-amber uppercase tracking-[2px]">La Conquête</span>
-            </div>
+            <p className="font-mono text-[8px] text-mist/50 uppercase tracking-[3px] mb-1">Scroll pour explorer</p>
+            <svg width="14" height="22" viewBox="0 0 14 22">
+              <rect x="1" y="1" width="12" height="20" rx="6" fill="none" stroke="rgba(242,242,242,0.3)" strokeWidth="1" />
+              <circle cx="7" cy="7" r="1.5" fill="#E8832A">
+                <animate attributeName="cy" values="7;14;7" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1;0.2;1" dur="2s" repeatCount="indefinite" />
+              </circle>
+            </svg>
+          </motion.div>
 
-            <h2 className="font-heading font-bold text-4xl md:text-5xl text-mist leading-tight">
-              Chaque sortie élargit<br />ton empreinte.
-            </h2>
-
-            <p className="font-mono text-[11px] text-steel leading-relaxed tracking-wide">
-              Suis ton taux de couverture.<br />
-              Observe ton expansion territoire par territoire.
-            </p>
-
-            <div className="hw-grad-sep" />
-
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber" />
-              <span className="font-mono text-[10px] text-steel uppercase tracking-[2px]">Cartographie hexagonale H3</span>
-            </div>
+          <motion.div
+            className="flex gap-10"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.1 }}
+          >
+            {[
+              { label: 'BEARING', value: 'N 12°' },
+              { label: 'H3 CELL', value: '8a2e44' },
+              { label: 'STATUS', value: 'TRACKING', amber: true },
+            ].map(({ label, value, amber }) => (
+              <div key={label}>
+                <p className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px] mb-1">{label}</p>
+                <p className={`font-mono text-[13px] font-medium tracking-wide ${amber ? 'text-amber' : 'text-mist/80'}`}>{value}</p>
+              </div>
+            ))}
           </motion.div>
         </div>
+
+        <motion.div
+          className="absolute left-12 top-1/2 font-mono text-[8px] text-mist/40 uppercase tracking-[4px] whitespace-nowrap pointer-events-none"
+          style={{ transform: 'translateY(-50%) rotate(-90deg)', transformOrigin: 'left center' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1.5 }}
+        >
+          v2.4 · BUILD 2026.04 · PRECISION MODE
+        </motion.div>
+
+        <style>{`
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        `}</style>
       </section>
 
-      {/* ── Section 2 — La Stratégie ── */}
-      <section className="relative py-32 px-6">
-        {/* Subtle separator */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-32 bg-gradient-to-b from-transparent via-steel/30 to-transparent pointer-events-none" />
+      {/* ── Bande transition ── */}
+      <motion.div
+        className="relative mt-16 px-12 py-5 border-y border-steel/10 overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 1.8 }}
+      >
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(232,131,42,0.04) 30%, rgba(61,178,224,0.03) 70%, transparent)' }} />
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
+          {/* Ligne gauche */}
+          <div className="flex items-center gap-8">
+            {[
+              { label: 'Distance totale', value: '1 842', unit: 'km' },
+              { label: 'Dénivelé cumulé', value: '68 000', unit: 'm D+' },
+              { label: 'Sorties analysées', value: '147', unit: '' },
+            ].map(({ label, value, unit }) => (
+              <div key={label} className="flex flex-col gap-0.5 whitespace-nowrap">
+                <span className="font-mono text-[8px] text-steel/60 uppercase tracking-[2px]">{label}</span>
+                <span className="font-mono text-[12px] text-mist/70 font-medium tabular-nums">
+                  {value}{unit && <span className="font-mono text-[9px] text-steel/50 ml-1">{unit}</span>}
+                </span>
+              </div>
+            ))}
+          </div>
 
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+          {/* Centre — séparateur gradient */}
+          <div className="flex items-center gap-4 shrink-0">
+            <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, transparent, #E8832A)' }} />
+            <span className="font-mono text-[8px] text-steel/50 uppercase tracking-[3px]">Données terrain</span>
+            <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #3DB2E0, transparent)' }} />
+          </div>
 
-          {/* Text */}
+          {/* Ligne droite */}
+          <div className="flex items-center gap-8">
+            {[
+              { label: 'Zones couvertes', value: '847 km²', amber: false },
+              { label: 'Couverture', value: '8%', amber: false },
+              { label: 'Statut', value: 'ACTIF', amber: true },
+            ].map(({ label, value, amber }) => (
+              <div key={label} className="flex flex-col gap-0.5 whitespace-nowrap">
+                <span className="font-mono text-[8px] text-steel/60 uppercase tracking-[2px]">{label}</span>
+                <span className={`font-mono text-[12px] font-medium tabular-nums ${amber ? 'text-amber/70' : 'text-mist/70'}`}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── Section Territoire ── */}
+      <section className="relative py-24 px-6 overflow-hidden">
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+
+          {/* Texte gauche */}
           <motion.div
-            className="space-y-8 order-2 md:order-1"
-            initial={{ opacity: 0, x: -40 }}
+            className="space-y-8"
+            initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-glacier/10 border border-glacier/30 rounded-full">
-              <span className="font-mono text-[10px] text-glacier uppercase tracking-[2px]">La Stratégie</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber/10 border border-amber/30 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
+              <span className="font-mono text-[10px] text-amber uppercase tracking-[2px]">Territoire</span>
             </div>
 
             <h2 className="font-heading font-bold text-4xl md:text-5xl text-mist leading-tight">
-              Analyse avancée,<br />sans compromis.
+              Chaque sortie<br />
+              <span className="text-amber font-normal italic">trace ton empire.</span>
             </h2>
 
-            <div className="flex flex-col gap-4">
+            <p className="font-mono text-[11px] text-steel/70 leading-relaxed tracking-wide max-w-sm">
+              HawkSight cartographie chaque kilomètre couru en cellules hexagonales H3. Au fil des sorties, ton territoire se construit — visible, mesurable, expansible.
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4">
               {[
-                { icon: <ElevationIcon />, label: 'Profil dénivelé & VAP', color: '#E8832A' },
-                { icon: <HeartIcon />, label: 'Efficacité cardiaque', color: '#3DB2E0' },
-                { icon: <MountainIcon />, label: 'Analyse montées / descentes', color: '#6DAA75' },
-              ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  className="flex items-center gap-4"
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 * i }}
-                >
-                  <div className="p-2.5 rounded-lg border shrink-0" style={{ backgroundColor: `${item.color}15`, borderColor: `${item.color}30`, color: item.color }}>
-                    {item.icon}
-                  </div>
-                  <span className="font-mono text-[11px] text-mist/70 uppercase tracking-[1.5px]">{item.label}</span>
-                </motion.div>
+                { label: 'Sorties', value: '147', color: 'text-amber', br: 'amber' },
+                { label: 'Couverture', value: '8%', color: 'text-amber', br: 'amber' },
+                { label: 'Surface', value: '847 km²', color: 'text-glacier', br: 'glacier' },
+              ].map(({ label, value, color, br }) => (
+                <div key={label} className="hw-card-dark relative p-3">
+                  <span className={`hw-br hw-br-tl hw-br-${br}`} />
+                  <span className={`hw-br hw-br-br hw-br-${br}`} />
+                  <p className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px] mb-1.5">{label}</p>
+                  <p className={`font-heading text-xl font-bold tabular-nums ${color}`}>{value}</p>
+                </div>
               ))}
+            </div>
+
+            {/* Barre de progression conquête */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px]">Niveau de conquête</span>
+                <span className="font-mono text-[8px] text-amber uppercase tracking-[2px]">Traileur Confirmé</span>
+              </div>
+              <div className="h-1 bg-steel/10 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: 'linear-gradient(90deg, #E8832A, #C96A1A)' }}
+                  initial={{ width: 0 }}
+                  whileInView={{ width: '62%' }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.4, delay: 0.3, ease: 'easeOut' }}
+                />
+              </div>
+              <div className="flex justify-between">
+                {['Explorateur', 'Confirmé', 'Territoire Libre', 'Légende'].map((s, i) => (
+                  <span key={s} className={`font-mono text-[7px] uppercase tracking-[1px] ${i <= 1 ? 'text-amber/60' : 'text-steel/30'}`}>{s}</span>
+                ))}
+              </div>
             </div>
           </motion.div>
 
-          {/* Visual */}
+          {/* Hex map droite */}
           <motion.div
-            className="relative order-1 md:order-2"
-            initial={{ opacity: 0, x: 40 }}
+            className="relative"
+            initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <div className="hw-card-dark-lg p-0 overflow-hidden" style={{ background: '#07080B' }}>
-              <span className="hw-br hw-br-tl hw-br-glacier" />
-              <span className="hw-br hw-br-tr hw-br-glacier" />
-              <span className="hw-br hw-br-bl hw-br-glacier-dim" />
-              <span className="hw-br hw-br-br hw-br-glacier-dim" />
+            <div className="hw-card-dark-lg p-0 overflow-hidden aspect-[3/2]" style={{ background: '#05060A' }}>
+              <span className="hw-br hw-br-tl hw-br-amber" />
+              <span className="hw-br hw-br-tr hw-br-amber" />
+              <span className="hw-br hw-br-bl" />
+              <span className="hw-br hw-br-br" />
 
-              {/* ── Dashboard HUD ── */}
-              <div className="p-5 flex flex-col gap-3">
+              <TerritoryHexMap />
 
-                {/* Header HUD */}
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-[8px] text-steel uppercase tracking-[2px]">Trail · Grand Ballon</span>
-                  <span className="font-mono text-[8px] text-glacier/60 uppercase tracking-[1px]">14 Apr 2026</span>
-                </div>
-
-                {/* Stats row */}
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { label: 'Distance', value: '28.4', unit: 'km',  color: 'text-amber' },
-                    { label: 'D+',       value: '1 247', unit: 'm',  color: 'text-glacier' },
-                    { label: 'Temps',    value: '4:12',  unit: 'h',  color: 'text-mist' },
-                    { label: 'FC Moy',   value: '142',   unit: 'bpm',color: 'text-moss' },
-                  ].map(({ label, value, unit, color }) => (
-                    <div key={label} className="bg-charcoal/60 border border-steel/20 rounded-md p-2">
-                      <p className="font-mono text-[7px] text-steel/60 uppercase tracking-[1px] mb-0.5">{label}</p>
-                      <p className={`font-heading text-base font-bold tabular-nums leading-none ${color}`}>{value}<span className="font-mono text-[7px] text-steel/50 ml-0.5">{unit}</span></p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Elevation chart SVG */}
-                <div className="bg-charcoal/40 border border-steel/15 rounded-md p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-[7px] text-steel uppercase tracking-[2px]">Profil Dénivelé</span>
-                    <span className="font-mono text-[7px] text-amber/60">+1247m / -1198m</span>
-                  </div>
-                  <svg width="100%" height="64" viewBox="0 0 320 64" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="elev-grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#E8832A" stopOpacity="0.4"/>
-                        <stop offset="100%" stopColor="#E8832A" stopOpacity="0.02"/>
-                      </linearGradient>
-                      <filter id="elev-glow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                    </defs>
-                    <path d="M0 60 C20 58,35 52,50 44 C65 36,75 28,90 18 C100 11,108 6,118 4 C128 2,132 8,142 14 C152 20,158 26,170 32 C182 38,190 42,202 36 C214 30,220 20,232 12 C242 5,248 2,256 4 C264 6,270 14,280 22 C290 30,298 40,310 50 L320 56 L320 64 L0 64 Z"
-                      fill="url(#elev-grad)" />
-                    <path d="M0 60 C20 58,35 52,50 44 C65 36,75 28,90 18 C100 11,108 6,118 4 C128 2,132 8,142 14 C152 20,158 26,170 32 C182 38,190 42,202 36 C214 30,220 20,232 12 C242 5,248 2,256 4 C264 6,270 14,280 22 C290 30,298 40,310 50 L320 56"
-                      fill="none" stroke="#E8832A" strokeWidth="1.2" strokeLinecap="round" filter="url(#elev-glow)" />
-                  </svg>
-                </div>
-
-                {/* HR zones bar */}
-                <div className="bg-charcoal/40 border border-steel/15 rounded-md p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-[7px] text-steel uppercase tracking-[2px]">Zones FC</span>
-                    <span className="font-mono text-[7px] text-glacier/60">2h34 en Z3-Z4</span>
-                  </div>
-                  <div className="flex gap-0.5 h-3 rounded-sm overflow-hidden">
-                    {[
-                      { w: '8%',  color: '#6DAA75' },
-                      { w: '14%', color: '#3DB2E0' },
-                      { w: '28%', color: '#E8832A' },
-                      { w: '32%', color: '#E8832A', opacity: 0.6 },
-                      { w: '18%', color: '#fc8181' },
-                    ].map((z, i) => (
-                      <div key={i} className="h-full rounded-sm" style={{ width: z.w, background: z.color, opacity: z.opacity ?? 1 }} />
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    {['Z1','Z2','Z3','Z4','Z5'].map(z => (
-                      <span key={z} className="font-mono text-[6px] text-steel/40">{z}</span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Pace line */}
-                <div className="bg-charcoal/40 border border-steel/15 rounded-md p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-[7px] text-steel uppercase tracking-[2px]">Allure</span>
-                    <span className="font-mono text-[7px] text-moss/60">Moy 8'54''/km</span>
-                  </div>
-                  <svg width="100%" height="36" viewBox="0 0 320 36" preserveAspectRatio="none">
-                    <defs>
-                      <filter id="pace-glow"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                    </defs>
-                    <path d="M0 20 C15 18,25 14,40 16 C55 18,60 24,75 20 C90 16,95 10,110 12 C125 14,130 22,145 18 C160 14,165 8,180 10 C195 12,200 20,215 24 C230 28,235 22,250 18 C265 14,275 16,290 20 C300 23,308 26,320 24"
-                      fill="none" stroke="#6DAA75" strokeWidth="1.2" strokeLinecap="round" filter="url(#pace-glow)" />
-                  </svg>
-                </div>
+              {/* Overlay info badges */}
+              <div className="hw-card-dark absolute top-4 right-4 px-3 py-2">
+                <span className="hw-br hw-br-tl hw-br-amber" />
+                <span className="hw-br hw-br-br hw-br-amber" />
+                <p className="font-mono text-[7px] text-steel/50 uppercase tracking-[2px] mb-0.5">Dernière sortie</p>
+                <p className="font-mono text-[11px] text-amber font-medium">+12 cellules</p>
+              </div>
+              <div className="hw-card-dark absolute bottom-4 left-4 px-3 py-2">
+                <span className="hw-br hw-br-tl hw-br-glacier" />
+                <span className="hw-br hw-br-br hw-br-glacier" />
+                <p className="font-mono text-[7px] text-steel/50 uppercase tracking-[2px] mb-0.5">Zone glacier</p>
+                <p className="font-mono text-[11px] text-glacier font-medium">Nouveau massif</p>
               </div>
             </div>
-            <div className="absolute -inset-6 bg-glacier/5 rounded-3xl blur-3xl -z-10 pointer-events-none" />
+            <div className="absolute -inset-4 bg-amber/5 rounded-3xl blur-3xl -z-10 pointer-events-none" />
           </motion.div>
         </div>
       </section>
 
       {/* ── Section Profil Trailer ── */}
       <section className="relative py-32 px-6 overflow-hidden">
-        {/* Séparateur top */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-32 bg-gradient-to-b from-transparent via-steel/30 to-transparent pointer-events-none" />
-        {/* Glow ambiant centré */}
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(61,178,224,0.04) 0%, transparent 60%)' }} />
 
         <div className="max-w-7xl mx-auto">
-
-          {/* Header centré */}
           <motion.div
             className="text-center mb-20"
             initial={{ opacity: 0, y: 20 }}
@@ -662,10 +606,7 @@ export function HomePage() {
             </p>
           </motion.div>
 
-          {/* Layout : axes à gauche, radar au centre, axes à droite */}
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center">
-
-            {/* Axes gauche */}
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center">
             <motion.div
               className="flex flex-col gap-8"
               initial={{ opacity: 0, x: -30 }}
@@ -674,9 +615,9 @@ export function HomePage() {
               transition={{ duration: 0.7, delay: 0.2 }}
             >
               {[
-                { label: 'Endurance', score: 78, color: '#E8832A', desc: 'Capacité à maintenir l\'effort sur la durée. Calculée sur tes sorties longues et le maintien de la FC.' },
+                { label: 'Endurance', score: 78, color: '#E8832A', desc: "Capacité à maintenir l'effort sur la durée. Calculée sur tes sorties longues et le maintien de la FC." },
                 { label: 'Dénivelé', score: 85, color: '#3DB2E0', desc: 'Efficacité en montée et descente. Ratio VAP / vitesse à plat et gestion des descentes techniques.' },
-                { label: 'Régularité', score: 62, color: '#6DAA75', desc: 'Constance de l\'effort et de l\'allure. Écart-type de pace et gestion des relances après ravito.' },
+                { label: 'Régularité', score: 62, color: '#6DAA75', desc: "Constance de l'effort et de l'allure. Écart-type de pace et gestion des relances après ravito." },
               ].map(({ label, score, color, desc }, i) => (
                 <div key={label} className="text-right">
                   <div className="flex items-center justify-end gap-3 mb-1.5">
@@ -687,8 +628,7 @@ export function HomePage() {
                     <div className="w-1 h-10 rounded-full shrink-0" style={{ background: `linear-gradient(to bottom, ${color}, ${color}40)` }} />
                   </div>
                   <p className="font-mono text-[9px] text-steel/60 leading-relaxed max-w-xs ml-auto">{desc}</p>
-                  {/* Barre de score */}
-                  <div className="mt-2 h-0.5 bg-steel/10 rounded-full overflow-hidden">
+                  <div className="mt-2 h-px bg-steel/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
                       style={{ background: color }}
@@ -702,7 +642,6 @@ export function HomePage() {
               ))}
             </motion.div>
 
-            {/* Radar SVG central */}
             <motion.div
               className="relative"
               initial={{ opacity: 0, scale: 0.85 }}
@@ -713,7 +652,6 @@ export function HomePage() {
               <RadarChart />
             </motion.div>
 
-            {/* Axes droite */}
             <motion.div
               className="flex flex-col gap-8"
               initial={{ opacity: 0, x: 30 }}
@@ -734,7 +672,7 @@ export function HomePage() {
                     </div>
                   </div>
                   <p className="font-mono text-[9px] text-steel/60 leading-relaxed max-w-xs">{desc}</p>
-                  <div className="mt-2 h-0.5 bg-steel/10 rounded-full overflow-hidden">
+                  <div className="mt-2 h-px bg-steel/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
                       style={{ background: color }}
@@ -749,7 +687,6 @@ export function HomePage() {
             </motion.div>
           </div>
 
-          {/* Baseline */}
           <motion.div
             className="text-center mt-16 flex flex-col items-center gap-3"
             initial={{ opacity: 0 }}
@@ -763,7 +700,6 @@ export function HomePage() {
             </div>
             <p className="font-mono text-[9px] text-steel/40 uppercase tracking-[1px]">Calculé sur 147 sorties · 1 842 km · 68 000 m D+</p>
           </motion.div>
-
         </div>
       </section>
 
@@ -799,6 +735,40 @@ export function HomePage() {
           </div>
         </motion.div>
       </section>
+
+      {/* ── Footer ── */}
+      <footer className="relative border-t border-steel/10 px-12 py-6 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(232,131,42,0.03) 40%, rgba(61,178,224,0.02) 60%, transparent)' }} />
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
+
+          {/* Gauche — logo */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Logo size={20} />
+            <span className="font-mono text-[11px] font-bold text-mist/60 tracking-[2px]">HAWKSIGHT</span>
+          </div>
+
+          {/* Centre — liens + copyright */}
+          <div className="flex items-center gap-8">
+            {['Plateforme', 'Analytics', 'Territoire', 'Contact'].map(link => (
+              <a key={link} href="#" className="font-mono text-[9px] text-steel/50 uppercase tracking-[2px] hover:text-mist/60 transition-colors">
+                {link}
+              </a>
+            ))}
+            <span className="w-px h-3 bg-steel/20" />
+            <span className="font-mono text-[9px] text-steel/30 tracking-[1px]">© 2026 HawkSight</span>
+          </div>
+
+          {/* Droite — statut système */}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="font-mono text-[9px] text-steel/40 uppercase tracking-[2px]">System</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" style={{ boxShadow: '0 0 6px #E8832A' }} />
+              <span className="font-mono text-[9px] text-amber/70 uppercase tracking-[2px]">Online</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 }
