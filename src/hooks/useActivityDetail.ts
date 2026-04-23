@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { activitiesApi, explorationApi } from '@/services/api';
-import type { Activity, ActivityStream, ActivityExplorationRate, TrailStats } from '@/types';
+import type { Activity, ActivityStream, ActivityExplorationRate, TrailStats, ActivityRecord } from '@/types';
 
 interface UseActivityDetailReturn {
   activity: Activity | null;
@@ -8,6 +8,7 @@ interface UseActivityDetailReturn {
   explorationRate: ActivityExplorationRate | null;
   trailStats: TrailStats | null;
   race: { id: string; name: string; type: string } | null;
+  records: ActivityRecord[];
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -19,6 +20,7 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
   const [explorationRate, setExplorationRate] = useState<ActivityExplorationRate | null>(null);
   const [trailStats, setTrailStats] = useState<TrailStats | null>(null);
   const [race, setRace] = useState<{ id: string; name: string; type: string } | null>(null);
+  const [records, setRecords] = useState<ActivityRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +42,7 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
       setStreams(data.streams || []);
       setTrailStats(data.trail_stats ?? null);
       setRace(data.race ?? null);
+      setRecords(data.records ?? []);
       setExplorationRate(expRate);
     } catch (err) {
       console.error('Error fetching activity detail:', err);
@@ -59,6 +62,7 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
     explorationRate,
     trailStats,
     race,
+    records,
     isLoading,
     error,
     refetch: fetchActivityDetail,

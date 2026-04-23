@@ -11,7 +11,7 @@ import {
   HeartRateProfileChart,
 } from '@/components/charts';
 import { eventsApi } from '@/services/api';
-import type { ActivityFormData, TrainingEvent } from '@/types';
+import type { ActivityFormData, TrainingEvent, ActivityRecord } from '@/types';
 import { sportColor, sportLabel } from '@/services/utils/constants';
 import { formatDateLong } from '@/services/utils/formatters';
 
@@ -40,6 +40,55 @@ const ExplorationIcon = () => (
 
 const isTrail = (sport: string) => sport === 'Trail';
 
+// ── Records card ─────────────────────────────────────────────────────────────
+const RECORD_LABELS: Record<string, string> = {
+  '5k': '5 km', '10k': '10 km', 'semi': 'Semi', '30k': '30 km',
+  'marathon': 'Marathon', '50k': '50 km', '75k': '75 km', 'longest': 'Plus longue',
+  'climb_5min': 'D+ 5min', 'climb_30min': 'D+ 30min', 'climb_60min': 'D+ 60min',
+  'descent_5min': 'D- 5min', 'descent_30min': 'D- 30min',
+  'kv_1000m': 'KV 1000m', 'longest_climb': 'Montée continue',
+  'max_dplus_activity': 'Max D+', 'best_dplus_ratio': 'Meilleur ratio D+', 'best_week_dplus': 'Meilleure semaine D+',
+};
+
+const TrophyIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="18" width="12" height="4" />
+  </svg>
+);
+
+function RecordsCard({ records }: { records: ActivityRecord[] }) {
+  return (
+    <div className="hw-card-dark-lg mb-8">
+      <div className="flex items-center gap-3 pb-3 border-b border-steel/25 mb-4">
+        <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 shrink-0">
+          <TrophyIcon />
+        </div>
+        <div>
+          <div className="text-sm font-semibold text-mist">Records personnels</div>
+          <div className="font-mono text-[10px] text-steel mt-0.5">{records.length} record{records.length > 1 ? 's' : ''} détenu{records.length > 1 ? 's' : ''} sur cette activité</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {records.map(r => (
+          <div key={r.id} className="bg-steel/10 border border-steel/20 rounded-lg px-3 py-2.5">
+            <div className="font-mono text-[9px] text-steel uppercase tracking-[1.5px] mb-1">
+              {RECORD_LABELS[r.distance_key] ?? r.distance_key}
+            </div>
+            <div className="text-base font-bold font-mono tabular-nums text-amber-400">
+              {r.time_formatted ?? r.value_formatted ?? r.value}
+            </div>
+            {r.pace_formatted && (
+              <div className="font-mono text-[9px] text-steel mt-0.5">{r.pace_formatted} /km</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Shared chart card className
 const chartCard = 'hw-card-dark-lg';
 
@@ -56,7 +105,7 @@ function BackLink() {
 export function ActivityDetailPage() {
   const { id } = useParams();
   const activityId = id ? parseInt(id, 10) : null;
-  const { activity, streams, explorationRate, trailStats, race, isLoading, error, refetch } = useActivityDetail(activityId);
+  const { activity, streams, explorationRate, trailStats, race, records, isLoading, error, refetch } = useActivityDetail(activityId);
   const { updateActivity } = useActivities();
   const posterRef = useRef<HTMLDivElement>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -293,6 +342,9 @@ export function ActivityDetailPage() {
           <p className="font-mono text-xs text-steel">Pas de données de streams pour cette activité</p>
         </div>
       )}
+
+      {/* ── Records ── */}
+      {records.length > 0 && <RecordsCard records={records} />}
 
       {showEditModal && (
         <ActivityModal activity={activity} onClose={() => setShowEditModal(false)} onSave={handleSaveEdit} />

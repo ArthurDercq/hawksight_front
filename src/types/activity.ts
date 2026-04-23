@@ -87,11 +87,32 @@ export interface ActivityStream {
   temp?: number;
 }
 
+export interface ActivityRecord {
+  id: number;
+  distance_key: string;
+  record_type: string;
+  metric_type: string;
+  value: number;
+  unit: string;
+  activity_distance_km: number | null;
+  date: string | null;
+  activity_id: number;
+  activity_name: string;
+  activity_url: string;
+  start_km: number | null;
+  end_km: number | null;
+  is_excluded: boolean;
+  time_formatted?: string;
+  pace_formatted?: string | null;
+  value_formatted?: string;
+}
+
 export interface ActivityDetail {
   activity: Activity;
   streams: ActivityStream[];
   trail_stats?: TrailStats | null;
   race?: { id: string; name: string; type: string } | null;
+  records: ActivityRecord[];
 }
 
 export interface LastActivity {
