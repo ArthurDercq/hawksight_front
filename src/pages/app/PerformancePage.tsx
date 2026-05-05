@@ -378,7 +378,7 @@ export function PerformancePage() {
               </div>
             ) : error ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="text-red-400 text-sm">{error}</p>
+                <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">{error}</p>
               </div>
             ) : filteredActivities.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
@@ -518,20 +518,20 @@ export function PerformancePage() {
           {analysisStatus === 'error' && (
             <div className="hw-card-dark p-8">
               <div className="flex flex-col items-center gap-4">
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" strokeWidth="2">
+                <div className="p-4 bg-steel/5 border border-steel/20 rounded-lg">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="1.5">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-red-400 font-medium">Erreur lors de l'analyse</p>
-                  <p className="text-steel text-sm mt-1">{analysisError || 'Une erreur inattendue s\'est produite'}</p>
+                  <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">Erreur lors de l'analyse</p>
+                  <p className="text-steel/40 text-xs font-mono mt-1">{analysisError || 'Une erreur inattendue s\'est produite'}</p>
                 </div>
                 <button
                   onClick={handleLaunchAnalysis}
-                  className="px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm hover:bg-red-500/20 transition-colors"
+                  className="px-4 py-2 bg-steel/10 border border-steel/20 text-steel/60 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-steel/40 transition-colors"
                 >
                   Réessayer
                 </button>

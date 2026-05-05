@@ -217,8 +217,11 @@ function TrailProfileCard() {
 
         {/* Error */}
         {error && !isLoading && (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
-            <p className="text-red-400 text-xs font-mono">{error}</p>
+          <div className="mb-4 px-3 py-2 rounded-lg bg-steel/5 border border-steel/20 flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <p className="text-steel/60 text-[10px] font-mono uppercase tracking-wider">{error}</p>
           </div>
         )}
 
@@ -467,8 +470,13 @@ export function ProfilePage() {
   if (error || !profile) {
     return (
       <div className="max-w-7xl mx-auto px-6">
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 text-center">
-          <p className="text-red-400 font-mono text-sm">{error || 'Impossible de charger le profil'}</p>
+        <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">{error || 'Impossible de charger le profil'}</p>
         </div>
       </div>
     );

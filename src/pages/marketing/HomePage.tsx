@@ -2,7 +2,6 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { useAuth } from '@/context';
-import { Logo } from '@/components/ui';
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 const ArrowRightIcon = () => (
@@ -289,18 +288,7 @@ export function HomePage() {
   const handleCTA = () => navigate(isAuthenticated ? '/dashboard' : '/login');
 
   return (
-    <div className="bg-charcoal text-mist min-h-screen">
-
-      {/* ── Header ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5">
-        <div className="flex items-center gap-2.5">
-          <Logo size={26} />
-          <span className="font-mono text-sm font-bold text-mist tracking-[1px]">HAWKSIGHT</span>
-        </div>
-        <button onClick={handleCTA} className="hw-btn-amber px-6 py-3.5 text-sm" style={{ color: '#F2F2F2', background: 'rgba(242,242,242,0.05)', borderColor: 'rgba(242,242,242,0.2)' }}>
-          Connexion <ArrowRightIcon />
-        </button>
-      </header>
+    <div className="min-h-screen">
 
       {/* ── HERO ── */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
@@ -543,6 +531,16 @@ export function HomePage() {
                 ))}
               </div>
             </div>
+
+            <a
+              href="/terrain"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-amber/30 bg-amber/5 hover:bg-amber/10 hover:border-amber/50 transition-all"
+            >
+              <span className="font-mono text-[10px] text-amber uppercase tracking-[2px]">Explorer le terrain</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8832A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
+            </a>
           </motion.div>
 
           {/* Hex map droite */}
@@ -579,6 +577,8 @@ export function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── Section Terrain → page dédiée /terrain ── */}
 
       {/* ── Section Profil Trailer ── */}
       <section className="relative py-32 px-6 overflow-hidden">
@@ -699,6 +699,15 @@ export function HomePage() {
               <div className="flex items-center gap-2"><div className="w-6 h-px border-t border-dashed border-steel/40" /><span>Référence élite</span></div>
             </div>
             <p className="font-mono text-[9px] text-steel/40 uppercase tracking-[1px]">Calculé sur 147 sorties · 1 842 km · 68 000 m D+</p>
+            <a
+              href="/methode"
+              className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full border border-glacier/30 bg-glacier/5 hover:bg-glacier/10 hover:border-glacier/50 transition-all"
+            >
+              <span className="font-mono text-[10px] text-glacier uppercase tracking-[2px]">Découvrir la méthode</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
+            </a>
           </motion.div>
         </div>
       </section>
@@ -735,39 +744,6 @@ export function HomePage() {
           </div>
         </motion.div>
       </section>
-
-      {/* ── Footer ── */}
-      <footer className="relative border-t border-steel/10 px-12 py-6 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(232,131,42,0.03) 40%, rgba(61,178,224,0.02) 60%, transparent)' }} />
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
-
-          {/* Gauche — logo */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Logo size={20} />
-            <span className="font-mono text-[11px] font-bold text-mist/60 tracking-[2px]">HAWKSIGHT</span>
-          </div>
-
-          {/* Centre — liens + copyright */}
-          <div className="flex items-center gap-8">
-            {['Plateforme', 'Analytics', 'Territoire', 'Contact'].map(link => (
-              <a key={link} href="#" className="font-mono text-[9px] text-steel/50 uppercase tracking-[2px] hover:text-mist/60 transition-colors">
-                {link}
-              </a>
-            ))}
-            <span className="w-px h-3 bg-steel/20" />
-            <span className="font-mono text-[9px] text-steel/30 tracking-[1px]">© 2026 HawkSight</span>
-          </div>
-
-          {/* Droite — statut système */}
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="font-mono text-[9px] text-steel/40 uppercase tracking-[2px]">System</span>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" style={{ boxShadow: '0 0 6px #E8832A' }} />
-              <span className="font-mono text-[9px] text-amber/70 uppercase tracking-[2px]">Online</span>
-            </div>
-          </div>
-        </div>
-      </footer>
 
     </div>
   );

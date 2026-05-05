@@ -37,8 +37,13 @@ export function PageStateWrapper({
         <div className="mb-8">
           <SectionTitle icon={icon} title={title} />
         </div>
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6 text-center">
-          <p className="text-red-400">{error}</p>
+        <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">{error}</p>
         </div>
       </div>
     );

@@ -38,7 +38,7 @@ export function ExplorationPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6">
         <SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" />
         <div className="flex items-center justify-center py-24">
           <Spinner message="Chargement de la carte..." />
@@ -49,17 +49,24 @@ export function ExplorationPage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" />
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6 text-center">
-          <p className="text-red-400 font-mono text-xs">{error}</p>
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="mb-8">
+          <SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" />
+        </div>
+        <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col gap-6">
+    <div className="max-w-7xl mx-auto px-6 flex flex-col gap-6">
 
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

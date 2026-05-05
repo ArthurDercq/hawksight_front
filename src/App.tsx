@@ -1,151 +1,60 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { AuthProvider, useAuth } from '@/context';
-import { Sidebar, Footer } from '@/components/layout';
+import { AuthProvider } from '@/context';
+import { Sidebar, Footer, AppHeader } from '@/components/layout';
 import { Spinner } from '@/components/ui/Spinner';
+import { MarketingLayout } from '@/layouts/MarketingLayout';
+import { RequireAuth, RequireOnboarding } from '@/router/guards';
 
-const HomePage = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
-const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+// ── Marketing pages ────────────────────────────────────────────────────────────
+const HomePage       = lazy(() => import('@/pages/marketing/HomePage').then(m => ({ default: m.HomePage })));
+const TerrainPage    = lazy(() => import('@/pages/marketing/TerrainPage').then(m => ({ default: m.TerrainPage })));
+const PlateformePage = lazy(() => import('@/pages/marketing/PlateformePage').then(m => ({ default: m.PlateformePage })));
+const AnalyticsPage  = lazy(() => import('@/pages/marketing/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
+const MethodePage    = lazy(() => import('@/pages/marketing/MethodePage').then(m => ({ default: m.MethodePage })));
+
+// ── Auth / misc public pages ───────────────────────────────────────────────────
+const LoginPage        = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage').then(m => ({ default: m.AuthCallbackPage })));
-const InviteOnlyPage = lazy(() => import('@/pages/InviteOnlyPage').then(m => ({ default: m.InviteOnlyPage })));
-const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
-const ActivitiesPage = lazy(() => import('@/pages/ActivitiesPage').then(m => ({ default: m.ActivitiesPage })));
-const ActivityDetailPage = lazy(() => import('@/pages/ActivityDetailPage').then(m => ({ default: m.ActivityDetailPage })));
-const KPIPage = lazy(() => import('@/pages/KPIPage').then(m => ({ default: m.KPIPage })));
-const CalendarPage = lazy(() => import('@/pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
-const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
-const PerformancePage = lazy(() => import('@/pages/PerformancePage').then(m => ({ default: m.PerformancePage })));
-const ExplorationPage = lazy(() => import('@/pages/ExplorationPage').then(m => ({ default: m.ExplorationPage })));
+const InviteOnlyPage   = lazy(() => import('@/pages/InviteOnlyPage').then(m => ({ default: m.InviteOnlyPage })));
 
+// ── App pages ──────────────────────────────────────────────────────────────────
+const DashboardPage     = lazy(() => import('@/pages/app/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const ActivitiesPage    = lazy(() => import('@/pages/app/ActivitiesPage').then(m => ({ default: m.ActivitiesPage })));
+const ActivityDetailPage = lazy(() => import('@/pages/app/ActivityDetailPage').then(m => ({ default: m.ActivityDetailPage })));
+const KPIPage           = lazy(() => import('@/pages/app/KPIPage').then(m => ({ default: m.KPIPage })));
+const CalendarPage      = lazy(() => import('@/pages/app/CalendarPage').then(m => ({ default: m.CalendarPage })));
+const ProfilePage       = lazy(() => import('@/pages/app/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const PerformancePage   = lazy(() => import('@/pages/app/PerformancePage').then(m => ({ default: m.PerformancePage })));
+const ExplorationPage   = lazy(() => import('@/pages/app/ExplorationPage').then(m => ({ default: m.ExplorationPage })));
+
+// ── Misc ───────────────────────────────────────────────────────────────────────
 function StravaInviteRedirect() {
   const [searchParams] = useSearchParams();
   const invite = searchParams.get('invite');
   return <Navigate to={invite ? `/login?invite=${invite}` : '/login'} replace />;
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center">
-        <Spinner message="Chargement..." />
-      </div>
-    );
-  }
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-}
-
-function AppRoutes() {
-  return (
-    <Suspense fallback={<Spinner />}>
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      <Route path="/auth/strava/login" element={<StravaInviteRedirect />} />
-      <Route path="/invite-only" element={<InviteOnlyPage />} />
-
-      {/* Protected routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/activities"
-        element={
-          <ProtectedRoute>
-            <ActivitiesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/activity/:id"
-        element={
-          <ProtectedRoute>
-            <ActivityDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/kpi"
-        element={
-          <ProtectedRoute>
-            <KPIPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/calendar"
-        element={
-          <ProtectedRoute>
-            <CalendarPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/performance"
-        element={
-          <ProtectedRoute>
-            <PerformancePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/exploration"
-        element={
-          <ProtectedRoute>
-            <ExplorationPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-    </Suspense>
-  );
-}
-
-function AppLayout() {
-  const { pathname } = useLocation();
-  const isLanding = pathname === '/';
-  const isPublicFullscreen = ['/login', '/auth/callback', '/auth/strava/login', '/invite-only'].includes(pathname);
-
-  if (isLanding) {
-    return <AppRoutes />;
-  }
-
-  if (isPublicFullscreen) {
-    return (
-      <div className="min-h-screen bg-charcoal text-mist font-body">
-        <AppRoutes />
-      </div>
-    );
-  }
-
-  // Authenticated app layout: fixed sidebar + scrollable main
+function AppShell() {
   return (
     <div className="min-h-screen bg-charcoal text-mist font-body flex">
       <Sidebar />
-      {/* Offset for fixed sidebar */}
       <div className="ml-[196px] flex flex-col flex-1 min-h-screen">
+        <AppHeader />
         <main className="flex-1 px-6 py-6">
-          <AppRoutes />
+          <Suspense fallback={<Spinner />}>
+            <Routes>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard"    element={<DashboardPage />} />
+              <Route path="activities"   element={<ActivitiesPage />} />
+              <Route path="activity/:id" element={<ActivityDetailPage />} />
+              <Route path="kpi"          element={<KPIPage />} />
+              <Route path="calendar"     element={<CalendarPage />} />
+              <Route path="profile"      element={<ProfilePage />} />
+              <Route path="performance"  element={<PerformancePage />} />
+              <Route path="exploration"  element={<ExplorationPage />} />
+            </Routes>
+          </Suspense>
         </main>
         <Footer />
       </div>
@@ -157,7 +66,36 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppLayout />
+        <Suspense fallback={<Spinner />}>
+          <Routes>
+
+            {/* ── Marketing — navbar + footer vitrine ── */}
+            <Route element={<MarketingLayout />}>
+              <Route path="/"            element={<HomePage />} />
+              <Route path="/terrain"     element={<TerrainPage />} />
+              <Route path="/plateforme"  element={<PlateformePage />} />
+              <Route path="/analytics"   element={<AnalyticsPage />} />
+              <Route path="/methode"     element={<MethodePage />} />
+            </Route>
+
+            {/* ── Auth / public fullscreen ── */}
+            <Route path="/login"              element={<div className="min-h-screen bg-charcoal text-mist font-body"><LoginPage /></div>} />
+            <Route path="/auth/callback"      element={<div className="min-h-screen bg-charcoal text-mist font-body"><AuthCallbackPage /></div>} />
+            <Route path="/auth/strava/login"  element={<StravaInviteRedirect />} />
+            <Route path="/invite-only"        element={<div className="min-h-screen bg-charcoal text-mist font-body"><InviteOnlyPage /></div>} />
+
+            {/* ── App SaaS — auth requis ── */}
+            <Route element={<RequireAuth />}>
+              <Route element={<RequireOnboarding />}>
+                <Route path="/*" element={<AppShell />} />
+              </Route>
+            </Route>
+
+            {/* ── Fallback ── */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

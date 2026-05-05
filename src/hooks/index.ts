@@ -13,3 +13,5 @@ export { useInView } from './useInView';
 export { useEvents } from './useEvents';
 export { useTrailProfile } from './useTrailProfile';
 export { useTerritories } from './useTerritories';
+export { useSyncStatus } from './useSyncStatus';
+export type { JobSyncStatus } from './useSyncStatus';

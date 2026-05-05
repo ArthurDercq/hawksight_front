@@ -1,10 +1,21 @@
-export { HomePage } from './HomePage';
-export { LoginPage } from './LoginPage';
-export { DashboardPage } from './DashboardPage';
-export { ActivitiesPage } from './ActivitiesPage';
-export { ActivityDetailPage } from './ActivityDetailPage';
-export { KPIPage } from './KPIPage';
-export { CalendarPage } from './CalendarPage';
-export { ProfilePage } from './ProfilePage';
-export { PerformancePage } from './PerformancePage';
-export { ExplorationPage } from './ExplorationPage';
+// Marketing
+export { HomePage }       from './marketing/HomePage';
+export { TerrainPage }    from './marketing/TerrainPage';
+export { PlateformePage } from './marketing/PlateformePage';
+export { AnalyticsPage }  from './marketing/AnalyticsPage';
+export { MethodePage }    from './marketing/MethodePage';
+
+// App
+export { DashboardPage }      from './app/DashboardPage';
+export { ActivitiesPage }     from './app/ActivitiesPage';
+export { ActivityDetailPage } from './app/ActivityDetailPage';
+export { KPIPage }            from './app/KPIPage';
+export { CalendarPage }       from './app/CalendarPage';
+export { ProfilePage }        from './app/ProfilePage';
+export { PerformancePage }    from './app/PerformancePage';
+export { ExplorationPage }    from './app/ExplorationPage';
+
+// Auth / misc
+export { LoginPage }        from './LoginPage';
+export { AuthCallbackPage } from './AuthCallbackPage';
+export { InviteOnlyPage }   from './InviteOnlyPage';
