@@ -15,6 +15,7 @@ const MethodePage    = lazy(() => import('@/pages/marketing/MethodePage').then(m
 
 // ── Auth / misc public pages ───────────────────────────────────────────────────
 const LoginPage        = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage     = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage').then(m => ({ default: m.AuthCallbackPage })));
 const InviteOnlyPage   = lazy(() => import('@/pages/InviteOnlyPage').then(m => ({ default: m.InviteOnlyPage })));
 
@@ -80,6 +81,7 @@ export default function App() {
 
             {/* ── Auth / public fullscreen ── */}
             <Route path="/login"              element={<div className="min-h-screen bg-charcoal text-mist font-body"><LoginPage /></div>} />
+            <Route path="/register"           element={<div className="min-h-screen bg-charcoal text-mist font-body"><RegisterPage /></div>} />
             <Route path="/auth/callback"      element={<div className="min-h-screen bg-charcoal text-mist font-body"><AuthCallbackPage /></div>} />
             <Route path="/auth/strava/login"  element={<StravaInviteRedirect />} />
             <Route path="/invite-only"        element={<div className="min-h-screen bg-charcoal text-mist font-body"><InviteOnlyPage /></div>} />

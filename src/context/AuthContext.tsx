@@ -7,7 +7,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   currentUser: CurrentUser | null;
-  loginWithStravaCode: (code: string) => Promise<true | 403 | string>;
+  loginWithStravaCode: (code: string) => Promise<true | 403 | 'register' | string>;
+  loginWithCredentials: (identifier: string, password: string) => Promise<true | 401 | string>;
+  registerWithOnboarding: (onboardingToken: string, username: string, email: string, password: string) => Promise<true | string>;
   logout: () => void;
 }
 
@@ -25,11 +27,26 @@ function isTokenExpired(token: string): boolean {
 function decodeUser(token: string): CurrentUser | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    if (!payload.sub || !payload.role) return null;
-    return { sub: String(payload.sub), role: payload.role, username: payload.username };
+    if (!payload.sub) return null;
+    return {
+      sub: String(payload.sub),
+      role: payload.role ?? 'user',
+      username: payload.username ?? '',
+    };
   } catch {
     return null;
   }
+}
+
+function handleApiError(error: unknown): string {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const axiosError = error as { response?: { status?: number; data?: { detail?: string } } };
+    const detail = axiosError.response?.data?.detail;
+    if (detail) return detail;
+    if (axiosError.response?.status && axiosError.response.status >= 500) return 'Erreur serveur, réessaie dans un moment';
+  }
+  if (error instanceof Error && error.message === 'Network Error') return 'Impossible de contacter le serveur';
+  return 'Une erreur est survenue';
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -37,7 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Validate and restore token on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('eyesight_token');
     if (storedToken && !isTokenExpired(storedToken)) {
@@ -49,27 +65,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const loginWithStravaCode = useCallback(async (code: string): Promise<true | 403 | string> => {
+  const _persistToken = useCallback((access_token: string) => {
+    localStorage.setItem('eyesight_token', access_token);
+    setToken(access_token);
+    setCurrentUser(decodeUser(access_token));
+  }, []);
+
+  const loginWithStravaCode = useCallback(async (code: string): Promise<true | 403 | 'register' | string> => {
     try {
       const { access_token } = await authApi.exchangeStravaCode(code);
-      localStorage.setItem('eyesight_token', access_token);
-      setToken(access_token);
-      setCurrentUser(decodeUser(access_token));
+      const payload = JSON.parse(atob(access_token.split('.')[1]));
+      // Token onboarding (nouvel user) — pas de role complet, redirect vers register
+      if (payload.type === 'onboarding') {
+        return 'register';
+      }
+      _persistToken(access_token);
       return true;
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number } };
         if (axiosError.response?.status === 403) return 403;
-        if (axiosError.response?.status && axiosError.response.status >= 500) {
-          return 'Erreur serveur, veuillez réessayer';
-        }
       }
-      if (error instanceof Error && error.message === 'Network Error') {
-        return 'Impossible de contacter le serveur';
-      }
-      return 'Erreur de connexion';
+      return handleApiError(error);
     }
-  }, []);
+  }, [_persistToken]);
+
+  const loginWithCredentials = useCallback(async (identifier: string, password: string): Promise<true | 401 | string> => {
+    try {
+      const { access_token } = await authApi.login(identifier, password);
+      _persistToken(access_token);
+      return true;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 401) return 401;
+      }
+      return handleApiError(error);
+    }
+  }, [_persistToken]);
+
+  const registerWithOnboarding = useCallback(async (
+    onboardingToken: string,
+    username: string,
+    email: string,
+    password: string,
+  ): Promise<true | string> => {
+    try {
+      const { access_token } = await authApi.register(onboardingToken, username, email, password);
+      _persistToken(access_token);
+      return true;
+    } catch (error: unknown) {
+      return handleApiError(error);
+    }
+  }, [_persistToken]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('eyesight_token');
@@ -86,6 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         currentUser,
         loginWithStravaCode,
+        loginWithCredentials,
+        registerWithOnboarding,
         logout,
       }}
     >

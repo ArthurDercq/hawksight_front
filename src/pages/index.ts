@@ -17,5 +17,6 @@ export { ExplorationPage }    from './app/ExplorationPage';
 
 // Auth / misc
 export { LoginPage }        from './LoginPage';
+export { RegisterPage }     from './RegisterPage';
 export { AuthCallbackPage } from './AuthCallbackPage';
 export { InviteOnlyPage }   from './InviteOnlyPage';

@@ -17,4 +17,20 @@ export const authApi = {
     );
     return response.data;
   },
+
+  async login(identifier: string, password: string): Promise<AuthToken> {
+    const response = await axios.post<AuthToken>(
+      `${ENV.API_BASE_URL}/auth/login`,
+      { identifier, password }
+    );
+    return response.data;
+  },
+
+  async register(onboarding_token: string, username: string, email: string, password: string): Promise<AuthToken> {
+    const response = await axios.post<AuthToken>(
+      `${ENV.API_BASE_URL}/auth/register`,
+      { onboarding_token, username, email, password }
+    );
+    return response.data;
+  },
 };

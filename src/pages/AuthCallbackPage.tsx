@@ -35,6 +35,9 @@ export function AuthCallbackPage() {
     loginWithStravaCode(code).then(result => {
       if (result === true) {
         navigate('/dashboard', { replace: true });
+      } else if (result === 'register') {
+        // Nouvel utilisateur — le code onboarding est dans l'URL, on le passe à /register
+        navigate(`/register?code=${encodeURIComponent(code)}`, { replace: true });
       } else if (result === 403) {
         navigate('/invite-only', { replace: true });
       } else {
