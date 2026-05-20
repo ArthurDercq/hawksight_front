@@ -185,7 +185,7 @@ export function RunWalkScatter({ data, color = '#E8832A', onExport }: RunWalkSca
                 const x = 40 + ((slope - bounds.minSlope) / (bounds.maxSlope - bounds.minSlope)) * 320;
                 return (
                   <g key={`slope-${slope}`}>
-                    <line x1={x} y1="10" x2={x} y2="190" stroke="#3A3F47" strokeWidth="0.5" opacity="0.3" />
+                    <line x1={x} y1="10" x2={x} y2="190" stroke="#9CA3AF" strokeWidth="0.5" opacity="0.3" />
                     <text x={x} y="208" textAnchor="middle" className="font-mono text-[10px]" fill="#6B7280">
                       {slope}%
                     </text>
@@ -197,7 +197,7 @@ export function RunWalkScatter({ data, color = '#E8832A', onExport }: RunWalkSca
                 const y = 10 + ((bounds.maxSpeed - speed) / (bounds.maxSpeed - bounds.minSpeed)) * 180;
                 return (
                   <g key={`speed-${speed}`}>
-                    <line x1="40" y1={y} x2="360" y2={y} stroke="#3A3F47" strokeWidth="0.5" opacity="0.3" />
+                    <line x1="40" y1={y} x2="360" y2={y} stroke="#9CA3AF" strokeWidth="0.5" opacity="0.3" />
                     <text x="35" y={y + 3} textAnchor="end" className="font-mono text-[10px]" fill="#6B7280">
                       {speed}
                     </text>
@@ -221,7 +221,7 @@ export function RunWalkScatter({ data, color = '#E8832A', onExport }: RunWalkSca
                 y1="10"
                 x2={40 + ((0 - bounds.minSlope) / (bounds.maxSlope - bounds.minSlope)) * 320}
                 y2="190"
-                stroke="#6B7280"
+                stroke="#9CA3AF"
                 strokeWidth="1"
                 strokeDasharray="4,4"
                 opacity="0.5"

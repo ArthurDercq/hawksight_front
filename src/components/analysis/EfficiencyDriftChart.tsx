@@ -241,7 +241,7 @@ export function EfficiencyDriftChart({ data, color = '#8e44ad', onExport }: Effi
                   y1={20 + (percent / 100) * 160}
                   x2="360"
                   y2={20 + (percent / 100) * 160}
-                  stroke="#3A3F47"
+                  stroke="#9CA3AF"
                   strokeWidth="0.5"
                   opacity="0.2"
                 />

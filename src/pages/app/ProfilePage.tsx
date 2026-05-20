@@ -130,13 +130,13 @@ function RadarChart({ scores, referenceScores, color = TRAIL_COLOR }: {
 
       {[0.25, 0.5, 0.75, 1].map((ratio) => (
         <polygon key={ratio} points={gridPolygon(ratio)} fill="none"
-          stroke="#3A3F47" strokeWidth={ratio === 1 ? 0.8 : 0.5} opacity={ratio === 1 ? 0.5 : 0.2} />
+          stroke="#9CA3AF" strokeWidth={ratio === 1 ? 0.8 : 0.5} opacity={ratio === 1 ? 0.5 : 0.2} />
       ))}
 
       {axes.map((_, i) => {
         const outer = point(i, R);
         return <line key={i} x1={CX} y1={CY} x2={outer.x.toFixed(1)} y2={outer.y.toFixed(1)}
-          stroke="#3A3F47" strokeWidth="0.5" opacity="0.3" />;
+          stroke="#9CA3AF" strokeWidth="0.5" opacity="0.3" />;
       })}
 
       {referenceScores && (
@@ -218,10 +218,10 @@ function TrailProfileCard() {
         {/* Error */}
         {error && !isLoading && (
           <div className="mb-4 px-3 py-2 rounded-lg bg-steel/5 border border-steel/20 flex items-center gap-2">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <p className="text-steel/60 text-[10px] font-mono uppercase tracking-wider">{error}</p>
+            <p className="text-steel/85 text-[10px] font-mono uppercase tracking-wider">{error}</p>
           </div>
         )}
 
@@ -471,12 +471,12 @@ export function ProfilePage() {
     return (
       <div className="max-w-7xl mx-auto px-6">
         <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">{error || 'Impossible de charger le profil'}</p>
+          <p className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">{error || 'Impossible de charger le profil'}</p>
         </div>
       </div>
     );

@@ -43,7 +43,7 @@ export function PlateformePage() {
           </motion.h1>
 
           <motion.p
-            className="font-mono text-[11px] text-steel/60 leading-relaxed tracking-wide max-w-xl mx-auto mb-10"
+            className="font-mono text-[11px] text-steel/85 leading-relaxed tracking-wide max-w-xl mx-auto mb-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.25 }}
@@ -123,7 +123,7 @@ export function PlateformePage() {
                 <span className={`font-mono text-3xl ${color === 'amber' ? 'text-amber' : 'text-glacier'}`}>{icon}</span>
                 <div>
                   <h3 className="font-heading font-semibold text-lg text-mist mb-2">{title}</h3>
-                  <p className="font-mono text-[9px] text-steel/55 leading-relaxed">{desc}</p>
+                  <p className="font-mono text-[9px] text-steel/80 leading-relaxed">{desc}</p>
                 </div>
                 <a href={href} className="hw-link mt-auto">{cta}</a>
               </motion.div>
@@ -151,7 +151,7 @@ export function PlateformePage() {
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-mist mb-4">
               Connecte Strava.<br />Tout le reste est automatique.
             </h2>
-            <p className="font-mono text-[10px] text-steel/50 uppercase tracking-[1px] mb-8">
+            <p className="font-mono text-[10px] text-steel/75 uppercase tracking-[1px] mb-8">
               Toutes tes activités · Aucune saisie manuelle · Mise à jour à chaque sortie
             </p>
             <button onClick={handleCTA} className="hw-btn-amber px-10 py-3.5 text-sm">

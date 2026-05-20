@@ -137,7 +137,7 @@ body {
 /* ── Stat label (9px muted mono uppercase) ── */
 .hw-label {
   font-size: 9px;
-  color: rgba(242,242,242,0.35);
+  color: #FFFFFF;
   font-family: 'JetBrains Mono', monospace;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -334,7 +334,7 @@ body {
 .hw-section-label {
   font-size: 9px;
   font-family: 'JetBrains Mono', monospace;
-  color: #3A3F47;
+  color: #FFFFFF;
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -352,7 +352,7 @@ body {
 .hw-chart-subtitle {
   font-size: 9px;
   font-family: 'JetBrains Mono', monospace;
-  color: #3A3F47;
+  color: #FFFFFF;
   margin-bottom: 12px;
 }
 
@@ -369,7 +369,7 @@ body {
 .hw-btn-ghost {
   font-size: 10px;
   font-family: 'JetBrains Mono', monospace;
-  color: #3A3F47;
+  color: #FFFFFF;
   background: none;
   border: 1px solid rgba(58,63,71,0.3);
   border-radius: 6px;
@@ -419,7 +419,7 @@ body {
   padding: 7px 10px;
   background: none;
   border: none;
-  color: #3A3F47;
+  color: #FFFFFF;
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }

@@ -84,11 +84,11 @@ export function MarketingLayout() {
               </a>
             ))}
             <span className="w-px h-3 bg-steel/20" />
-            <span className="font-mono text-[9px] text-steel/30 tracking-[1px]">© 2026 HawkSight</span>
+            <span className="font-mono text-[9px] text-steel/80 tracking-[1px]">© 2026 HawkSight</span>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <span className="font-mono text-[9px] text-steel/40 uppercase tracking-[2px]">System</span>
+            <span className="font-mono text-[9px] text-steel/65 uppercase tracking-[2px]">System</span>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" style={{ boxShadow: '0 0 6px #E8832A' }} />
               <span className="font-mono text-[9px] text-amber/70 uppercase tracking-[2px]">Online</span>

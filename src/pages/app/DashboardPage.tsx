@@ -132,7 +132,7 @@ export function DashboardPage() {
             </>
           ) : (
             <>
-              <p className="font-mono text-[84px] font-black leading-none text-steel/40 tabular-nums">--</p>
+              <p className="font-mono text-[84px] font-black leading-none text-steel/65 tabular-nums">--</p>
               <div className="hw-grad-sep" />
             </>
           )}
@@ -334,24 +334,31 @@ export function DashboardPage() {
               </div>
               {/* Featured stats */}
               <div className="grid grid-cols-4 gap-2">
-                <div>
-                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">Distance</p>
-                  <p className="font-mono text-sm font-bold tabular-nums text-amber">{lastActivity.distance_km.toFixed(1)}<span className="text-[8px] text-amber/50 ml-0.5">km</span></p>
-                </div>
+                {lastActivity.type !== 'WeightTraining' && (
+                  <div>
+                    <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">Distance</p>
+                    <p className="font-mono text-sm font-bold tabular-nums text-amber">{lastActivity.distance_km.toFixed(1)}<span className="text-[8px] text-amber/50 ml-0.5">km</span></p>
+                  </div>
+                )}
                 <div>
                   <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">Temps</p>
                   <p className="font-mono text-sm font-bold tabular-nums text-mist">{lastActivity.duree_hms}</p>
                 </div>
-                <div>
-                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">D+</p>
-                  <p className="font-mono text-sm font-bold tabular-nums text-glacier">{formatNumber(lastActivity.denivele_m ?? 0)}<span className="text-[8px] text-glacier/50 ml-0.5">m</span></p>
-                </div>
-                <div>
-                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
-                  <p className="font-mono text-sm font-bold tabular-nums text-moss">
-                    {lastActivity.type === 'Bike' ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'}` : formatPace(lastActivity.allure_min_per_km)}
-                  </p>
-                </div>
+                {lastActivity.type !== 'WeightTraining' && (
+                  <div>
+                    <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">D+</p>
+                    <p className="font-mono text-sm font-bold tabular-nums text-glacier">{formatNumber(lastActivity.denivele_m ?? 0)}<span className="text-[8px] text-glacier/50 ml-0.5">m</span></p>
+                  </div>
+                )}
+                {lastActivity.type !== 'WeightTraining' && (
+                  <div>
+                    <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
+                    <p className="font-mono text-sm font-bold tabular-nums text-moss">
+                      {lastActivity.type === 'Bike' ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'}` : (lastActivity.allure_min_per_km ?? '--')}
+                      <span className="text-[8px] text-moss/50 ml-0.5">{lastActivity.type === 'Bike' ? 'km/h' : '/km'}</span>
+                    </p>
+                  </div>
+                )}
               </div>
               {lastActivityExploration && lastActivityExploration.total_cells > 0 && (
                 <div className="mt-2 flex items-center gap-2 px-2 py-1 rounded bg-glacier/5 border border-glacier/15">
@@ -370,7 +377,9 @@ export function DashboardPage() {
             {recentActivities.filter(a => a.id !== lastActivity?.id).slice(0, 2).map((activity) => {
               const color = sportBarColor(activity.type ?? '');
               const isBike = activity.type === 'Bike';
-              const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : formatPace(activity.allure_min_per_km);
+              const isWeightTraining = activity.type === 'WeightTraining';
+              const paceUnit = isBike ? ' km/h' : '/km';
+              const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : (activity.allure_min_per_km ?? '--');
               return (
                 <Link key={activity.id} to={`/activity/${activity.id}`} className="hw-act-row">
                   <div className="w-[3px] h-7 rounded-sm shrink-0" style={{ background: color }} />
@@ -380,8 +389,12 @@ export function DashboardPage() {
                   </div>
                   <div className="flex gap-3.5 ml-auto shrink-0 text-right">
                     <div>
-                      <p className="font-mono text-[11px] font-semibold tabular-nums text-mist/60">{activity.distance_km.toFixed(1)} km</p>
-                      <p className="font-mono text-[9px] text-steel">{pace}{isBike ? ' km/h' : '/km'}</p>
+                      {!isWeightTraining && (
+                        <p className="font-mono text-[11px] font-semibold tabular-nums text-mist/60">{activity.distance_km.toFixed(1)} km</p>
+                      )}
+                      {!isWeightTraining && (
+                        <p className="font-mono text-[9px] text-steel">{pace}{paceUnit}</p>
+                      )}
                     </div>
                   </div>
                 </Link>
@@ -477,15 +490,6 @@ function formatActivityDate(dateString: string): string {
   return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${rest}`;
 }
 
-function formatPace(raw: string): string {
-  if (!raw || raw === '--') return '--';
-  if (raw.includes(':')) return `${raw}/km`;
-  const decimal = parseFloat(raw);
-  if (isNaN(decimal)) return raw;
-  const min = Math.floor(decimal);
-  const sec = Math.round((decimal - min) * 60);
-  return `${min}:${sec.toString().padStart(2, '0')}/km`;
-}
 
 function formatTime(seconds: number): string {
   const hours = Math.floor(seconds / 3600);

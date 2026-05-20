@@ -362,7 +362,7 @@ export function HomePage() {
               { label: 'ELEV', value: '1 397 m' },
             ].map(({ label, value }) => (
               <div key={label}>
-                <p className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px] mb-1">{label}</p>
+                <p className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px] mb-1">{label}</p>
                 <p className="font-mono text-[13px] text-mist/80 font-medium tracking-wide">{value}</p>
               </div>
             ))}
@@ -396,7 +396,7 @@ export function HomePage() {
               { label: 'STATUS', value: 'TRACKING', amber: true },
             ].map(({ label, value, amber }) => (
               <div key={label}>
-                <p className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px] mb-1">{label}</p>
+                <p className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px] mb-1">{label}</p>
                 <p className={`font-mono text-[13px] font-medium tracking-wide ${amber ? 'text-amber' : 'text-mist/80'}`}>{value}</p>
               </div>
             ))}
@@ -435,9 +435,9 @@ export function HomePage() {
               { label: 'Sorties analysées', value: '147', unit: '' },
             ].map(({ label, value, unit }) => (
               <div key={label} className="flex flex-col gap-0.5 whitespace-nowrap">
-                <span className="font-mono text-[8px] text-steel/60 uppercase tracking-[2px]">{label}</span>
+                <span className="font-mono text-[8px] text-steel/85 uppercase tracking-[2px]">{label}</span>
                 <span className="font-mono text-[12px] text-mist/70 font-medium tabular-nums">
-                  {value}{unit && <span className="font-mono text-[9px] text-steel/50 ml-1">{unit}</span>}
+                  {value}{unit && <span className="font-mono text-[9px] text-steel/75 ml-1">{unit}</span>}
                 </span>
               </div>
             ))}
@@ -446,7 +446,7 @@ export function HomePage() {
           {/* Centre — séparateur gradient */}
           <div className="flex items-center gap-4 shrink-0">
             <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, transparent, #E8832A)' }} />
-            <span className="font-mono text-[8px] text-steel/50 uppercase tracking-[3px]">Données terrain</span>
+            <span className="font-mono text-[8px] text-steel/75 uppercase tracking-[3px]">Données terrain</span>
             <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #3DB2E0, transparent)' }} />
           </div>
 
@@ -458,7 +458,7 @@ export function HomePage() {
               { label: 'Statut', value: 'ACTIF', amber: true },
             ].map(({ label, value, amber }) => (
               <div key={label} className="flex flex-col gap-0.5 whitespace-nowrap">
-                <span className="font-mono text-[8px] text-steel/60 uppercase tracking-[2px]">{label}</span>
+                <span className="font-mono text-[8px] text-steel/85 uppercase tracking-[2px]">{label}</span>
                 <span className={`font-mono text-[12px] font-medium tabular-nums ${amber ? 'text-amber/70' : 'text-mist/70'}`}>{value}</span>
               </div>
             ))}
@@ -503,7 +503,7 @@ export function HomePage() {
                 <div key={label} className="hw-card-dark relative p-3">
                   <span className={`hw-br hw-br-tl hw-br-${br}`} />
                   <span className={`hw-br hw-br-br hw-br-${br}`} />
-                  <p className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px] mb-1.5">{label}</p>
+                  <p className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px] mb-1.5">{label}</p>
                   <p className={`font-heading text-xl font-bold tabular-nums ${color}`}>{value}</p>
                 </div>
               ))}
@@ -512,7 +512,7 @@ export function HomePage() {
             {/* Barre de progression conquête */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px]">Niveau de conquête</span>
+                <span className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px]">Niveau de conquête</span>
                 <span className="font-mono text-[8px] text-amber uppercase tracking-[2px]">Traileur Confirmé</span>
               </div>
               <div className="h-1 bg-steel/10 rounded-full overflow-hidden">
@@ -527,7 +527,7 @@ export function HomePage() {
               </div>
               <div className="flex justify-between">
                 {['Explorateur', 'Confirmé', 'Territoire Libre', 'Légende'].map((s, i) => (
-                  <span key={s} className={`font-mono text-[7px] uppercase tracking-[1px] ${i <= 1 ? 'text-amber/60' : 'text-steel/30'}`}>{s}</span>
+                  <span key={s} className={`font-mono text-[7px] uppercase tracking-[1px] ${i <= 1 ? 'text-amber/60' : 'text-steel/80'}`}>{s}</span>
                 ))}
               </div>
             </div>
@@ -563,13 +563,13 @@ export function HomePage() {
               <div className="hw-card-dark absolute top-4 right-4 px-3 py-2">
                 <span className="hw-br hw-br-tl hw-br-amber" />
                 <span className="hw-br hw-br-br hw-br-amber" />
-                <p className="font-mono text-[7px] text-steel/50 uppercase tracking-[2px] mb-0.5">Dernière sortie</p>
+                <p className="font-mono text-[7px] text-steel/75 uppercase tracking-[2px] mb-0.5">Dernière sortie</p>
                 <p className="font-mono text-[11px] text-amber font-medium">+12 cellules</p>
               </div>
               <div className="hw-card-dark absolute bottom-4 left-4 px-3 py-2">
                 <span className="hw-br hw-br-tl hw-br-glacier" />
                 <span className="hw-br hw-br-br hw-br-glacier" />
-                <p className="font-mono text-[7px] text-steel/50 uppercase tracking-[2px] mb-0.5">Zone glacier</p>
+                <p className="font-mono text-[7px] text-steel/75 uppercase tracking-[2px] mb-0.5">Zone glacier</p>
                 <p className="font-mono text-[11px] text-glacier font-medium">Nouveau massif</p>
               </div>
             </div>
@@ -623,11 +623,11 @@ export function HomePage() {
                   <div className="flex items-center justify-end gap-3 mb-1.5">
                     <div>
                       <p className="font-mono text-[9px] uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
-                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/50 ml-0.5">/100</span></p>
+                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/75 ml-0.5">/100</span></p>
                     </div>
                     <div className="w-1 h-10 rounded-full shrink-0" style={{ background: `linear-gradient(to bottom, ${color}, ${color}40)` }} />
                   </div>
-                  <p className="font-mono text-[9px] text-steel/60 leading-relaxed max-w-xs ml-auto">{desc}</p>
+                  <p className="font-mono text-[9px] text-steel/85 leading-relaxed max-w-xs ml-auto">{desc}</p>
                   <div className="mt-2 h-px bg-steel/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
@@ -668,10 +668,10 @@ export function HomePage() {
                     <div className="w-1 h-10 rounded-full shrink-0" style={{ background: `linear-gradient(to bottom, ${color}, ${color}40)` }} />
                     <div>
                       <p className="font-mono text-[9px] uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
-                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/50 ml-0.5">/100</span></p>
+                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/75 ml-0.5">/100</span></p>
                     </div>
                   </div>
-                  <p className="font-mono text-[9px] text-steel/60 leading-relaxed max-w-xs">{desc}</p>
+                  <p className="font-mono text-[9px] text-steel/85 leading-relaxed max-w-xs">{desc}</p>
                   <div className="mt-2 h-px bg-steel/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
@@ -694,11 +694,11 @@ export function HomePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.5 }}
           >
-            <div className="flex items-center gap-6 font-mono text-[9px] text-steel/50 uppercase tracking-[2px]">
+            <div className="flex items-center gap-6 font-mono text-[9px] text-steel/75 uppercase tracking-[2px]">
               <div className="flex items-center gap-2"><div className="w-6 h-px bg-glacier/60" /><span>Ton profil</span></div>
               <div className="flex items-center gap-2"><div className="w-6 h-px border-t border-dashed border-steel/40" /><span>Référence élite</span></div>
             </div>
-            <p className="font-mono text-[9px] text-steel/40 uppercase tracking-[1px]">Calculé sur 147 sorties · 1 842 km · 68 000 m D+</p>
+            <p className="font-mono text-[9px] text-steel/65 uppercase tracking-[1px]">Calculé sur 147 sorties · 1 842 km · 68 000 m D+</p>
             <a
               href="/methode"
               className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full border border-glacier/30 bg-glacier/5 hover:bg-glacier/10 hover:border-glacier/50 transition-all"

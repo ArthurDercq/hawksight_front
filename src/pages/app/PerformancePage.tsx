@@ -378,12 +378,12 @@ export function PerformancePage() {
               </div>
             ) : error ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">{error}</p>
+                <p className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">{error}</p>
               </div>
             ) : filteredActivities.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                  <CalendarIcon className="w-10 h-10 mx-auto text-steel/50 mb-2" />
+                  <CalendarIcon className="w-10 h-10 mx-auto text-steel/75 mb-2" />
                   <p className="text-steel text-sm">
                     {selectedDate ? 'Aucune activité à cette date' : 'Aucune activité'}
                   </p>
@@ -434,9 +434,9 @@ export function PerformancePage() {
                           </div>
                           <div className="flex items-center gap-2 mt-1 text-steel font-mono text-[10px]">
                             <span>{formatDateDisplay(activity.start_date)}</span>
-                            <span className="text-steel/50">•</span>
+                            <span className="text-steel/75">•</span>
                             <span>{distanceKm.toFixed(1)} km</span>
-                            <span className="text-steel/50">•</span>
+                            <span className="text-steel/75">•</span>
                             <span>{activity.moving_time_hms || formatDuration(activity.moving_time)}</span>
                           </div>
                         </div>
@@ -519,19 +519,19 @@ export function PerformancePage() {
             <div className="hw-card-dark p-8">
               <div className="flex flex-col items-center gap-4">
                 <div className="p-4 bg-steel/5 border border-steel/20 rounded-lg">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="1.5">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">Erreur lors de l'analyse</p>
-                  <p className="text-steel/40 text-xs font-mono mt-1">{analysisError || 'Une erreur inattendue s\'est produite'}</p>
+                  <p className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">Erreur lors de l'analyse</p>
+                  <p className="text-steel/65 text-xs font-mono mt-1">{analysisError || 'Une erreur inattendue s\'est produite'}</p>
                 </div>
                 <button
                   onClick={handleLaunchAnalysis}
-                  className="px-4 py-2 bg-steel/10 border border-steel/20 text-steel/60 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-steel/40 transition-colors"
+                  className="px-4 py-2 bg-steel/10 border border-steel/20 text-steel/85 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-steel/40 transition-colors"
                 >
                   Réessayer
                 </button>
@@ -591,7 +591,7 @@ function AnalysisLoader({ activityName, isFile }: { activityName?: string; isFil
           <p className="text-mist font-medium">Analyse en cours...</p>
           <p className="text-amber text-sm font-medium">{ANALYSIS_STEPS[stepIndex]}</p>
           <p className="text-steel text-sm">{isFile ? `Traitement de ${activityName}` : `Analyse de ${activityName}`}</p>
-          <p className="font-mono text-xs text-steel/60 mt-2">{timeStr}</p>
+          <p className="font-mono text-xs text-steel/85 mt-2">{timeStr}</p>
           {elapsed >= 15 && (
             <p className="text-steel text-xs mt-1">L'analyse peut prendre jusqu'à 2 minutes pour les activités longues</p>
           )}

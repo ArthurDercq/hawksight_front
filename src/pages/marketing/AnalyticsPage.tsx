@@ -44,7 +44,7 @@ export function AnalyticsPage() {
               Tes données.<br />
               <span className="text-glacier font-normal italic">Toute la vérité.</span>
             </h1>
-            <p className="font-mono text-[11px] text-steel/60 leading-relaxed tracking-wide mb-8 max-w-md">
+            <p className="font-mono text-[11px] text-steel/85 leading-relaxed tracking-wide mb-8 max-w-md">
               Pace, dénivelé, fréquence cardiaque, VAM, efficacité — HawkSight calcule des dizaines d'indicateurs sur chaque sortie et les met en perspective sur ton historique complet.
             </p>
             <button onClick={handleCTA} className="hw-btn-amber px-10 py-3.5 text-sm">
@@ -68,10 +68,10 @@ export function AnalyticsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 + i * 0.07 }}
               >
-                <p className="font-mono text-[7px] text-steel/40 uppercase tracking-[1px] mb-1.5">{label}</p>
+                <p className="font-mono text-[7px] text-steel/65 uppercase tracking-[1px] mb-1.5">{label}</p>
                 <p className={`font-heading text-2xl font-bold tabular-nums ${color}`}>
                   {value}
-                  <span className="font-mono text-[9px] text-steel/40 ml-1">{unit}</span>
+                  <span className="font-mono text-[9px] text-steel/65 ml-1">{unit}</span>
                 </p>
               </motion.div>
             ))}
@@ -117,7 +117,7 @@ export function AnalyticsPage() {
                 <span className={`font-mono text-xl shrink-0 mt-0.5 ${color === 'amber' ? 'text-amber' : 'text-glacier'}`}>{icon}</span>
                 <div>
                   <h3 className="font-heading font-semibold text-base text-mist mb-1.5">{title}</h3>
-                  <p className="font-mono text-[9px] text-steel/50 leading-relaxed">{desc}</p>
+                  <p className="font-mono text-[9px] text-steel/75 leading-relaxed">{desc}</p>
                 </div>
               </motion.div>
             ))}

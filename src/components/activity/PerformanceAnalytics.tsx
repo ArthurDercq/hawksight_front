@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 
 const DownloadIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <polyline points="7 10 12 15 17 10" />
     <line x1="12" y1="15" x2="12" y2="3" />
@@ -9,7 +9,7 @@ const DownloadIcon = () => (
 );
 
 const ActivityIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
   </svg>
 );
@@ -449,7 +449,7 @@ export function PerformanceAnalytics() {
                     y1={(percent / 100) * 180 + 10}
                     x2="390"
                     y2={(percent / 100) * 180 + 10}
-                    stroke="#3A3F47"
+                    stroke="#9CA3AF"
                     strokeWidth="0.5"
                     opacity="0.2"
                   />

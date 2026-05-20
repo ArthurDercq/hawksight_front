@@ -146,7 +146,7 @@ export function OnboardingScreen({ status, hasData }: Props) {
         transition={{ duration: 0.5 }}
       >
         <Logo size={28} />
-        <span className="font-mono text-xs text-steel/60 uppercase tracking-[3px]">HawkSight</span>
+        <span className="font-mono text-xs text-steel/85 uppercase tracking-[3px]">HawkSight</span>
       </motion.div>
 
       {/* Message principal */}
@@ -221,7 +221,7 @@ export function OnboardingScreen({ status, hasData }: Props) {
         </div>
 
         {isSyncing && (
-          <p className="mt-3 font-mono text-[9px] text-steel/50 uppercase tracking-[1.5px]">
+          <p className="mt-3 font-mono text-[9px] text-steel/75 uppercase tracking-[1.5px]">
             Cette page se met à jour automatiquement toutes les 5 secondes
           </p>
         )}

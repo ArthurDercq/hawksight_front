@@ -51,7 +51,7 @@ export function MethodePage() {
           </motion.h1>
 
           <motion.p
-            className="font-mono text-[11px] text-steel/60 leading-relaxed tracking-wide max-w-xl mx-auto mb-10"
+            className="font-mono text-[11px] text-steel/85 leading-relaxed tracking-wide max-w-xl mx-auto mb-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.25 }}
@@ -90,7 +90,7 @@ export function MethodePage() {
             <h2 className="font-heading font-bold text-4xl text-mist mb-3">
               Ce que le score mesure vraiment.
             </h2>
-            <p className="font-mono text-[10px] text-steel/45 uppercase tracking-[2px]">
+            <p className="font-mono text-[10px] text-steel/70 uppercase tracking-[2px]">
               Calculé sur ton historique complet — pas sur une seule sortie.
             </p>
           </motion.div>
@@ -109,7 +109,7 @@ export function MethodePage() {
                 <div className="w-28 shrink-0">
                   <p className="font-mono text-[9px] uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
                   <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>
-                    {score}<span className="font-mono text-[9px] text-steel/40 ml-0.5">/100</span>
+                    {score}<span className="font-mono text-[9px] text-steel/65 ml-0.5">/100</span>
                   </p>
                 </div>
                 <div className="flex-1">
@@ -123,7 +123,7 @@ export function MethodePage() {
                       transition={{ duration: 1.2, delay: 0.3 + i * 0.1, ease: 'easeOut' }}
                     />
                   </div>
-                  <p className="font-mono text-[9px] text-steel/45 leading-relaxed">{desc}</p>
+                  <p className="font-mono text-[9px] text-steel/70 leading-relaxed">{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -159,9 +159,9 @@ export function MethodePage() {
                 transition={{ duration: 0.55, delay: 0.1 * i }}
               >
                 <span className={`hw-br hw-br-tl hw-br-${color}`} />
-                <p className="font-mono text-[8px] text-steel/30 uppercase tracking-[3px] mb-3">{step}</p>
+                <p className="font-mono text-[8px] text-steel/80 uppercase tracking-[3px] mb-3">{step}</p>
                 <h3 className="font-heading font-semibold text-base text-mist mb-2">{title}</h3>
-                <p className="font-mono text-[9px] text-steel/50 leading-relaxed">{desc}</p>
+                <p className="font-mono text-[9px] text-steel/75 leading-relaxed">{desc}</p>
               </motion.div>
             ))}
           </div>

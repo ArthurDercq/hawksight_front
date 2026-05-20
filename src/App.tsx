@@ -38,26 +38,25 @@ function StravaInviteRedirect() {
 
 function AppShell() {
   return (
-    <div className="min-h-screen bg-charcoal text-mist font-body flex">
+    <div className="h-screen bg-charcoal text-mist font-body flex overflow-hidden">
       <Sidebar />
-      <div className="ml-[196px] flex flex-col flex-1 min-h-screen">
+      <div className="ml-[196px] flex flex-col flex-1 h-screen overflow-hidden">
         <AppHeader />
-        <main className="flex-1 px-6 py-6">
+        <main className="flex-1 overflow-y-auto flex flex-col">
           <Suspense fallback={<Spinner />}>
             <Routes>
               <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard"    element={<DashboardPage />} />
-              <Route path="activities"   element={<ActivitiesPage />} />
-              <Route path="activity/:id" element={<ActivityDetailPage />} />
-              <Route path="kpi"          element={<KPIPage />} />
-              <Route path="calendar"     element={<CalendarPage />} />
-              <Route path="profile"      element={<ProfilePage />} />
-              <Route path="performance"  element={<PerformancePage />} />
-              <Route path="exploration"  element={<ExplorationPage />} />
+              <Route path="dashboard"    element={<div className="px-6 py-6"><DashboardPage /><Footer /></div>} />
+              <Route path="activities"   element={<div className="px-6 py-6"><ActivitiesPage /><Footer /></div>} />
+              <Route path="activity/:id" element={<div className="px-6 py-6"><ActivityDetailPage /><Footer /></div>} />
+              <Route path="kpi"          element={<div className="px-6 py-6"><KPIPage /><Footer /></div>} />
+              <Route path="calendar"     element={<div className="px-6 py-6"><CalendarPage /><Footer /></div>} />
+              <Route path="profile"      element={<div className="px-6 py-6"><ProfilePage /><Footer /></div>} />
+              <Route path="performance"  element={<div className="px-6 py-6"><PerformancePage /><Footer /></div>} />
+              <Route path="exploration"  element={<><ExplorationPage /><Footer /></>} />
             </Routes>
           </Suspense>
         </main>
-        <Footer />
       </div>
     </div>
   );

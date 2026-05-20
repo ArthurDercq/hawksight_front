@@ -201,7 +201,7 @@ export function TerrainPage() {
                 Conquiers<br />
                 <span className="text-amber font-normal italic">chaque cellule.</span>
               </h1>
-              <p className="font-mono text-[11px] text-steel/60 leading-relaxed tracking-wide mb-8 max-w-md">
+              <p className="font-mono text-[11px] text-steel/85 leading-relaxed tracking-wide mb-8 max-w-md">
                 HawkSight découpe le terrain en milliers de cellules hexagonales H3. Chaque passage sur un sentier est enregistré et pondéré. Au fil des sorties, une carte de chaleur unique se construit — ton territoire réel, visible et mesurable.
               </p>
               <div className="flex items-center gap-4">
@@ -214,7 +214,7 @@ export function TerrainPage() {
                       <div key={i} className="w-1 h-1 rounded-full bg-amber" style={{ opacity: op }} />
                     ))}
                   </div>
-                  <span className="font-mono text-[9px] text-steel/40 uppercase tracking-[2px]">Connexion Strava</span>
+                  <span className="font-mono text-[9px] text-steel/65 uppercase tracking-[2px]">Connexion Strava</span>
                 </div>
               </div>
             </motion.div>
@@ -235,7 +235,7 @@ export function TerrainPage() {
                 <div key={label} className="hw-card-dark relative p-4">
                   <span className={`hw-br hw-br-tl hw-br-${br}`} />
                   <span className={`hw-br hw-br-br hw-br-${br}`} />
-                  <p className="font-mono text-[8px] text-steel/40 uppercase tracking-[2px] mb-2">{label}</p>
+                  <p className="font-mono text-[8px] text-steel/65 uppercase tracking-[2px] mb-2">{label}</p>
                   <p className={`font-heading text-3xl font-bold tabular-nums ${color}`}>
                     <AnimatedCounter target={value} suffix={suffix} decimals={decimals} />
                   </p>
@@ -266,7 +266,7 @@ export function TerrainPage() {
                 {/* HUD header */}
                 <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-steel/10" style={{ background: 'rgba(4,5,10,0.7)', backdropFilter: 'blur(8px)' }}>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-[8px] text-steel/50 uppercase tracking-[2px]">Carte de passage · H3 Res.9</span>
+                    <span className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px]">Carte de passage · H3 Res.9</span>
                     <span className="w-px h-3 bg-steel/20" />
                     <span className="font-mono text-[8px] text-mist/30 tracking-wide">47.85°N · 7.10°E · WGS84</span>
                   </div>
@@ -281,16 +281,16 @@ export function TerrainPage() {
                 {/* Badge territoire continu max */}
                 <div className="absolute top-12 right-4 p-3 min-w-[150px]" style={{ background: 'rgba(4,5,10,0.92)', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '8px' }}>
                   <span className="hw-br hw-br-tl hw-br-amber" />
-                  <p className="font-mono text-[7px] text-steel/40 uppercase tracking-[2px] mb-1.5">Territoire continu max</p>
+                  <p className="font-mono text-[7px] text-steel/65 uppercase tracking-[2px] mb-1.5">Territoire continu max</p>
                   <p className="font-heading text-base font-bold text-mist italic mb-2">Massif du Grand Ballon</p>
                   <div className="flex items-center gap-4">
                     <div>
-                      <p className="font-mono text-[7px] text-steel/40 uppercase tracking-[1px] mb-0.5">Zones</p>
+                      <p className="font-mono text-[7px] text-steel/65 uppercase tracking-[1px] mb-0.5">Zones</p>
                       <p className="font-heading text-lg font-bold text-amber">64</p>
                     </div>
                     <div>
-                      <p className="font-mono text-[7px] text-steel/40 uppercase tracking-[1px] mb-0.5">Surface</p>
-                      <p className="font-heading text-lg font-bold text-amber">4.6<span className="font-mono text-[9px] text-steel/40 ml-0.5">km²</span></p>
+                      <p className="font-mono text-[7px] text-steel/65 uppercase tracking-[1px] mb-0.5">Surface</p>
+                      <p className="font-heading text-lg font-bold text-amber">4.6<span className="font-mono text-[9px] text-steel/65 ml-0.5">km²</span></p>
                     </div>
                   </div>
                 </div>
@@ -298,22 +298,22 @@ export function TerrainPage() {
                 {/* Badge fréquence */}
                 <div className="absolute bottom-10 left-4 px-3 py-2" style={{ background: 'rgba(4,5,10,0.92)', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '8px' }}>
                   <span className="hw-br hw-br-tl hw-br-amber" />
-                  <p className="font-mono text-[7px] text-steel/40 uppercase tracking-[2px] mb-1.5">Fréquence · 58 max</p>
+                  <p className="font-mono text-[7px] text-steel/65 uppercase tracking-[2px] mb-1.5">Fréquence · 58 max</p>
                   <div className="flex items-center gap-0.5">
                     {[1, 0.85, 0.7, 0.55, 0.40, 0.28, 0.18, 0.10].map((op, i) => (
                       <div key={i} className="w-6 h-3 rounded-[2px]" style={{ background: `rgba(232,131,42,${op})` }} />
                     ))}
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="font-mono text-[7px] text-steel/30">1</span>
-                    <span className="font-mono text-[7px] text-steel/30">58</span>
+                    <span className="font-mono text-[7px] text-steel/80">1</span>
+                    <span className="font-mono text-[7px] text-steel/80">58</span>
                   </div>
                 </div>
 
                 {/* Légende bas */}
                 <div className="absolute bottom-3 left-0 right-0 flex justify-center pointer-events-none">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-[7px] text-steel/35 uppercase tracking-[2px]">Fréquence</span>
+                    <span className="font-mono text-[7px] text-steel/85 uppercase tracking-[2px]">Fréquence</span>
                     <div className="flex items-center gap-1">
                       {[
                         { label: '1–4',   color: 'rgba(90,55,15,0.7)' },
@@ -324,7 +324,7 @@ export function TerrainPage() {
                       ].map(s => (
                         <div key={s.label} className="flex flex-col items-center gap-0.5">
                           <div className="w-7 h-2 rounded-[2px]" style={{ background: s.color }} />
-                          <span className="font-mono text-[6px] text-steel/30">{s.label}</span>
+                          <span className="font-mono text-[6px] text-steel/80">{s.label}</span>
                         </div>
                       ))}
                     </div>
@@ -345,7 +345,7 @@ export function TerrainPage() {
               {/* Vue ensemble */}
               <div className="hw-card-dark p-4 relative">
                 <span className="hw-br hw-br-tl hw-br-amber" />
-                <p className="font-mono text-[8px] text-steel/40 uppercase tracking-[2px] mb-3">Vue d'ensemble</p>
+                <p className="font-mono text-[8px] text-steel/65 uppercase tracking-[2px] mb-3">Vue d'ensemble</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Zones',     value: 612,  suffix: '',     color: 'text-amber',   decimals: 0 },
@@ -354,7 +354,7 @@ export function TerrainPage() {
                     { label: 'Explo',     value: 30.1, suffix: '%',    color: 'text-glacier', decimals: 1 },
                   ].map(({ label, value, suffix, color, decimals }) => (
                     <div key={label}>
-                      <p className="font-mono text-[7px] text-steel/35 uppercase tracking-[1px] mb-0.5">{label}</p>
+                      <p className="font-mono text-[7px] text-steel/85 uppercase tracking-[1px] mb-0.5">{label}</p>
                       <p className={`font-heading text-xl font-bold tabular-nums ${color}`}>
                         <AnimatedCounter target={value} suffix={suffix} decimals={decimals} />
                       </p>
@@ -366,7 +366,7 @@ export function TerrainPage() {
               {/* Fréquentation */}
               <div className="hw-card-dark p-4 relative flex-1">
                 <span className="hw-br hw-br-tl hw-br-glacier" />
-                <p className="font-mono text-[8px] text-steel/40 uppercase tracking-[2px] mb-3">Fréquentation</p>
+                <p className="font-mono text-[8px] text-steel/65 uppercase tracking-[2px] mb-3">Fréquentation</p>
                 <div className="space-y-2.5">
                   {[
                     { label: 'Médiane', value: '6',   unit: 'passages' },
@@ -374,15 +374,15 @@ export function TerrainPage() {
                     { label: 'Max',     value: '58',  unit: 'passages', amber: true },
                   ].map(({ label, value, unit, amber }) => (
                     <div key={label} className="flex items-center justify-between">
-                      <span className="font-mono text-[8px] text-steel/55 uppercase tracking-[1px]">{label}</span>
-                      <span className="font-mono text-[8px] text-steel/25">{unit}</span>
+                      <span className="font-mono text-[8px] text-steel/80 uppercase tracking-[1px]">{label}</span>
+                      <span className="font-mono text-[8px] text-steel/75">{unit}</span>
                       <span className={`font-heading text-base font-bold tabular-nums ${amber ? 'text-amber' : 'text-mist'}`}>{value}</span>
                     </div>
                   ))}
                   <div className="pt-2 border-t border-steel/10">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-mono text-[7px] text-steel/40 uppercase tracking-[1px]">Novelty Gap</span>
-                      <span className="font-mono text-[7px] text-steel/25">Terrain hétérogène</span>
+                      <span className="font-mono text-[7px] text-steel/65 uppercase tracking-[1px]">Novelty Gap</span>
+                      <span className="font-mono text-[7px] text-steel/75">Terrain hétérogène</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="h-1 flex-1 bg-steel/10 rounded-full overflow-hidden">
@@ -404,7 +404,7 @@ export function TerrainPage() {
               {/* 4 sem → 1 an */}
               <div className="hw-card-dark p-4 relative">
                 <span className="hw-br hw-br-br hw-br-amber" />
-                <p className="font-mono text-[8px] text-steel/40 uppercase tracking-[2px] mb-3">4 Sem → 1 An</p>
+                <p className="font-mono text-[8px] text-steel/65 uppercase tracking-[2px] mb-3">4 Sem → 1 An</p>
                 <div className="space-y-3">
                   {[
                     { label: 'Zones',         cur: 142,  max: 612,  pct: 23 },
@@ -413,8 +413,8 @@ export function TerrainPage() {
                   ].map(({ label, cur, max, pct }) => (
                     <div key={label}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono text-[7px] text-steel/45 uppercase tracking-[1px]">{label}</span>
-                        <span className="font-mono text-[7px] text-amber/60 tabular-nums">{cur}<span className="text-steel/25"> / {max}</span></span>
+                        <span className="font-mono text-[7px] text-steel/70 uppercase tracking-[1px]">{label}</span>
+                        <span className="font-mono text-[7px] text-amber/60 tabular-nums">{cur}<span className="text-steel/75"> / {max}</span></span>
                       </div>
                       <div className="h-0.5 bg-steel/10 rounded-full overflow-hidden">
                         <motion.div
@@ -447,7 +447,7 @@ export function TerrainPage() {
             { label: 'Profil', value: 'L\'Explorateur', amber: true },
           ].map(({ label, value, amber }) => (
             <div key={label} className="flex flex-col gap-0.5 whitespace-nowrap">
-              <span className="font-mono text-[7px] text-steel/40 uppercase tracking-[2px]">{label}</span>
+              <span className="font-mono text-[7px] text-steel/65 uppercase tracking-[2px]">{label}</span>
               <span className={`font-mono text-[11px] font-medium tabular-nums ${amber ? 'text-amber/80' : 'text-mist/60'}`}>{value}</span>
             </div>
           ))}
@@ -500,10 +500,10 @@ export function TerrainPage() {
                     <span className="font-mono text-[7px] text-amber uppercase tracking-[2px] px-2 py-0.5 bg-amber/10 border border-amber/30 rounded-full">Actuel</span>
                   </div>
                 )}
-                <p className="font-mono text-[8px] text-steel/30 uppercase tracking-[3px] mb-2">{rank}</p>
+                <p className="font-mono text-[8px] text-steel/80 uppercase tracking-[3px] mb-2">{rank}</p>
                 <p className={`font-heading font-bold text-lg mb-1 ${active ? 'text-amber' : 'text-mist/50'}`}>{label}</p>
-                <p className="font-mono text-[8px] text-steel/40 uppercase tracking-[1px] mb-3">{zones} zones</p>
-                <p className="font-mono text-[9px] text-steel/50 leading-relaxed mb-4">{desc}</p>
+                <p className="font-mono text-[8px] text-steel/65 uppercase tracking-[1px] mb-3">{zones} zones</p>
+                <p className="font-mono text-[9px] text-steel/75 leading-relaxed mb-4">{desc}</p>
                 {active && (
                   <div>
                     <div className="h-1 bg-steel/10 rounded-full overflow-hidden">
@@ -563,7 +563,7 @@ export function TerrainPage() {
                   <span className={`font-mono text-[7px] uppercase tracking-[2px] px-2 py-0.5 rounded-full border ${color === 'amber' ? 'text-amber/60 border-amber/20 bg-amber/5' : 'text-glacier/60 border-glacier/20 bg-glacier/5'}`}>{tag}</span>
                 </div>
                 <h3 className="font-heading font-semibold text-base text-mist mb-2">{title}</h3>
-                <p className="font-mono text-[9px] text-steel/50 leading-relaxed">{desc}</p>
+                <p className="font-mono text-[9px] text-steel/75 leading-relaxed">{desc}</p>
               </motion.div>
             ))}
           </div>
@@ -586,7 +586,7 @@ export function TerrainPage() {
             Ton territoire<br />
             <span className="text-amber font-normal italic">t'attend.</span>
           </h2>
-          <p className="font-mono text-[10px] text-steel/50 uppercase tracking-[2px]">
+          <p className="font-mono text-[10px] text-steel/75 uppercase tracking-[2px]">
             Connecte Strava · Ta carte se génère en quelques secondes · Zéro configuration
           </p>
           <button onClick={handleCTA} className="hw-btn-amber px-12 py-4 text-sm">

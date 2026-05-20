@@ -26,12 +26,12 @@ export function AppHeader() {
       className="flex items-center gap-2.5 px-6 py-3 border-b border-steel/10"
       style={{ background: 'rgba(8,9,16,0.6)', backdropFilter: 'blur(8px)' }}
     >
-      <span className="font-mono text-[10px] text-steel/40 uppercase tracking-[2px]">HAWKSIGHT</span>
-      <span className="font-mono text-[10px] text-steel/25">/</span>
+      <span className="font-mono text-[10px] text-steel/65 uppercase tracking-[2px]">HAWKSIGHT</span>
+      <span className="font-mono text-[10px] text-steel/75">/</span>
       {parent && (
         <>
-          <span className="font-mono text-[10px] text-steel/40 uppercase tracking-[2px]">{parent}</span>
-          <span className="font-mono text-[10px] text-steel/25">/</span>
+          <span className="font-mono text-[10px] text-steel/65 uppercase tracking-[2px]">{parent}</span>
+          <span className="font-mono text-[10px] text-steel/75">/</span>
         </>
       )}
       <span className="font-mono text-[10px] text-mist/80 uppercase tracking-[2px] font-semibold">{label}</span>

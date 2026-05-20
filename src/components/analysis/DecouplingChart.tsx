@@ -204,7 +204,7 @@ export function DecouplingChart({ data, color = '#e74c3c', onExport }: Decouplin
                     y1={20 + (percent / 100) * 80}
                     x2="360"
                     y2={20 + (percent / 100) * 80}
-                    stroke="#3A3F47"
+                    stroke="#9CA3AF"
                     strokeWidth="0.5"
                     opacity="0.2"
                   />
@@ -245,7 +245,7 @@ export function DecouplingChart({ data, color = '#e74c3c', onExport }: Decouplin
               </g>
 
               {/* Separator */}
-              <line x1="40" y1="115" x2="360" y2="115" stroke="#3A3F47" strokeWidth="1" />
+              <line x1="40" y1="115" x2="360" y2="115" stroke="#9CA3AF" strokeWidth="1" />
 
               {/* BOTTOM CHART: Correlation */}
               <g>
@@ -255,7 +255,7 @@ export function DecouplingChart({ data, color = '#e74c3c', onExport }: Decouplin
                   y1="165"
                   x2="360"
                   y2="165"
-                  stroke="#3A3F47"
+                  stroke="#9CA3AF"
                   strokeWidth="1"
                   strokeDasharray="4,4"
                 />
