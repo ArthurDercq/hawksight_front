@@ -134,7 +134,7 @@ export function AidStationChart({ data, color = '#E8832A', onExport }: AidStatio
                       {station.name}
                     </span>
                     <span className="font-mono text-sm font-semibold" style={{ color }}>
-                      {station.duration_min.toFixed(1)} min
+                      {station.duration_formatted ?? `${station.duration_min.toFixed(1)} min`}
                     </span>
                   </div>
 

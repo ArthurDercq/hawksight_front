@@ -157,7 +157,7 @@ export function TrailStatsCard({ trailStats: t, sportColor }: Props) {
                   <div className="text-xs text-mist">{s.name}</div>
                   <div className="font-mono text-[9px] text-steel mt-0.5">km {s.km_point.toFixed(1)}</div>
                 </div>
-                <div className="font-mono text-sm font-bold" style={{ color: sportColor }}>{s.duration_min.toFixed(0)} min</div>
+                <div className="font-mono text-sm font-bold" style={{ color: sportColor }}>{s.duration_formatted ?? `${s.duration_min.toFixed(0)} min`}</div>
               </div>
             ))}
           </div>

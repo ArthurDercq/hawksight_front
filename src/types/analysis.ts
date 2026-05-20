@@ -8,9 +8,11 @@
 export interface AidStation {
   name: string;
   duration_min: number;
+  duration_s?: number;
+  duration_formatted?: string;
   km_point: number;
-  start_time: string;
-  end_time: string;
+  start_time?: string;
+  end_time?: string;
 }
 
 // 2. Run/Walk scatter point
