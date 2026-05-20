@@ -109,3 +109,12 @@ export function formatDurationCompact(seconds: number): string {
   if (hours > 0) return `${hours}h${minutes.toString().padStart(2, '0')}`;
   return `${minutes}min`;
 }
+
+const _numberFmt = new Intl.NumberFormat('fr-FR');
+
+/**
+ * Formate un nombre avec séparateur de milliers — ex: 12 345
+ */
+export function formatNumber(n: number): string {
+  return _numberFmt.format(Math.round(n));
+}

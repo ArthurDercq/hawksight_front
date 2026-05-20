@@ -182,7 +182,7 @@ export function DashboardPage() {
               </div>
               <div>
                 <p className="hw-label">Dénivelé</p>
-                <p className="hw-value text-glacier">{Math.round(weeklySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
+                <p className="hw-value text-glacier">{formatNumber(weeklySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
               </div>
               <div>
                 <p className="hw-label">Sessions</p>
@@ -214,7 +214,7 @@ export function DashboardPage() {
                 </div>
                 <div>
                   <p className="hw-label">D+</p>
-                  <p className="hw-value text-glacier">{Math.round(monthlySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
+                  <p className="hw-value text-glacier">{formatNumber(monthlySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
                 </div>
                 <div>
                   <p className="hw-label">Sessions</p>
@@ -344,7 +344,7 @@ export function DashboardPage() {
                 </div>
                 <div>
                   <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">D+</p>
-                  <p className="font-mono text-sm font-bold tabular-nums text-glacier">{lastActivity.denivele_m}<span className="text-[8px] text-glacier/50 ml-0.5">m</span></p>
+                  <p className="font-mono text-sm font-bold tabular-nums text-glacier">{formatNumber(lastActivity.denivele_m ?? 0)}<span className="text-[8px] text-glacier/50 ml-0.5">m</span></p>
                 </div>
                 <div>
                   <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
@@ -367,7 +367,7 @@ export function DashboardPage() {
 
           {/* Autres activités récentes */}
           <div>
-            {recentActivities.slice(1, 3).map((activity) => {
+            {recentActivities.filter(a => a.id !== lastActivity?.id).slice(0, 2).map((activity) => {
               const color = sportBarColor(activity.type ?? '');
               const isBike = activity.type === 'Bike';
               const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : formatPace(activity.allure_min_per_km);
@@ -494,4 +494,9 @@ function formatTime(seconds: number): string {
     return `${hours}h${minutes > 0 ? minutes.toString().padStart(2, '0') : ''}`;
   }
   return `${minutes} min`;
+}
+
+const _numFmt = new Intl.NumberFormat('fr-FR');
+function formatNumber(n: number): string {
+  return _numFmt.format(Math.round(n));
 }
