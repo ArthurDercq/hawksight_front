@@ -1,23 +1,10 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-  return {
-  plugins: [
-    react(),
-    // Upload source maps vers Sentry uniquement en prod si les variables sont définies
-    ...(env.SENTRY_AUTH_TOKEN && env.VITE_SENTRY_DSN ? [sentryVitePlugin({
-      org: 'hawksight',
-      project: 'frontend',
-      authToken: env.SENTRY_AUTH_TOKEN,
-      sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
-      telemetry: false,
-    })] : []),
-  ],
+export default defineConfig({
+  plugins: [react()],
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {
@@ -54,5 +41,4 @@ export default defineConfig(({ mode }) => {
       },
     },
   },
-  }
 })

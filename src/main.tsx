@@ -10,7 +10,7 @@ if (SENTRY_DSN) {
     dsn: SENTRY_DSN,
     environment: import.meta.env.MODE,
     tracesSampleRate: import.meta.env.PROD ? 0.5 : 0.0,
-    replaysOnErrorSampleRate: 0,
+    sendDefaultPii: true,
   })
 }
 // Fonts hébergées localement — zéro requête externe, zéro blocage
