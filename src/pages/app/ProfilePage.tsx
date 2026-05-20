@@ -664,19 +664,19 @@ export function ProfilePage() {
                 <div>
                   <h3 className="font-heading font-semibold text-mist text-sm">Synchronisation</h3>
                   <p className="text-[#3A3F47] text-xs font-mono mt-0.5">
-                    {profile.last_sync_at
-                      ? formatRelativeTime(profile.last_sync_at)
-                      : 'Jamais synchronisé'}
+                    {profile.last_activity_at
+                      ? formatRelativeTime(profile.last_activity_at)
+                      : 'Aucune activité'}
                   </p>
                 </div>
               </div>
 
-              {/* Last sync date */}
-              {profile.last_sync_at && (
+              {/* Dernière activité reçue */}
+              {profile.last_activity_at && (
                 <div className="mb-4 px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20">
-                  <p className="text-[#3A3F47] text-[10px] font-mono uppercase tracking-wider mb-0.5">Dernière sync</p>
+                  <p className="text-[#3A3F47] text-[10px] font-mono uppercase tracking-wider mb-0.5">Dernière activité reçue</p>
                   <p className="text-mist/70 text-xs font-mono">
-                    {new Date(profile.last_sync_at).toLocaleDateString('fr-FR', {
+                    {new Date(profile.last_activity_at).toLocaleDateString('fr-FR', {
                       day: 'numeric', month: 'long', year: 'numeric',
                       hour: '2-digit', minute: '2-digit'
                     })}

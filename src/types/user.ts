@@ -13,6 +13,7 @@ export interface UserProfile {
   email_address?: string;
   created_at: string;
   last_sync_at?: string;
+  last_activity_at?: string;
   is_active: boolean;
   role: UserRole;
   // Champs étendus — retournés par /auth/strava/profile
@@ -29,6 +30,7 @@ export interface StravaSyncStatus {
   user_id: number;
   strava_id: number;
   last_sync_at: string | null;
+  last_activity_at: string | null;
   activities_count: number;
   features_count: number;
   is_syncing: boolean;
