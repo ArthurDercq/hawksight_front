@@ -106,7 +106,7 @@ export function AuthCallbackPage() {
               <div className="h-5 flex items-center justify-center mb-6">
                 <motion.p
                   key={stepIndex}
-                  className="font-mono text-[11px] text-mist/50 uppercase tracking-[1.5px]"
+                  className="hw-text-data text-mist/50 uppercase tracking-[1.5px]"
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}

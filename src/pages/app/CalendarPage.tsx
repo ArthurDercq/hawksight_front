@@ -86,18 +86,18 @@ export function CalendarPage() {
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">{error}</span>
+          <span className="hw-text-data text-steel/85 uppercase tracking-wider">{error}</span>
         </div>
       ) : (
         <div className="hw-card-dark-lg">
           {/* Weekday headers */}
-          <div className="grid gap-1 mb-1.5" style={{ gridTemplateColumns: 'repeat(7, 1fr) 90px' }}>
+          <div className="grid gap-1 mb-1.5 grid-cols-[repeat(7,1fr)_90px]">
             {WEEKDAYS.map((day) => (
-              <div key={day} className="text-center font-mono text-[9px] font-semibold text-glacier uppercase tracking-[1.5px] py-1.5">
+              <div key={day} className="text-center hw-text-label font-semibold text-glacier py-1.5">
                 {day}
               </div>
             ))}
-            <div className="text-center font-mono text-[9px] font-semibold text-steel uppercase tracking-[1.5px] py-1.5">
+            <div className="text-center hw-text-label font-semibold text-steel py-1.5">
               S·W
             </div>
           </div>
@@ -143,7 +143,7 @@ function CalendarWeekRow({ week, onAddEvent }: CalendarWeekRowProps) {
   const hasActivity = stats.totalDistance > 0;
 
   return (
-    <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr) 90px' }}>
+    <div className="grid gap-1 grid-cols-[repeat(7,1fr)_90px]">
       {week.days.map((day, i) => (
         <CalendarDayCell key={i} day={day} onAddEvent={onAddEvent} />
       ))}
@@ -151,17 +151,17 @@ function CalendarWeekRow({ week, onAddEvent }: CalendarWeekRowProps) {
       {/* Week summary */}
       <div className={hasActivity ? 'hw-cal-week-stats hw-cal-week-stats--active' : 'hw-cal-week-stats'}>
         <div className="flex justify-between items-baseline">
-          <span className="font-mono text-[8px] text-steel">km</span>
-          <span className={`font-mono text-[11px] font-semibold tabular-nums ${hasActivity ? 'text-amber' : 'text-steel'}`}>{dist}</span>
+          <span className="hw-text-label text-steel">km</span>
+          <span className={`hw-text-data font-semibold ${hasActivity ? 'text-amber' : 'text-steel'}`}>{dist}</span>
         </div>
         <div className="h-px bg-steel/20" />
         <div className="flex justify-between items-baseline">
-          <span className="font-mono text-[8px] text-steel">tps</span>
-          <span className={`font-mono text-[10px] tabular-nums ${hasActivity ? 'text-mist' : 'text-steel'}`}>{time}</span>
+          <span className="hw-text-label text-steel">tps</span>
+          <span className={`hw-text-caption tabular-nums ${hasActivity ? 'text-mist' : 'text-steel'}`}>{time}</span>
         </div>
         <div className="flex justify-between items-baseline">
-          <span className="font-mono text-[8px] text-steel">/km</span>
-          <span className={`font-mono text-[10px] tabular-nums ${hasActivity ? 'text-glacier' : 'text-steel'}`}>{pace}</span>
+          <span className="hw-text-label text-steel">/km</span>
+          <span className={`hw-text-caption tabular-nums ${hasActivity ? 'text-glacier' : 'text-steel'}`}>{pace}</span>
         </div>
       </div>
     </div>
@@ -199,7 +199,7 @@ function CalendarDayCell({ day, onAddEvent }: CalendarDayCellProps) {
     >
       {/* Day number + add button */}
       <div className="flex items-center justify-between mb-1.5">
-        <span className={`font-mono text-[11px] ${isToday ? 'font-bold text-amber' : isCurrentMonth ? 'font-medium text-mist' : 'text-steel'}`}>
+        <span className={`hw-text-data ${isToday ? 'font-bold text-amber' : isCurrentMonth ? 'font-medium text-mist' : 'text-steel'}`}>
           {date.getDate()}
         </span>
         {isCurrentMonth && hovered && (
@@ -215,7 +215,7 @@ function CalendarDayCell({ day, onAddEvent }: CalendarDayCellProps) {
 
       {/* Event badges */}
       {events.map((event: TrainingEvent) => (
-        <div key={event.id} className="hw-event-badge mb-1 text-[9px]" title={event.name}>
+        <div key={event.id} className="hw-event-badge mb-1" title={event.name}>
           <span className="shrink-0">🏁</span>
           <span className="truncate">{event.name}</span>
         </div>

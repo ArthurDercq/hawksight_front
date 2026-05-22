@@ -119,7 +119,7 @@ export function OnboardingScreen({ status, hasData }: Props) {
   }, [displayProgress, indeterminateWidth]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B0C10] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-charcoal overflow-y-auto">
       {/* Orbs */}
       <div className="fixed top-1/4 -left-40 w-96 h-96 bg-[#E8832A]/6 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-1/4 -right-40 w-80 h-80 bg-[#3DB2E0]/6 rounded-full blur-3xl pointer-events-none" />
@@ -183,7 +183,7 @@ export function OnboardingScreen({ status, hasData }: Props) {
                   : 'Aucune activité trouvée'}
               </h2>
             </div>
-            <p className="font-mono text-[11px] text-steel uppercase tracking-wider">
+            <p className="hw-text-data text-steel uppercase tracking-wider">
               {hasError
                 ? 'Contacte le support si le problème persiste'
                 : isRateLimitPaused
@@ -221,14 +221,14 @@ export function OnboardingScreen({ status, hasData }: Props) {
         </div>
 
         {isSyncing && (
-          <p className="mt-3 font-mono text-[9px] text-steel/75 uppercase tracking-[1.5px]">
+          <p className="mt-3 hw-text-label text-steel/75">
             Cette page se met à jour automatiquement toutes les 5 secondes
           </p>
         )}
       </motion.div>
 
       {/* Skeleton dashboard — donne l'impression que les données arrivent */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: '280px 1fr' }}>
+      <div className="grid grid-cols-[280px_1fr] gap-3">
         <SkeletonCard delay={0.1} className="min-h-[280px]" />
         <SkeletonCard delay={0.18} className="min-h-[280px]" />
       </div>

@@ -137,7 +137,7 @@ export function generateCalendarWeeks(
   const startDate = new Date(firstDay);
   startDate.setDate(firstDay.getDate() - startDayOfWeek);
 
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
 
   while (currentDate <= lastDay || currentDate.getDay() !== 1) {
     const week: CalendarWeek = {

@@ -92,7 +92,7 @@ const ActivityTrace = ({ activity }: { activity: Activity }) => {
   const color = activityColors[activity.type];
 
   return (
-    <div className="aspect-square border border-[#3A3F47]/40 relative overflow-hidden bg-[#0B0C10] rounded">
+    <div className="aspect-square border border-steel/40 relative overflow-hidden bg-charcoal rounded">
       {/* Grille de fond */}
       <div
         className="absolute inset-0 opacity-[0.02]"
@@ -213,17 +213,17 @@ export function ActivityGridPosters() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Year Selector */}
         <div className="flex items-center gap-3">
-          <span className="text-[#3A3F47] font-['Inter'] text-sm">Année</span>
+          <span className="text-muted font-body text-sm">Année</span>
           <div className="flex gap-2">
             {availableYears.map((year) => (
               <button
                 key={year}
                 onClick={() => setSelectedYear(year)}
                 className={`
-                  px-4 py-2 rounded border font-['JetBrains_Mono'] text-sm transition-all
+                  px-4 py-2 rounded border font-mono text-sm transition-all
                   ${selectedYear === year
                     ? 'bg-[#E8832A]/10 border-[#E8832A] text-[#E8832A]'
-                    : 'bg-[#0B0C10] border-[#3A3F47]/30 text-[#F2F2F2]/60 hover:border-[#3A3F47]'
+                    : 'bg-charcoal border-steel/30 text-[#F2F2F2]/60 hover:border-steel'
                   }
                 `}
               >
@@ -237,14 +237,14 @@ export function ActivityGridPosters() {
         <div className="flex items-center gap-2">
           <button
             onClick={exportAsPNG}
-            className="flex items-center gap-2 px-4 py-2 bg-[#E8832A]/10 border border-[#E8832A]/30 text-[#E8832A] rounded hover:bg-[#E8832A]/20 transition-all font-['Inter'] text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#E8832A]/10 border border-[#E8832A]/30 text-[#E8832A] rounded hover:bg-[#E8832A]/20 transition-all font-body text-sm"
           >
             <DownloadIcon className="w-4 h-4" />
             PNG
           </button>
           <button
             onClick={exportAsSVG}
-            className="flex items-center gap-2 px-4 py-2 bg-[#3DB2E0]/10 border border-[#3DB2E0]/30 text-[#3DB2E0] rounded hover:bg-[#3DB2E0]/20 transition-all font-['Inter'] text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#3DB2E0]/10 border border-[#3DB2E0]/30 text-[#3DB2E0] rounded hover:bg-[#3DB2E0]/20 transition-all font-body text-sm"
           >
             <DownloadIcon className="w-4 h-4" />
             SVG
@@ -254,15 +254,15 @@ export function ActivityGridPosters() {
 
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <FilterIcon className="w-4 h-4 text-[#3A3F47]" />
-        <span className="text-[#3A3F47] font-['Inter'] text-sm">Filtrer par type</span>
+        <FilterIcon className="w-4 h-4 text-muted" />
+        <span className="text-muted font-body text-sm">Filtrer par type</span>
         <div className="flex gap-2">
           {(Object.keys(activityColors) as ActivityType[]).map((type) => (
             <button
               key={type}
               onClick={() => toggleFilter(type)}
               className={`
-                px-3 py-1.5 rounded border text-xs font-['Inter'] transition-all
+                px-3 py-1.5 rounded border text-xs font-body transition-all
                 ${activeFilters.includes(type)
                   ? 'border-opacity-100 opacity-100'
                   : 'border-opacity-30 opacity-40'
@@ -285,7 +285,7 @@ export function ActivityGridPosters() {
       {/* Poster Container - Format Portrait */}
       <div
         ref={posterRef}
-        className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-8 relative overflow-hidden max-w-3xl mx-auto"
+        className="bg-charcoal border border-steel/30 rounded-lg p-8 relative overflow-hidden max-w-3xl mx-auto"
       >
         {/* Background effects */}
         <div className="absolute top-0 left-0 w-64 h-64 bg-[#E8832A]/5 rounded-full blur-3xl" />
@@ -293,7 +293,7 @@ export function ActivityGridPosters() {
 
         <div className="relative space-y-6">
           {/* Header */}
-          <div className="flex items-start justify-between pb-4 border-b border-[#3A3F47]/30">
+          <div className="flex items-start justify-between pb-4 border-b border-steel/30">
             <div className="flex items-start gap-4">
               <div className="relative">
                 <div className="absolute inset-0 bg-[#E8832A]/20 blur-lg" />
@@ -303,7 +303,7 @@ export function ActivityGridPosters() {
               </div>
               <div>
                 <h3 className="font-['Space_Grotesk'] text-[#F2F2F2]">Année {selectedYear}</h3>
-                <p className="text-[#3A3F47] font-['Inter'] text-sm">
+                <p className="text-muted font-body text-sm">
                   {filteredActivities.length} activités affichées
                 </p>
               </div>
@@ -319,7 +319,7 @@ export function ActivityGridPosters() {
                   />
                 ))}
               </div>
-              <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+              <span className="text-muted font-mono text-xs">
                 HAWKSIGHT_GRID
               </span>
             </div>
@@ -331,33 +331,33 @@ export function ActivityGridPosters() {
               activeFilters.includes(activity.type) ? (
                 <ActivityTrace key={activity.index} activity={activity} />
               ) : (
-                <div key={activity.index} className="aspect-square border border-[#3A3F47]/20 bg-[#0B0C10]/50" />
+                <div key={activity.index} className="aspect-square border border-steel/20 bg-charcoal/50" />
               )
             ))}
           </div>
 
           {/* Footer with stats and legend */}
-          <div className="space-y-4 pt-4 border-t border-[#3A3F47]/30">
+          <div className="space-y-4 pt-4 border-t border-steel/30">
             {/* Stats */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div>
-                  <div className="text-[#3A3F47] font-['Inter'] text-sm">Distance totale</div>
-                  <div className="text-[#E8832A] font-['JetBrains_Mono']">1,847 km</div>
+                  <div className="text-muted font-body text-sm">Distance totale</div>
+                  <div className="text-[#E8832A] font-mono">1,847 km</div>
                 </div>
                 <div>
-                  <div className="text-[#3A3F47] font-['Inter'] text-sm">Temps total</div>
-                  <div className="text-[#3DB2E0] font-['JetBrains_Mono']">156h 24min</div>
+                  <div className="text-muted font-body text-sm">Temps total</div>
+                  <div className="text-[#3DB2E0] font-mono">156h 24min</div>
                 </div>
                 <div>
-                  <div className="text-[#3A3F47] font-['Inter'] text-sm">Dénivelé</div>
-                  <div className="text-[#E8832A] font-['JetBrains_Mono']">23,450 m</div>
+                  <div className="text-muted font-body text-sm">Dénivelé</div>
+                  <div className="text-[#E8832A] font-mono">23,450 m</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#E8832A] animate-pulse" />
-                <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                <span className="text-muted font-mono text-xs">
                   COMPLETE
                 </span>
               </div>
@@ -365,7 +365,7 @@ export function ActivityGridPosters() {
 
             {/* Mini Legend */}
             <div className="flex items-center gap-6 pt-2">
-              <span className="text-[#3A3F47] font-['Inter'] text-xs uppercase tracking-wide">
+              <span className="text-muted font-body text-xs uppercase tracking-wide">
                 Légende
               </span>
               <div className="flex items-center gap-4">
@@ -375,10 +375,10 @@ export function ActivityGridPosters() {
                       className="w-3 h-0.5 rounded-full"
                       style={{ backgroundColor: activityColors[type] }}
                     />
-                    <span className="text-[#F2F2F2]/60 font-['Inter'] text-xs">
+                    <span className="text-[#F2F2F2]/60 font-body text-xs">
                       {activityLabels[type]}
                     </span>
-                    <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                    <span className="text-muted font-mono text-xs">
                       ({counts[type] || 0})
                     </span>
                   </div>

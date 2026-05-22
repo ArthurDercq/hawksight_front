@@ -98,7 +98,7 @@ const ElevationTrace = ({ activity }: { activity: Activity }) => {
   const areaPath = `${linePath} L 100 100 L 0 100 Z`;
 
   return (
-    <div className="aspect-square border border-[#3A3F47]/40 relative overflow-hidden bg-[#0B0C10] rounded">
+    <div className="aspect-square border border-steel/40 relative overflow-hidden bg-charcoal rounded">
       {/* Grille de fond */}
       <div
         className="absolute inset-0 opacity-[0.02]"
@@ -230,17 +230,17 @@ export function ElevationGridPosters() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Year Selector */}
         <div className="flex items-center gap-3">
-          <span className="text-[#3A3F47] font-['Inter'] text-sm">Année</span>
+          <span className="text-muted font-body text-sm">Année</span>
           <div className="flex gap-2">
             {availableYears.map((year) => (
               <button
                 key={year}
                 onClick={() => setSelectedYear(year)}
                 className={`
-                  px-4 py-2 rounded border font-['JetBrains_Mono'] text-sm transition-all
+                  px-4 py-2 rounded border font-mono text-sm transition-all
                   ${selectedYear === year
                     ? 'bg-[#6DAA75]/10 border-[#6DAA75] text-[#6DAA75]'
-                    : 'bg-[#0B0C10] border-[#3A3F47]/30 text-[#F2F2F2]/60 hover:border-[#3A3F47]'
+                    : 'bg-charcoal border-steel/30 text-[#F2F2F2]/60 hover:border-steel'
                   }
                 `}
               >
@@ -254,14 +254,14 @@ export function ElevationGridPosters() {
         <div className="flex items-center gap-2">
           <button
             onClick={exportAsPNG}
-            className="flex items-center gap-2 px-4 py-2 bg-[#6DAA75]/10 border border-[#6DAA75]/30 text-[#6DAA75] rounded hover:bg-[#6DAA75]/20 transition-all font-['Inter'] text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#6DAA75]/10 border border-[#6DAA75]/30 text-[#6DAA75] rounded hover:bg-[#6DAA75]/20 transition-all font-body text-sm"
           >
             <DownloadIcon className="w-4 h-4" />
             PNG
           </button>
           <button
             onClick={exportAsSVG}
-            className="flex items-center gap-2 px-4 py-2 bg-[#3DB2E0]/10 border border-[#3DB2E0]/30 text-[#3DB2E0] rounded hover:bg-[#3DB2E0]/20 transition-all font-['Inter'] text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#3DB2E0]/10 border border-[#3DB2E0]/30 text-[#3DB2E0] rounded hover:bg-[#3DB2E0]/20 transition-all font-body text-sm"
           >
             <DownloadIcon className="w-4 h-4" />
             SVG
@@ -271,15 +271,15 @@ export function ElevationGridPosters() {
 
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <FilterIcon className="w-4 h-4 text-[#3A3F47]" />
-        <span className="text-[#3A3F47] font-['Inter'] text-sm">Filtrer par type</span>
+        <FilterIcon className="w-4 h-4 text-muted" />
+        <span className="text-muted font-body text-sm">Filtrer par type</span>
         <div className="flex gap-2">
           {(Object.keys(elevationColors) as ActivityType[]).map((type) => (
             <button
               key={type}
               onClick={() => toggleFilter(type)}
               className={`
-                px-3 py-1.5 rounded border text-xs font-['Inter'] transition-all
+                px-3 py-1.5 rounded border text-xs font-body transition-all
                 ${activeFilters.includes(type)
                   ? 'border-opacity-100 opacity-100'
                   : 'border-opacity-30 opacity-40'
@@ -302,7 +302,7 @@ export function ElevationGridPosters() {
       {/* Poster Container */}
       <div
         ref={posterRef}
-        className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-8 relative overflow-hidden max-w-3xl mx-auto"
+        className="bg-charcoal border border-steel/30 rounded-lg p-8 relative overflow-hidden max-w-3xl mx-auto"
       >
         {/* Background effects */}
         <div className="absolute top-0 left-0 w-64 h-64 bg-[#6DAA75]/5 rounded-full blur-3xl" />
@@ -310,7 +310,7 @@ export function ElevationGridPosters() {
 
         <div className="relative space-y-6">
           {/* Header */}
-          <div className="flex items-start justify-between pb-4 border-b border-[#3A3F47]/30">
+          <div className="flex items-start justify-between pb-4 border-b border-steel/30">
             <div className="flex items-start gap-4">
               <div className="relative">
                 <div className="absolute inset-0 bg-[#6DAA75]/20 blur-lg" />
@@ -320,7 +320,7 @@ export function ElevationGridPosters() {
               </div>
               <div>
                 <h3 className="font-['Space_Grotesk'] text-[#F2F2F2]">Dénivelés {selectedYear}</h3>
-                <p className="text-[#3A3F47] font-['Inter'] text-sm">
+                <p className="text-muted font-body text-sm">
                   {filteredActivities.length} profils affichés
                 </p>
               </div>
@@ -336,7 +336,7 @@ export function ElevationGridPosters() {
                   />
                 ))}
               </div>
-              <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+              <span className="text-muted font-mono text-xs">
                 HAWKSIGHT_ELEVATION
               </span>
             </div>
@@ -348,33 +348,33 @@ export function ElevationGridPosters() {
               activeFilters.includes(activity.type) ? (
                 <ElevationTrace key={activity.index} activity={activity} />
               ) : (
-                <div key={activity.index} className="aspect-square border border-[#3A3F47]/20 bg-[#0B0C10]/50" />
+                <div key={activity.index} className="aspect-square border border-steel/20 bg-charcoal/50" />
               )
             ))}
           </div>
 
           {/* Footer with stats and legend */}
-          <div className="space-y-4 pt-4 border-t border-[#3A3F47]/30">
+          <div className="space-y-4 pt-4 border-t border-steel/30">
             {/* Stats */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div>
-                  <div className="text-[#3A3F47] font-['Inter'] text-sm">D+ total</div>
-                  <div className="text-[#6DAA75] font-['JetBrains_Mono']">23,450 m</div>
+                  <div className="text-muted font-body text-sm">D+ total</div>
+                  <div className="text-[#6DAA75] font-mono">23,450 m</div>
                 </div>
                 <div>
-                  <div className="text-[#3A3F47] font-['Inter'] text-sm">D- total</div>
-                  <div className="text-[#9477D9] font-['JetBrains_Mono']">22,890 m</div>
+                  <div className="text-muted font-body text-sm">D- total</div>
+                  <div className="text-[#9477D9] font-mono">22,890 m</div>
                 </div>
                 <div>
-                  <div className="text-[#3A3F47] font-['Inter'] text-sm">Alt. max</div>
-                  <div className="text-[#3DB2E0] font-['JetBrains_Mono']">2,847 m</div>
+                  <div className="text-muted font-body text-sm">Alt. max</div>
+                  <div className="text-[#3DB2E0] font-mono">2,847 m</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#6DAA75] animate-pulse" />
-                <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                <span className="text-muted font-mono text-xs">
                   COMPLETE
                 </span>
               </div>
@@ -382,7 +382,7 @@ export function ElevationGridPosters() {
 
             {/* Mini Legend */}
             <div className="flex items-center gap-6 pt-2">
-              <span className="text-[#3A3F47] font-['Inter'] text-xs uppercase tracking-wide">
+              <span className="text-muted font-body text-xs uppercase tracking-wide">
                 Légende
               </span>
               <div className="flex items-center gap-4">
@@ -392,10 +392,10 @@ export function ElevationGridPosters() {
                       className="w-3 h-0.5 rounded-full"
                       style={{ backgroundColor: elevationColors[type].stroke }}
                     />
-                    <span className="text-[#F2F2F2]/60 font-['Inter'] text-xs">
+                    <span className="text-[#F2F2F2]/60 font-body text-xs">
                       {activityLabels[type]}
                     </span>
-                    <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                    <span className="text-muted font-mono text-xs">
                       ({counts[type] || 0})
                     </span>
                   </div>

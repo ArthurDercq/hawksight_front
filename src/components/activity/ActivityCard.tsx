@@ -37,11 +37,11 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             {activity.name}
           </Link>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="font-mono text-[9px] text-steel uppercase tracking-wider">
+            <span className="hw-text-label text-steel">
               {sportStyle.label} · {formatDate(activity.start_date)}
             </span>
             {activity.race && (
-              <span className="hw-event-badge text-[8px]">
+              <span className="hw-event-badge">
                 🏁 {activity.race.name}
               </span>
             )}
@@ -53,34 +53,34 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
       <div className="grid grid-cols-4 gap-2.5 mb-3">
         {!isWeightTraining && (
           <div>
-            <p className="font-mono text-[9px] text-mist/30 uppercase mb-0.5">Distance</p>
+            <p className="hw-text-label text-mist/30 mb-0.5">Distance</p>
             <p className="text-sm font-bold font-mono tabular-nums text-amber">
               {(activity.distance_km || activity.distance || 0).toFixed(1)}
-              <span className="text-[9px] text-amber/50 ml-0.5">km</span>
+              <span className="hw-text-label text-amber/50 ml-0.5">km</span>
             </p>
           </div>
         )}
         <div>
-          <p className="font-mono text-[9px] text-mist/30 uppercase mb-0.5">Durée</p>
+          <p className="hw-text-label text-mist/30 mb-0.5">Durée</p>
           <p className="text-sm font-bold font-mono tabular-nums text-mist">
             {activity.moving_time_hms || `${Math.round(activity.moving_time / 60)} min`}
           </p>
         </div>
         {!isWeightTraining && activity.total_elevation_gain !== undefined && activity.total_elevation_gain > 0 && (
           <div>
-            <p className="font-mono text-[9px] text-mist/30 uppercase mb-0.5">D+</p>
+            <p className="hw-text-label text-mist/30 mb-0.5">D+</p>
             <p className="text-sm font-bold font-mono tabular-nums text-glacier">
               {Math.round(activity.total_elevation_gain)}
-              <span className="text-[9px] text-glacier/50 ml-0.5">m</span>
+              <span className="hw-text-label text-glacier/50 ml-0.5">m</span>
             </p>
           </div>
         )}
         {!isWeightTraining && activity.speed_minutes_per_km_hms && (
           <div>
-            <p className="font-mono text-[9px] text-mist/30 uppercase mb-0.5">{isBike ? 'Vitesse' : 'Allure'}</p>
+            <p className="hw-text-label text-mist/30 mb-0.5">{isBike ? 'Vitesse' : 'Allure'}</p>
             <p className="text-sm font-bold font-mono tabular-nums text-moss">
               {isBike ? `${activity.average_speed?.toFixed(1) || '--'}` : activity.speed_minutes_per_km_hms}
-              <span className="text-[9px] text-moss/50 ml-0.5">{isBike ? 'km/h' : '/km'}</span>
+              <span className="hw-text-label text-moss/50 ml-0.5">{isBike ? 'km/h' : '/km'}</span>
             </p>
           </div>
         )}
@@ -96,7 +96,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             {onEdit && (
               <button
                 onClick={() => onEdit(activity)}
-                className="font-mono text-[9px] text-mist/30 bg-transparent border-none cursor-pointer uppercase tracking-wider hover:text-mist/70 transition-colors"
+                className="hw-text-label text-mist/30 bg-transparent border-none cursor-pointer hover:text-mist/70 transition-colors"
               >
                 Modifier
               </button>
@@ -104,7 +104,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             {onDelete && (
               <button
                 onClick={() => onDelete(activity)}
-                className="font-mono text-[9px] text-red-400/40 bg-transparent border-none cursor-pointer uppercase tracking-wider hover:text-red-400/80 transition-colors"
+                className="hw-text-label text-red-400/40 bg-transparent border-none cursor-pointer hover:text-red-400/80 transition-colors"
               >
                 Supprimer
               </button>

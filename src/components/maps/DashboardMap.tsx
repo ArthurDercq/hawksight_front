@@ -170,68 +170,57 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
     <div className={`relative overflow-hidden ${className}`} style={style}>
       <div ref={containerRef} className="w-full h-full" />
       {/* Grid overlay style mockup */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(61,178,224,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(61,178,224,0.025) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
+      <div className="absolute inset-0 pointer-events-none hw-map-grid-overlay" />
       {/* Gradient bas pour lisibilité des stats */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(6,12,24,0.85) 0%, transparent 45%)' }} />
+      <div className="absolute inset-0 pointer-events-none hw-map-gradient-bottom" />
       {/* Gradient gauche léger */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(6,12,24,0.4) 0%, transparent 30%)' }} />
+      <div className="absolute inset-0 pointer-events-none hw-map-gradient-left" />
 
-      {/* Label haut gauche — 9px mono #3A3F47 letter-spacing 2px */}
-      <span
-        className="absolute pointer-events-none"
-        style={{ top: '14px', left: '16px', fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '2px' }}
-      >
+      {/* Label haut gauche */}
+      <span className="absolute pointer-events-none hw-text-label" style={{ top: '14px', left: '16px', letterSpacing: '2px' }}>
         Zones explorées
       </span>
 
       {/* Stats conquête — bas gauche */}
-      <div className="absolute pointer-events-none" style={{ bottom: '14px', left: '16px', display: 'flex', gap: '20px' }}>
+      <div className="absolute pointer-events-none flex gap-5" style={{ bottom: '14px', left: '16px' }}>
         {explorationStats ? (
           <>
             <div>
-              <p style={{ fontSize: '26px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{explorationStats.total_cells}</p>
-              <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>territoires</p>
+              <p className="hw-stat-value-lg">{explorationStats.total_cells}</p>
+              <p className="hw-text-label mt-px">territoires</p>
             </div>
             <div>
-              <p style={{ fontSize: '26px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{Math.round(explorationStats.surface_km2)} km²</p>
-              <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>surface</p>
+              <p className="hw-stat-value-lg">{Math.round(explorationStats.surface_km2)} km²</p>
+              <p className="hw-text-label mt-px">surface</p>
             </div>
             <div>
               {newThisMonth === 0 ? (
-                <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 1.4 }}>Aucune nouvelle<br />zone ce mois</p>
+                <p className="hw-text-label" style={{ lineHeight: 1.4 }}>Aucune nouvelle<br />zone ce mois</p>
               ) : (
                 <>
-                  <p style={{ fontSize: '26px', fontWeight: 700, color: '#3DB2E0', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>+{newThisMonth ?? '—'}</p>
-                  <p style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '1px' }}>ce mois</p>
+                  <p className="hw-stat-value-lg">+{newThisMonth ?? '—'}</p>
+                  <p className="hw-text-label mt-px">ce mois</p>
                 </>
               )}
             </div>
           </>
         ) : mapLoaded && !dataLoaded ? (
-          <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(61,178,224,0.4)' }} className="animate-pulse">chargement...</span>
+          <span className="hw-text-caption text-glacier/40 animate-pulse">chargement...</span>
         ) : null}
       </div>
 
       {/* Lien Exploration — bas droite */}
       <Link
         to="/exploration"
-        className="hw-link absolute"
-        style={{ bottom: '14px', right: '14px', color: 'rgba(61,178,224,0.5)' }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'rgba(61,178,224,0.9)')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(61,178,224,0.5)')}
+        className="hw-link absolute text-glacier/50 hover:text-glacier/90 transition-colors"
+        style={{ bottom: '14px', right: '14px' }}
       >
         Voir exploration →
       </Link>
 
-      {/* Corner brackets — 14×14px glacier, mockup exact */}
-      <span className="hw-br hw-br-tl pointer-events-none" style={{ borderColor: 'rgba(61,178,224,0.35)' }} />
-      <span className="hw-br hw-br-br pointer-events-none" style={{ borderColor: 'rgba(61,178,224,0.35)' }} />
+      {/* Corner brackets — glacier */}
+      <span className="hw-br hw-br-tl hw-br-glacier-dim pointer-events-none" />
+      <span className="hw-br hw-br-br hw-br-glacier-dim pointer-events-none" />
     </div>
   );
 }

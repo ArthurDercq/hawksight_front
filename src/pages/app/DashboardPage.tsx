@@ -102,12 +102,12 @@ export function DashboardPage() {
       {isDemo && <DemoBanner />}
 
       {/* ── ROW 0 : Score Trail + Carte ── */}
-      <div className="grid gap-3 min-h-[280px]" style={{ gridTemplateColumns: '280px 1fr' }}>
+      <div className="grid gap-3 min-h-[280px] grid-cols-[280px_1fr]">
 
         {/* Score Trail */}
         <div className="relative overflow-hidden flex flex-col bg-charcoal border border-steel/30 rounded-lg p-5 min-h-[280px]">
           {/* Radial amber glow */}
-          <span className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, rgba(232,131,42,0.06) 0%, transparent 65%)' }} />
+          <span className="absolute inset-0 pointer-events-none hw-gradient-amber-glow" />
           <span className="hw-br hw-br-tl hw-br-amber" />
           <span className="hw-br hw-br-tr hw-br-amber" />
           <span className="hw-br hw-br-bl hw-br-amber" />
@@ -116,7 +116,7 @@ export function DashboardPage() {
           {/* Eyebrow */}
           <div className="flex items-center justify-between mb-1.5">
             <p className="hw-score-eyebrow">Trail Score</p>
-            <Link to="/profile" className="hw-link" style={{ color: 'rgba(232,131,42,0.5)' }}>Profil →</Link>
+            <Link to="/profile" className="hw-link text-amber/50">Profil →</Link>
           </div>
 
           {/* Big score */}
@@ -126,7 +126,7 @@ export function DashboardPage() {
                 <p className="font-mono text-[84px] font-black leading-none text-amber tabular-nums">
                   {Math.round(trailProfile.trail_score_final)}
                 </p>
-                <span className="font-mono text-[13px] text-amber/40 pb-2.5">/100</span>
+                <span className="hw-text-value text-amber/40 pb-2.5">/100</span>
               </div>
               <div className="hw-grad-sep" />
             </>
@@ -141,8 +141,8 @@ export function DashboardPage() {
           <div className="absolute bottom-5 right-5 text-right">
             {trailProfile && (
               <>
-                <p className="text-[13px] font-semibold text-moss tracking-[0.5px]">{trailProfile.dominant_profile}</p>
-                <p className="font-mono text-[9px] text-steel uppercase tracking-[1px] mt-0.5">Profil dominant</p>
+                <p className="hw-text-value font-semibold text-moss tracking-[0.5px]">{trailProfile.dominant_profile}</p>
+                <p className="hw-text-label mt-0.5">Profil dominant</p>
               </>
             )}
           </div>
@@ -150,8 +150,7 @@ export function DashboardPage() {
 
         {/* Carte Mapbox */}
         <DashboardMap
-          className=""
-          style={{ minHeight: '280px', borderRadius: '8px' }}
+          className="min-h-[280px] rounded-lg"
           explorationStats={explorationStats}
         />
       </div>
@@ -164,7 +163,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <span className="hw-card-title">Cette semaine</span>
             {weeklySummary && (
-              <span className={`font-mono text-[11px] ${weeklySummary.prevWeekComparison >= 0 ? 'text-moss' : 'text-red-400'}`}>
+              <span className={`hw-text-data ${weeklySummary.prevWeekComparison >= 0 ? 'text-moss' : 'text-red-400'}`}>
                 {weeklySummary.prevWeekComparison >= 0 ? '↑' : '↓'} {Math.abs(weeklySummary.prevWeekComparison).toFixed(0)}%
               </span>
             )}
@@ -174,7 +173,7 @@ export function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="hw-label">Distance</p>
-                <p className="hw-value text-amber">{weeklySummary.totalDistance.toFixed(1)} <span className="text-[10px] text-amber/60">km</span></p>
+                <p className="hw-value text-amber">{weeklySummary.totalDistance.toFixed(1)} <span className="hw-text-caption text-amber/60">km</span></p>
               </div>
               <div>
                 <p className="hw-label">Temps</p>
@@ -182,7 +181,7 @@ export function DashboardPage() {
               </div>
               <div>
                 <p className="hw-label">Dénivelé</p>
-                <p className="hw-value text-glacier">{formatNumber(weeklySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
+                <p className="hw-value text-glacier">{formatNumber(weeklySummary.totalElevation)} <span className="hw-text-caption text-glacier/60">m</span></p>
               </div>
               <div>
                 <p className="hw-label">Sessions</p>
@@ -199,7 +198,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <span className="hw-card-title">{currentMonth}</span>
             {monthlySummary && (
-              <span className={`font-mono text-[11px] ${monthlySummary.trend >= 0 ? 'text-moss' : 'text-red-400'}`}>
+              <span className={`hw-text-data ${monthlySummary.trend >= 0 ? 'text-moss' : 'text-red-400'}`}>
                 {monthlySummary.trend >= 0 ? '↑' : '↓'} {Math.abs(monthlySummary.trend).toFixed(0)}%
               </span>
             )}
@@ -210,11 +209,11 @@ export function DashboardPage() {
               <div className="grid grid-cols-3 gap-2.5 mb-3">
                 <div>
                   <p className="hw-label">Distance</p>
-                  <p className="hw-value text-amber">{monthlySummary.totalDistance.toFixed(1)} <span className="text-[10px] text-amber/60">km</span></p>
+                  <p className="hw-value text-amber">{monthlySummary.totalDistance.toFixed(1)} <span className="hw-text-caption text-amber/60">km</span></p>
                 </div>
                 <div>
                   <p className="hw-label">D+</p>
-                  <p className="hw-value text-glacier">{formatNumber(monthlySummary.totalElevation)} <span className="text-[10px] text-glacier/60">m</span></p>
+                  <p className="hw-value text-glacier">{formatNumber(monthlySummary.totalElevation)} <span className="hw-text-caption text-glacier/60">m</span></p>
                 </div>
                 <div>
                   <p className="hw-label">Sessions</p>
@@ -226,8 +225,8 @@ export function DashboardPage() {
                   <div className="hw-pb-fill" style={{ width: `${monthlySummary.monthProgress}%` }} />
                 </div>
                 <div className="flex justify-between mt-1.5">
-                  <span className="font-mono text-[9px] text-mist/25">Progression</span>
-                  <span className="font-mono text-[9px] text-mist/25">{monthlySummary.daysPassed}/{monthlySummary.daysInMonth}j</span>
+                  <span className="hw-text-caption text-mist/25">Progression</span>
+                  <span className="hw-text-caption text-mist/25">{monthlySummary.daysPassed}/{monthlySummary.daysInMonth}j</span>
                 </div>
               </div>
             </>
@@ -239,10 +238,10 @@ export function DashboardPage() {
         {/* Prochain événement */}
         <div className="hw-card border-glacier/25">
           {/* Top stripe */}
-          <span className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none" style={{ background: 'linear-gradient(90deg, #E8832A, #3DB2E0, transparent)' }} />
+          <span className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none hw-gradient-accent-stripe" />
 
           <div className="flex items-center justify-between mb-2.5">
-            <p className="font-mono text-[9px] text-glacier/70 uppercase tracking-[2px]">Prochain Événement</p>
+            <p className="hw-text-label text-glacier/70 tracking-[2px]">Prochain Événement</p>
             {nextEvent && <span className="hw-ev-badge">J-{getDaysUntil(nextEvent.date)}</span>}
           </div>
 
@@ -250,21 +249,21 @@ export function DashboardPage() {
             <>
               <p className="text-base font-bold text-mist truncate mb-0.5">{nextEvent.name}</p>
               {(nextEvent.location || nextEvent.date) && (
-                <p className="font-mono text-[10px] text-steel mb-3.5 uppercase tracking-[1px]">
+                <p className="hw-text-label text-muted mb-3.5 tracking-[1px]">
                   {[nextEvent.location, new Date(nextEvent.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()].filter(Boolean).join(' · ')}
                 </p>
               )}
               <div className="flex gap-[18px] mb-3.5">
                 {nextEvent.distance_km && (
                   <div>
-                    <p className="font-mono text-[22px] font-bold text-glacier tabular-nums leading-none">{nextEvent.distance_km}</p>
-                    <p className="font-mono text-[9px] text-steel uppercase tracking-[1px] mt-0.5">km</p>
+                    <p className="font-mono text-2xl font-bold text-glacier tabular-nums leading-none">{nextEvent.distance_km}</p>
+                    <p className="hw-text-label mt-0.5">km</p>
                   </div>
                 )}
                 {nextEvent.elevation_m && (
                   <div>
-                    <p className="font-mono text-[22px] font-bold text-glacier tabular-nums leading-none">{nextEvent.elevation_m.toLocaleString('fr-FR')}</p>
-                    <p className="font-mono text-[9px] text-steel uppercase tracking-[1px] mt-0.5">m D+</p>
+                    <p className="font-mono text-2xl font-bold text-glacier tabular-nums leading-none">{nextEvent.elevation_m.toLocaleString('fr-FR')}</p>
+                    <p className="hw-text-label mt-0.5">m D+</p>
                   </div>
                 )}
               </div>
@@ -275,7 +274,7 @@ export function DashboardPage() {
               <p className="text-mist/25 text-xs">Aucun événement planifié</p>
               <button
                 onClick={() => setEventModalOpen(true)}
-                className="font-mono text-[10px] text-amber text-left bg-transparent border-none cursor-pointer p-0"
+                className="hw-text-caption text-amber text-left bg-transparent border-none cursor-pointer p-0"
               >
                 + Ajouter un événement
               </button>
@@ -319,15 +318,15 @@ export function DashboardPage() {
               <div className="flex items-start gap-2 mb-2">
                 <div className="w-[3px] h-9 rounded-sm shrink-0" style={{ background: sportBarColor(lastActivity.type ?? '') }} />
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[8px] text-amber/70 uppercase tracking-[2px] mb-0.5">
+                  <p className="hw-text-label text-amber/70 tracking-[2px] mb-0.5">
                     Dernière activité · {lastActivity.type}
                     {lastActivity.denivele_m ? ` · +${lastActivity.denivele_m}m D+` : ''}
                   </p>
-                  <p className="text-[13px] font-semibold text-mist truncate">{lastActivity.name}</p>
-                  <p className="font-mono text-[9px] text-steel">{formatActivityDate(lastActivity.date)}</p>
+                  <p className="hw-text-value font-semibold text-mist truncate">{lastActivity.name}</p>
+                  <p className="hw-text-caption">{formatActivityDate(lastActivity.date)}</p>
                 </div>
                 {lastActivity.race && (
-                  <span className="hw-event-badge shrink-0 text-[8px]">
+                  <span className="hw-event-badge shrink-0">
                     🏁 {lastActivity.race.name}
                   </span>
                 )}
@@ -336,26 +335,26 @@ export function DashboardPage() {
               <div className="grid grid-cols-4 gap-2">
                 {lastActivity.type !== 'WeightTraining' && (
                   <div>
-                    <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">Distance</p>
-                    <p className="font-mono text-sm font-bold tabular-nums text-amber">{lastActivity.distance_km.toFixed(1)}<span className="text-[8px] text-amber/50 ml-0.5">km</span></p>
+                    <p className="hw-text-label text-mist/30 mb-0.5">Distance</p>
+                    <p className="font-mono text-sm font-bold tabular-nums text-amber">{lastActivity.distance_km.toFixed(1)}<span className="hw-text-label text-amber/50 ml-0.5">km</span></p>
                   </div>
                 )}
                 <div>
-                  <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">Temps</p>
+                  <p className="hw-text-label text-mist/30 mb-0.5">Temps</p>
                   <p className="font-mono text-sm font-bold tabular-nums text-mist">{lastActivity.duree_hms}</p>
                 </div>
                 {lastActivity.type !== 'WeightTraining' && (
                   <div>
-                    <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">D+</p>
-                    <p className="font-mono text-sm font-bold tabular-nums text-glacier">{formatNumber(lastActivity.denivele_m ?? 0)}<span className="text-[8px] text-glacier/50 ml-0.5">m</span></p>
+                    <p className="hw-text-label text-mist/30 mb-0.5">D+</p>
+                    <p className="font-mono text-sm font-bold tabular-nums text-glacier">{formatNumber(lastActivity.denivele_m ?? 0)}<span className="hw-text-label text-glacier/50 ml-0.5">m</span></p>
                   </div>
                 )}
                 {lastActivity.type !== 'WeightTraining' && (
                   <div>
-                    <p className="font-mono text-[8px] text-mist/30 uppercase mb-0.5">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
+                    <p className="hw-text-label text-mist/30 mb-0.5">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
                     <p className="font-mono text-sm font-bold tabular-nums text-moss">
                       {lastActivity.type === 'Bike' ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'}` : (lastActivity.allure_min_per_km ?? '--')}
-                      <span className="text-[8px] text-moss/50 ml-0.5">{lastActivity.type === 'Bike' ? 'km/h' : '/km'}</span>
+                      <span className="hw-text-label text-moss/50 ml-0.5">{lastActivity.type === 'Bike' ? 'km/h' : '/km'}</span>
                     </p>
                   </div>
                 )}
@@ -363,9 +362,9 @@ export function DashboardPage() {
               {lastActivityExploration && lastActivityExploration.total_cells > 0 && (
                 <div className="mt-2 flex items-center gap-2 px-2 py-1 rounded bg-glacier/5 border border-glacier/15">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>
-                  <span className="font-mono text-[9px] text-glacier/70">{lastActivityExploration.label}</span>
+                  <span className="hw-text-caption text-glacier/70">{lastActivityExploration.label}</span>
                   {lastActivityExploration.exploration_rate !== null && (
-                    <span className="ml-auto font-mono text-[9px] text-glacier font-bold">{lastActivityExploration.exploration_rate.toFixed(0)}%</span>
+                    <span className="ml-auto hw-text-caption text-glacier font-bold">{lastActivityExploration.exploration_rate.toFixed(0)}%</span>
                   )}
                 </div>
               )}
@@ -385,15 +384,15 @@ export function DashboardPage() {
                   <div className="w-[3px] h-7 rounded-sm shrink-0" style={{ background: color }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-mist truncate">{activity.name}</p>
-                    <p className="font-mono text-[9px] text-steel mt-px">{activity.type?.toUpperCase()} · {formatActivityDate(activity.date)}</p>
+                    <p className="hw-text-caption mt-px">{activity.type?.toUpperCase()} · {formatActivityDate(activity.date)}</p>
                   </div>
                   <div className="flex gap-3.5 ml-auto shrink-0 text-right">
                     <div>
                       {!isWeightTraining && (
-                        <p className="font-mono text-[11px] font-semibold tabular-nums text-mist/60">{activity.distance_km.toFixed(1)} km</p>
+                        <p className="hw-text-data font-semibold text-mist/60">{activity.distance_km.toFixed(1)} km</p>
                       )}
                       {!isWeightTraining && (
-                        <p className="font-mono text-[9px] text-steel">{pace}{paceUnit}</p>
+                        <p className="hw-text-caption">{pace}{paceUnit}</p>
                       )}
                     </div>
                   </div>
@@ -437,12 +436,12 @@ export function DashboardPage() {
                   return (
                     <div key={key} className="hw-rec-row">
                       <div>
-                        <p className="font-mono text-[9px] text-mist/30 uppercase tracking-[1.5px]">{label}</p>
+                        <p className="hw-text-label text-mist/30">{label}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-mono text-sm font-bold tabular-nums text-amber inline">{display}</p>
-                        {unit && <span className="font-mono text-[9px] text-amber/55 ml-0.5">{unit}</span>}
-                        {rec.date && <p className="font-mono text-[9px] text-steel mt-0.5">{new Date(rec.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+                        {unit && <span className="hw-text-caption text-amber/55 ml-0.5">{unit}</span>}
+                        {rec.date && <p className="hw-text-caption mt-0.5">{new Date(rec.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
                       </div>
                     </div>
                   );

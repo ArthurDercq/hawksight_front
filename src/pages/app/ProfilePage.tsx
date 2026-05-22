@@ -184,25 +184,25 @@ function TrailProfileCard() {
   const score100 = profile ? Math.round(profile.trail_score_final) : null;
 
   return (
-    <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
+    <div className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-48 h-48 bg-[#C96A1A]/5 rounded-full blur-3xl" />
 
       <div className="relative">
         {/* Header */}
-        <div className="flex items-start gap-3 pb-4 border-b border-[#3A3F47]/30 mb-6">
+        <div className="flex items-start gap-3 pb-4 border-b border-steel/30 mb-6">
           <div className="p-2 border rounded" style={{ backgroundColor: '#C96A1A10', borderColor: '#C96A1A30' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="font-heading text-[#F2F2F2]">Profil Traileur</h3>
-            <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">Analyse de tes compétences trail</p>
+            <h3 className="font-heading text-mist">Profil Traileur</h3>
+            <p className="text-muted font-body text-xs mt-1">Analyse de tes compétences trail</p>
           </div>
           <button
             onClick={compute}
             disabled={isComputing}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-mono border transition-all disabled:opacity-50"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hw-text-caption border transition-all disabled:opacity-50"
             style={{ color: color, borderColor: `${color}40`, backgroundColor: `${color}10` }}
             title="Recalculer le profil"
           >
@@ -221,7 +221,7 @@ function TrailProfileCard() {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <p className="text-steel/85 text-[10px] font-mono uppercase tracking-wider">{error}</p>
+            <p className="hw-text-label text-steel/85">{error}</p>
           </div>
         )}
 
@@ -232,7 +232,7 @@ function TrailProfileCard() {
           </div>
         ) : !profile ? (
           <div className="text-center py-10">
-            <p className="text-[#3A3F47] text-sm font-mono mb-4">Aucun profil calculé</p>
+            <p className="text-muted text-sm font-mono mb-4">Aucun profil calculé</p>
             <button
               onClick={compute}
               disabled={isComputing}
@@ -254,27 +254,27 @@ function TrailProfileCard() {
                 <span className="font-mono font-bold text-3xl leading-none" style={{ color }}>
                   {score100}
                 </span>
-                <span className="text-[9px] font-mono text-[#3A3F47] uppercase tracking-wider mt-0.5">/100</span>
+                <span className="hw-text-label text-muted mt-0.5">/100</span>
               </div>
               {/* Infos droite */}
               <div className="relative flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-mono text-[#3A3F47] uppercase tracking-wider">Profil dominant</span>
+                  <span className="hw-text-label text-muted">Profil dominant</span>
                 </div>
                 <div className="font-heading text-xl font-semibold" style={{ color }}>
                   {profile.dominant_profile}
                 </div>
                 {/* Barre de score */}
-                <div className="mt-2 h-1.5 bg-[#3A3F47]/20 rounded-full overflow-hidden w-full">
+                <div className="mt-2 h-1.5 bg-steel/20 rounded-full overflow-hidden w-full">
                   <div className="h-full rounded-full transition-all duration-1000"
                     style={{ width: `${score100}%`, background: `linear-gradient(to right, ${color}, #E8832A)` }} />
                 </div>
                 <div className="flex items-center justify-between mt-1">
-                  <span className="text-[9px] font-mono text-[#3A3F47]">0</span>
+                  <span className="hw-text-caption">0</span>
                   {profile.data_freshness_factor < 0.7 && (
-                    <span className="text-[9px] font-mono text-yellow-500/60">données anciennes</span>
+                    <span className="hw-text-caption text-yellow-500/60">données anciennes</span>
                   )}
-                  <span className="text-[9px] font-mono text-[#3A3F47]">100</span>
+                  <span className="hw-text-caption">100</span>
                 </div>
               </div>
             </div>
@@ -282,10 +282,10 @@ function TrailProfileCard() {
             {/* Reference selector */}
             {references.length > 0 && (
               <div className="mb-4 flex flex-wrap items-center gap-1.5">
-                <span className="text-[9px] font-mono text-[#3A3F47] uppercase tracking-wider mr-1">Comparer à</span>
+                <span className="hw-text-label text-muted mr-1">Comparer à</span>
                 <button
                   onClick={() => setSelectedRef(null)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all ${!selectedRef ? 'text-mist border-steel/50' : 'text-[#3A3F47] border-[#3A3F47]/20 hover:border-steel/30'}`}
+                  className={`px-2 py-0.5 rounded hw-text-caption border transition-all ${!selectedRef ? 'text-mist border-steel/50' : 'text-muted border-steel/20 hover:border-steel/30'}`}
                 >
                   Personne
                 </button>
@@ -293,7 +293,7 @@ function TrailProfileCard() {
                   <button
                     key={ref.slug}
                     onClick={() => setSelectedRef(selectedRef?.slug === ref.slug ? null : ref)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all ${selectedRef?.slug === ref.slug ? 'text-[#3DB2E0] border-[#3DB2E0]/50 bg-[#3DB2E0]/10' : 'text-[#3A3F47] border-[#3A3F47]/20 hover:border-[#3DB2E0]/30 hover:text-[#3DB2E0]/70'}`}
+                    className={`px-2 py-0.5 rounded hw-text-caption border transition-all ${selectedRef?.slug === ref.slug ? 'text-glacier border-glacier/50 bg-glacier/10' : 'text-muted border-steel/20 hover:border-glacier/30 hover:text-glacier/70'}`}
                   >
                     {ref.name.split(' ')[0]}
                   </button>
@@ -313,11 +313,11 @@ function TrailProfileCard() {
                   <div className="flex items-center justify-center gap-3 mt-1">
                     <div className="flex items-center gap-1.5">
                       <div className="w-3 h-px" style={{ background: color }} />
-                      <span className="text-[9px] font-mono text-[#3A3F47]">Toi</span>
+                      <span className="hw-text-caption">Toi</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-px border-t border-dashed border-[#3DB2E0]" />
-                      <span className="text-[9px] font-mono text-[#3A3F47]">{selectedRef.name.split(' ')[0]}</span>
+                      <div className="w-3 h-px border-t border-dashed border-glacier" />
+                      <span className="hw-text-caption">{selectedRef.name.split(' ')[0]}</span>
                     </div>
                   </div>
                 )}
@@ -330,21 +330,21 @@ function TrailProfileCard() {
                   return (
                     <div key={ax.key}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[#F2F2F2] font-['JetBrains_Mono'] text-[10px] uppercase tracking-wide">
+                        <span className="hw-text-label text-mist tracking-wide">
                           {ax.label}
                         </span>
                         <div className="flex items-center gap-2">
                           {refScore != null && (
-                            <span className="text-[#3DB2E0] font-['JetBrains_Mono'] text-[10px]">
+                            <span className="hw-text-caption text-glacier">
                               {Math.round(refScore)}
                             </span>
                           )}
-                          <span className="font-['JetBrains_Mono'] text-[11px] font-semibold" style={{ color }}>
+                          <span className="hw-text-data font-semibold" style={{ color }}>
                             {Math.round(score)}
                           </span>
                         </div>
                       </div>
-                      <div className="h-1.5 bg-[#3A3F47]/20 rounded-full overflow-hidden relative">
+                      <div className="h-1.5 bg-steel/20 rounded-full overflow-hidden relative">
                         {refScore != null && (
                           <div className="absolute h-full rounded-full opacity-40"
                             style={{ width: `${refScore}%`, background: '#3DB2E0' }} />
@@ -352,7 +352,7 @@ function TrailProfileCard() {
                         <div className="absolute h-full rounded-full transition-all duration-700"
                           style={{ width: `${score}%`, background: `linear-gradient(to right, ${color}, #E8832A)` }} />
                       </div>
-                      <p className="text-[#3A3F47] font-['Inter'] text-[10px] mt-0.5">{ax.desc}</p>
+                      <p className="hw-text-caption font-body mt-0.5">{ax.desc}</p>
                     </div>
                   );
                 })}
@@ -361,10 +361,10 @@ function TrailProfileCard() {
 
             {/* History toggle */}
             {history.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-[#3A3F47]/20">
+              <div className="mt-6 pt-4 border-t border-steel/20">
                 <button
                   onClick={() => setShowHistory(v => !v)}
-                  className="flex items-center gap-2 text-[10px] font-mono text-[#3A3F47] hover:text-mist/60 transition-colors"
+                  className="flex items-center gap-2 hw-text-caption text-muted hover:text-mist/60 transition-colors"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                     strokeLinecap="round" strokeLinejoin="round"
@@ -378,13 +378,13 @@ function TrailProfileCard() {
                   <div className="mt-3 space-y-1 max-h-48 overflow-y-auto pr-1">
                     {[...history].reverse().map(snap => (
                       <div key={snap.snapshot_date}
-                        className="flex items-center justify-between px-3 py-1.5 rounded bg-[#3A3F47]/10 hover:bg-[#3A3F47]/15 transition-colors">
-                        <span className="text-[10px] font-mono text-[#3A3F47]">{snap.week_label}</span>
+                        className="flex items-center justify-between px-3 py-1.5 rounded bg-steel/10 hover:bg-steel/15 transition-colors">
+                        <span className="hw-text-caption">{snap.week_label}</span>
                         <div className="flex items-center gap-3">
-                          <span className="text-[9px] font-mono text-[#3A3F47]/60">
+                          <span className="hw-text-caption text-muted/60">
                             {snap.dominant_profile}
                           </span>
-                          <span className="text-[11px] font-mono font-semibold" style={{ color }}>
+                          <span className="hw-text-data font-semibold" style={{ color }}>
                             {Math.round(snap.trail_score_final)}
                           </span>
                         </div>
@@ -397,11 +397,11 @@ function TrailProfileCard() {
 
             {/* Footer meta */}
             <div className="mt-4 flex items-center justify-between">
-              <span className="text-[9px] font-mono text-[#3A3F47]/40">
+              <span className="hw-text-caption text-muted/40">
                 v{profile.model_version} · calculé {profile.computed_at ? new Date(profile.computed_at).toLocaleDateString('fr-FR') : '—'}
               </span>
               {profile.imbalance_penalty > 0.05 && (
-                <span className="text-[9px] font-mono text-yellow-500/50">
+                <span className="hw-text-caption text-yellow-500/50">
                   pénalité déséquilibre −{Math.round(profile.imbalance_penalty)}pts
                 </span>
               )}
@@ -476,7 +476,7 @@ export function ProfilePage() {
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <p className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">{error || 'Impossible de charger le profil'}</p>
+          <p className="hw-text-data text-steel/85 uppercase tracking-wider">{error || 'Impossible de charger le profil'}</p>
         </div>
       </div>
     );
@@ -498,7 +498,7 @@ export function ProfilePage() {
         <div className="space-y-6">
 
           {/* Hero card */}
-          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
+          <div className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden">
             {/* Corner brackets */}
             <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-amber/30 rounded-tl" />
             <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-amber/30 rounded-tr" />
@@ -516,13 +516,13 @@ export function ProfilePage() {
                   <UserIcon />
                 </div>
                 {/* Status dot */}
-                <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-[#0B0C10] ${profile.is_active ? 'bg-[#6DAA75] animate-pulse' : 'bg-red-400'}`} />
+                <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-charcoal ${profile.is_active ? 'bg-moss animate-pulse' : 'bg-red-400'}`} />
               </div>
 
               {/* Identity */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-1 flex-wrap">
-                  <h2 className="font-heading text-xl font-semibold text-[#F2F2F2]">{fullName}</h2>
+                  <h2 className="font-heading text-xl font-semibold text-mist">{fullName}</h2>
                 </div>
 
                 {/* Gradient separator */}
@@ -540,7 +540,7 @@ export function ProfilePage() {
                     {activeSports.map(([key, tag]) => (
                       <span
                         key={key}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-['Inter'] border"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-body border"
                         style={{ backgroundColor: `${tag.color}12`, borderColor: `${tag.color}30`, color: tag.color }}
                       >
                         {tag.emoji} {tag.label}
@@ -558,11 +558,11 @@ export function ProfilePage() {
                       <div key={i} className="w-1 h-1 rounded-full bg-amber" style={{ opacity: 1 - i * 0.3 }} />
                     ))}
                   </div>
-                  <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">HAWKSIGHT</span>
+                  <span className="hw-text-caption">HAWKSIGHT</span>
                 </div>
                 <button
                   onClick={() => { logout(); navigate('/'); }}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#3A3F47] hover:text-red-400 hover:bg-red-500/10 border border-[#3A3F47]/20 hover:border-red-500/30 transition-all text-[11px] font-mono"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-muted hover:text-red-400 hover:bg-red-500/10 border border-steel/20 hover:border-red-500/30 transition-all hw-text-data"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -577,9 +577,9 @@ export function ProfilePage() {
           <TrailProfileCard />
 
           {/* Account details */}
-          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden">
+          <div className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden">
                   <div className="relative">
-              <div className="flex items-center gap-2 mb-5 pb-4 border-b border-[#3A3F47]/30">
+              <div className="flex items-center gap-2 mb-5 pb-4 border-b border-steel/30">
                 <div className="p-1.5 rounded-lg bg-steel/10 border border-steel/20 text-mist/50">
                   <IdIcon />
                 </div>
@@ -591,8 +591,8 @@ export function ProfilePage() {
               <DetailRow
                 label="Statut"
                 value={
-                  <span className={`flex items-center gap-1.5 ${profile.is_active ? 'text-[#6DAA75]' : 'text-red-400'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${profile.is_active ? 'bg-[#6DAA75]' : 'bg-red-400'}`} />
+                  <span className={`flex items-center gap-1.5 ${profile.is_active ? 'text-moss' : 'text-red-400'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${profile.is_active ? 'bg-moss' : 'bg-red-400'}`} />
                     {profile.is_active ? 'Actif' : 'Inactif'}
                   </span>
                 }
@@ -605,10 +605,10 @@ export function ProfilePage() {
         <div className="space-y-4">
 
           {/* Events card */}
-          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-5 relative overflow-hidden">
+          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-[#7B6BC8]/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#3A3F47]/30">
+              <div className="flex items-center justify-between mb-4 pb-4 border-b border-steel/30">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-[#7B6BC8]/10 border border-[#7B6BC8]/30 text-[#A89BE8]">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -642,7 +642,7 @@ export function ProfilePage() {
                   ))}
                   {pastEvents.length > 0 && (
                     <>
-                      <div className="text-[10px] text-mist/30 font-mono uppercase tracking-wider pt-2 pb-1">Passés</div>
+                      <div className="hw-text-label text-mist/30 pt-2 pb-1">Passés</div>
                       {pastEvents.map(event => (
                         <EventRow key={event.id} event={event} past onDelete={deleteEvent} onComplete={markCompleted} onEdit={setEditingEvent} />
                       ))}
@@ -654,16 +654,16 @@ export function ProfilePage() {
           </div>
 
           {/* Sync card */}
-          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#6DAA75]/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-moss/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
-              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-[#3A3F47]/30">
-                <div className="p-1.5 rounded-lg bg-[#6DAA75]/10 border border-[#6DAA75]/30 text-[#6DAA75]">
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-steel/30">
+                <div className="p-1.5 rounded-lg bg-moss/10 border border-moss/30 text-moss">
                   <SyncIcon />
                 </div>
                 <div>
                   <h3 className="font-heading font-semibold text-mist text-sm">Synchronisation</h3>
-                  <p className="text-[#3A3F47] text-xs font-mono mt-0.5">
+                  <p className="text-muted text-xs font-mono mt-0.5">
                     {profile.last_activity_at
                       ? formatRelativeTime(profile.last_activity_at)
                       : 'Aucune activité'}
@@ -673,8 +673,8 @@ export function ProfilePage() {
 
               {/* Dernière activité reçue */}
               {profile.last_activity_at && (
-                <div className="mb-4 px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20">
-                  <p className="text-[#3A3F47] text-[10px] font-mono uppercase tracking-wider mb-0.5">Dernière activité reçue</p>
+                <div className="mb-4 px-3 py-2 bg-charcoal/60 rounded-lg border border-steel/20">
+                  <p className="hw-text-label text-muted mb-0.5">Dernière activité reçue</p>
                   <p className="text-mist/70 text-xs font-mono">
                     {new Date(profile.last_activity_at).toLocaleDateString('fr-FR', {
                       day: 'numeric', month: 'long', year: 'numeric',
@@ -688,11 +688,7 @@ export function ProfilePage() {
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                style={syncDone
-                  ? { backgroundColor: '#6DAA7520', border: '1px solid #6DAA7540', color: '#6DAA75' }
-                  : { backgroundColor: '#6DAA7515', border: '1px solid #6DAA7530', color: '#6DAA75' }
-                }
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed text-moss ${syncDone ? 'bg-moss/[0.13] border border-moss/25' : 'bg-moss/[0.08] border border-moss/20'}`}
               >
                 {syncDone ? (
                   <><CheckIcon /> Synchronisé !</>
@@ -704,16 +700,16 @@ export function ProfilePage() {
               {/* Compteurs activités / features */}
               {(profile.activities_count !== undefined || profile.features_count !== undefined) && (
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20 text-center">
+                  <div className="px-3 py-2 bg-charcoal/60 rounded-lg border border-steel/20 text-center">
                     <p className="font-mono text-lg font-bold text-mist tabular-nums">{profile.activities_count ?? '—'}</p>
-                    <p className="text-[9px] font-mono text-steel uppercase tracking-wider mt-0.5">Activités</p>
+                    <p className="hw-text-label text-steel mt-0.5">Activités</p>
                   </div>
-                  <div className="relative group px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20 text-center cursor-default">
+                  <div className="relative group px-3 py-2 bg-charcoal/60 rounded-lg border border-steel/20 text-center cursor-default">
                     <p className="font-mono text-lg font-bold text-glacier tabular-nums">{profile.features_count ?? '—'}</p>
-                    <p className="text-[9px] font-mono text-steel uppercase tracking-wider mt-0.5">Analysées</p>
+                    <p className="hw-text-label text-steel mt-0.5">Analysées</p>
                     {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 px-3 py-2 bg-[#0B0C10] border border-[#3A3F47]/50 rounded-lg text-left opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-card">
-                      <p className="text-[10px] font-mono text-mist/70 leading-relaxed">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 px-3 py-2 bg-charcoal border border-steel/50 rounded-lg text-left opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-card">
+                      <p className="hw-text-caption text-mist/70 leading-relaxed">
                         Activités avec données GPS complètes disponibles (vitesse, FC, altitude par seconde).
                       </p>
                     </div>
@@ -724,16 +720,16 @@ export function ProfilePage() {
           </div>
 
           {/* FC Max card */}
-          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-5 relative overflow-hidden">
+          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#E8832A]/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
-              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-[#3A3F47]/30">
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-steel/30">
                 <div className="p-1.5 rounded-lg bg-amber/10 border border-amber/30 text-amber">
                   <HeartIcon />
                 </div>
                 <div>
                   <h3 className="font-heading font-semibold text-mist text-sm">FC Max personnelle</h3>
-                  <p className="text-[#3A3F47] text-xs font-mono mt-0.5">Utilisée pour les zones cardiaques</p>
+                  <p className="text-muted text-xs font-mono mt-0.5">Utilisée pour les zones cardiaques</p>
                 </div>
               </div>
               <FCMaxInput />
@@ -741,28 +737,28 @@ export function ProfilePage() {
           </div>
 
           {/* Strava connection card */}
-          <div className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-5 relative overflow-hidden">
+          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#FC4C02]/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
-              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-[#3A3F47]/30">
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-steel/30">
                 <div className="p-1.5 rounded-lg bg-[#FC4C02]/10 border border-[#FC4C02]/30 text-[#FC4C02]">
                   <StravaIcon />
                 </div>
                 <div>
                   <h3 className="font-heading font-semibold text-mist text-sm">Connexion Strava</h3>
-                  <p className="text-[#3A3F47] text-xs font-mono mt-0.5">Compte lié</p>
+                  <p className="text-muted text-xs font-mono mt-0.5">Compte lié</p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 {profile.strava_id ? (
-                  <div className="flex items-center justify-between px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20">
-                    <span className="text-[#3A3F47] text-[10px] font-mono uppercase tracking-wider">Strava ID</span>
+                  <div className="flex items-center justify-between px-3 py-2 bg-charcoal/60 rounded-lg border border-steel/20">
+                    <span className="hw-text-label text-muted">Strava ID</span>
                     <span className="text-[#FC4C02] font-mono text-sm">#{profile.strava_id}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between px-3 py-2 bg-charcoal/60 rounded-lg border border-[#3A3F47]/20">
-                    <span className="text-[#3A3F47] text-[10px] font-mono uppercase tracking-wider">Statut</span>
+                  <div className="flex items-center justify-between px-3 py-2 bg-charcoal/60 rounded-lg border border-steel/20">
+                    <span className="hw-text-label text-muted">Statut</span>
                     <span className="text-mist/30 text-xs font-mono">Non connecté</span>
                   </div>
                 )}
@@ -796,10 +792,10 @@ interface EventRowProps {
 function EventRow({ event, past, onDelete, onComplete, onEdit }: EventRowProps) {
   const dateStr = new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${past ? 'border-[#3A3F47]/15 bg-charcoal/20 opacity-60' : 'border-[#3A3F47]/30 bg-charcoal/40 hover:border-[#7B6BC8]/30'}`}>
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${past ? 'border-steel/15 bg-charcoal/20 opacity-60' : 'border-steel/30 bg-charcoal/40 hover:border-[#7B6BC8]/30'}`}>
       <button
         onClick={() => onComplete(event.id, !event.is_completed)}
-        className={`flex-shrink-0 w-4 h-4 rounded border transition-colors ${event.is_completed ? 'bg-[#7B6BC8] border-[#7B6BC8]' : 'border-[#3A3F47] hover:border-[#7B6BC8]'}`}
+        className={`flex-shrink-0 w-4 h-4 rounded border transition-colors ${event.is_completed ? 'bg-event border-event' : 'border-steel hover:border-event'}`}
         title={event.is_completed ? 'Marquer non complété' : 'Marquer complété'}
       >
         {event.is_completed && (
@@ -811,12 +807,11 @@ function EventRow({ event, past, onDelete, onComplete, onEdit }: EventRowProps) 
       <div className="flex-1 min-w-0">
         <p className={`text-xs font-medium truncate ${event.is_completed ? 'line-through text-mist/40' : 'text-mist'}`}>{event.name}</p>
         <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-[9px] font-mono text-mist/30">{dateStr}</span>
-          {event.distance_km && <span className="text-[9px] font-mono text-mist/30">· {event.distance_km} km</span>}
+          <span className="hw-text-caption text-mist/30">{dateStr}</span>
+          {event.distance_km && <span className="hw-text-caption text-mist/30">· {event.distance_km} km</span>}
         </div>
       </div>
-      <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded flex-shrink-0"
-        style={{ backgroundColor: 'rgba(123,107,200,0.15)', color: '#A89BE8', border: '1px solid rgba(123,107,200,0.3)' }}>
+      <span className="hw-event-badge flex-shrink-0 uppercase">
         {event.type}
       </span>
       {event.activity_id && (
@@ -885,9 +880,9 @@ function FCMaxInput() {
           onChange={e => { setValue(e.target.value); setSaved(false); }}
           onKeyDown={handleKeyDown}
           placeholder="ex: 185"
-          className="flex-1 px-3 py-2 bg-charcoal/60 border border-[#3A3F47]/40 rounded-lg text-mist font-mono text-sm focus:border-amber focus:outline-none transition-colors placeholder:text-mist/20"
+          className="flex-1 px-3 py-2 bg-charcoal/60 border border-steel/40 rounded-lg text-mist font-mono text-sm focus:border-amber focus:outline-none transition-colors placeholder:text-mist/20"
         />
-        <span className="text-[#3A3F47] font-mono text-sm">BPM</span>
+        <span className="text-muted font-mono text-sm">BPM</span>
       </div>
 
       <button
@@ -901,7 +896,7 @@ function FCMaxInput() {
         {saved ? <><CheckIcon /> Sauvegardé</> : 'Enregistrer'}
       </button>
 
-      <p className="text-[#3A3F47] text-[10px] font-mono leading-relaxed">
+      <p className="hw-text-caption leading-relaxed">
         Valeur stockée localement sur votre appareil. Utilisée pour calculer vos zones cardiaques (Z1–Z5).
       </p>
     </div>

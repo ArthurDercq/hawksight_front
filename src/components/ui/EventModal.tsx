@@ -18,7 +18,7 @@ const GOAL_TYPES: { value: GoalType; label: string }[] = [
 ];
 
 const inputCls = 'w-full bg-charcoal-light/50 border border-steel/50 rounded-lg px-3 py-2 text-mist text-sm focus:outline-none focus:border-amber/50 transition-colors';
-const labelCls = 'block font-mono text-[10px] uppercase tracking-widest text-mist/40 mb-1';
+const labelCls = 'block hw-text-caption uppercase tracking-widest text-mist/40 mb-1';
 
 function eventToForm(event: TrainingEvent): EventFormData {
   return {

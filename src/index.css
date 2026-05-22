@@ -55,40 +55,6 @@ body {
   opacity: 0.03;
 }
 
-/* Card base styles */
-.card-glass {
-  background: rgba(58, 63, 71, 0.3);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-}
-
-.card-glass:hover {
-  border-color: #E8832A;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-/* Gradient cards */
-.card-weekly {
-  background: linear-gradient(135deg, rgba(232, 131, 42, 0.2) 0%, rgba(61, 178, 224, 0.2) 100%);
-  border: 1px solid rgba(232, 131, 42, 0.5);
-  backdrop-filter: blur(10px);
-}
-
-.card-monthly {
-  background: linear-gradient(135deg, rgba(61, 178, 224, 0.2) 0%, rgba(109, 170, 117, 0.2) 100%);
-  border: 1px solid rgba(61, 178, 224, 0.5);
-  backdrop-filter: blur(10px);
-}
-
-.card-streak {
-  background: linear-gradient(135deg, rgba(232, 131, 42, 0.2) 0%, rgba(255, 99, 71, 0.2) 50%, rgba(255, 140, 0, 0.2) 100%);
-  border: 1px solid rgba(232, 131, 42, 0.5);
-  backdrop-filter: blur(10px);
-}
 
 /* ============================================
    HAWKSIGHT DESIGN SYSTEM — Reusable utilities
@@ -134,13 +100,52 @@ body {
   overflow: hidden;
 }
 
-/* ── Stat label (9px muted mono uppercase) ── */
-.hw-label {
+/* ── Typographie — Échelle sémantique ────────────────────────────────────────
+   Utilisation :
+   .hw-text-label   → labels uppercase (9px)   : "DISTANCE", "SURFACE EXPLORÉE"
+   .hw-text-caption → textes secondaires (10px) : sous-titres, métadonnées
+   .hw-text-data    → valeurs secondaires (11px): stats intermédiaires
+   .hw-text-value   → valeurs importantes (13px): métriques principales
+   .hw-label        → alias de .hw-text-label (compatibilité)
+   .hw-value        → grandes valeurs (16px bold): KPIs, compteurs
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.hw-text-label {
   font-size: 9px;
-  color: #FFFFFF;
+  color: #8B95A1;
   font-family: 'JetBrains Mono', monospace;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+}
+
+.hw-text-caption {
+  font-size: 10px;
+  color: #8B95A1;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hw-text-data {
+  font-size: 11px;
+  color: #F2F2F2;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.hw-text-value {
+  font-size: 13px;
+  color: #F2F2F2;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Stat label (alias de .hw-text-label pour compatibilité) ── */
+.hw-label {
+  font-size: 9px;
+  color: #8B95A1;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
   margin-bottom: 3px;
 }
 
@@ -207,6 +212,8 @@ body {
 .hw-br-glacier-dim { border-color: rgba(61,178,224,0.35); }
 .hw-br-moss { border-color: rgba(109,170,117,0.4); }
 .hw-br-steel { border-color: rgba(58,63,71,0.3); }
+.hw-br-red { border-color: rgba(252,129,129,0.35); }
+.hw-br-red-dim { border-color: rgba(252,129,129,0.2); }
 
 /* ── Progress bar ── */
 .hw-pb-bg {
@@ -330,13 +337,13 @@ body {
   overflow: hidden;
 }
 
-/* ── Section label (9px mono uppercase muted) ── */
+/* .hw-section-label — alias de .hw-label, conservé pour compatibilité */
 .hw-section-label {
   font-size: 9px;
   font-family: 'JetBrains Mono', monospace;
-  color: #FFFFFF;
+  color: #8B95A1;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
 }
 
 /* ── Chart title (10px/600 mono light) ── */
@@ -352,7 +359,7 @@ body {
 .hw-chart-subtitle {
   font-size: 9px;
   font-family: 'JetBrains Mono', monospace;
-  color: #FFFFFF;
+  color: #8B95A1;
   margin-bottom: 12px;
 }
 
@@ -369,7 +376,7 @@ body {
 .hw-btn-ghost {
   font-size: 10px;
   font-family: 'JetBrains Mono', monospace;
-  color: #FFFFFF;
+  color: #8B95A1;
   background: none;
   border: 1px solid rgba(58,63,71,0.3);
   border-radius: 6px;
@@ -419,7 +426,7 @@ body {
   padding: 7px 10px;
   background: none;
   border: none;
-  color: #FFFFFF;
+  color: #8B95A1;
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
@@ -515,6 +522,88 @@ body {
   border-bottom: 1px solid rgba(58,63,71,0.18);
 }
 .hw-rec-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+/* ── Map overlays (DashboardMap + ExplorationMap) ── */
+.hw-map-grid-overlay {
+  background-image:
+    linear-gradient(rgba(61,178,224,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61,178,224,0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.hw-map-gradient-bottom {
+  background: linear-gradient(to top, rgba(6,12,24,0.85) 0%, transparent 45%);
+}
+.hw-map-gradient-left {
+  background: linear-gradient(to right, rgba(6,12,24,0.4) 0%, transparent 30%);
+}
+
+/* ── Gradient stripe (accent separator) ── */
+.hw-gradient-accent-stripe {
+  background: linear-gradient(90deg, #E8832A, #3DB2E0, transparent);
+}
+
+/* ── Radial amber glow (score card) ── */
+.hw-gradient-amber-glow {
+  background: radial-gradient(ellipse at top left, rgba(232,131,42,0.06) 0%, transparent 65%);
+}
+
+/* ── Stat overlay large value (map bottom stats) ── */
+.hw-stat-value-lg {
+  font-size: 26px;
+  font-weight: 700;
+  color: #3DB2E0;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ── Chart card container (= styleA dans DashboardChartsSection) ── */
+.hw-chart-card {
+  background: #0B0C10;
+  border: 1px solid rgba(58,63,71,0.3);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Chart select (filtre sport/période dans les charts) ── */
+.hw-chart-select {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(58,63,71,0.2);
+  border: 1px solid rgba(58,63,71,0.4);
+  border-radius: 4px;
+  padding: 3px 6px;
+  color: rgba(242,242,242,0.6);
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── Chart nav button (prev/next) ── */
+.hw-chart-nav-btn {
+  padding: 2px 6px;
+  background: none;
+  border: none;
+  color: rgba(242,242,242,0.4);
+  cursor: pointer;
+  font-size: 12px;
+}
+.hw-chart-nav-btn:disabled {
+  color: #8B95A1;
+  cursor: not-allowed;
+}
+
+/* ── Chart empty state ── */
+.hw-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(242,242,242,0.2);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
 
 /* Hide Mapbox branding */
 .mapboxgl-ctrl-logo { display: none !important; }

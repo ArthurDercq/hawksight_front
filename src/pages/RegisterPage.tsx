@@ -116,7 +116,7 @@ export function RegisterPage() {
               {isExchanging ? (
                 <div className="text-center py-8">
                   <div className="w-8 h-8 border-2 border-amber/30 border-t-amber rounded-full animate-spin mx-auto mb-4" />
-                  <p className="font-mono text-[11px] text-mist/40 uppercase tracking-[2px]">Vérification Strava…</p>
+                  <p className="hw-text-data text-mist/40 uppercase tracking-[2px]">Vérification Strava…</p>
                 </div>
               ) : (
                 <>
@@ -126,7 +126,7 @@ export function RegisterPage() {
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6DAA75" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      <span className="text-[10px] font-mono text-moss uppercase tracking-wider">Strava connecté</span>
+                      <span className="hw-text-caption text-moss uppercase tracking-wider">Strava connecté</span>
                     </div>
                     <h2 className="text-2xl font-heading font-bold mb-2">
                       {stravaName ? `Bienvenue, ${stravaName.split(' ')[0]} !` : 'Crée ton compte'}
@@ -148,7 +148,7 @@ export function RegisterPage() {
 
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <label className="block font-mono text-[9px] text-mist/40 uppercase tracking-[2px] mb-2">
+                      <label className="block hw-text-label text-mist/40 mb-2">
                         Nom d'utilisateur
                       </label>
                       <input
@@ -162,7 +162,7 @@ export function RegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block font-mono text-[9px] text-mist/40 uppercase tracking-[2px] mb-2">
+                      <label className="block hw-text-label text-mist/40 mb-2">
                         Email
                       </label>
                       <input
@@ -176,7 +176,7 @@ export function RegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block font-mono text-[9px] text-mist/40 uppercase tracking-[2px] mb-2">
+                      <label className="block hw-text-label text-mist/40 mb-2">
                         Mot de passe <span className="text-mist/20">(8 caractères min.)</span>
                       </label>
                       <input
@@ -190,7 +190,7 @@ export function RegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block font-mono text-[9px] text-mist/40 uppercase tracking-[2px] mb-2">
+                      <label className="block hw-text-label text-mist/40 mb-2">
                         Confirmer le mot de passe
                       </label>
                       <input
@@ -206,7 +206,7 @@ export function RegisterPage() {
                         }`}
                       />
                       {passwordConfirm && !passwordsMatch && (
-                        <p className="mt-1 font-mono text-[9px] text-red-400/70 uppercase tracking-wider">
+                        <p className="mt-1 hw-text-label text-red-400/70 uppercase tracking-wider">
                           Les mots de passe ne correspondent pas
                         </p>
                       )}

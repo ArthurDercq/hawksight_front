@@ -5,8 +5,8 @@ interface Props { trailStats: TrailStats; sportColor: string; }
 function Kpi({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="font-mono text-[8px] text-steel uppercase tracking-[1.5px]">{label}</span>
-      <span className="text-[13px] font-semibold leading-tight" style={{ color: color ?? '#F2F2F2' }}>{value}</span>
+      <span className="hw-text-label text-steel">{label}</span>
+      <span className="hw-text-value leading-tight" style={{ color: color ?? '#F2F2F2' }}>{value}</span>
     </div>
   );
 }
@@ -15,7 +15,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 mb-2.5">
       <div className="flex-1 h-px bg-steel/20" />
-      <span className="font-mono text-[8px] text-steel/70 uppercase tracking-[2px] whitespace-nowrap">{children}</span>
+      <span className="hw-text-label text-steel/70 whitespace-nowrap">{children}</span>
       <div className="flex-1 h-px bg-steel/20" />
     </div>
   );
@@ -28,8 +28,8 @@ function ClimbBox({ color, label, data }: {
 }) {
   return (
     <div className="bg-[#111318] border border-steel/20 rounded-lg px-3 py-2.5">
-      <div className="font-mono text-[8px] uppercase tracking-[1.5px] mb-2" style={{ color }}>{label}</div>
-      <div className="font-mono text-[8px] text-steel mb-1 mt-2">Plus longue</div>
+      <div className="hw-text-label mb-2" style={{ color }}>{label}</div>
+      <div className="hw-text-label text-steel mb-1 mt-2">Plus longue</div>
       <div className="flex gap-3">
         <Kpi label="Durée" value={data.longest.duration} />
         {data.longest.dplus != null && <Kpi label="D+" value={`${data.longest.dplus} m`} color={color} />}
@@ -37,7 +37,7 @@ function ClimbBox({ color, label, data }: {
         {data.longest.vap != null && <Kpi label="VAP" value={`${Math.round(data.longest.vap)} m/h`} />}
       </div>
       <div className="h-px bg-steel/20 my-1.5" />
-      <div className="font-mono text-[8px] text-steel mb-1">Plus grande</div>
+      <div className="hw-text-label text-steel mb-1">Plus grande</div>
       <div className="flex gap-3">
         <Kpi label="Durée" value={data.biggest.duration} />
         {data.biggest.dplus != null && <Kpi label="D+" value={`${data.biggest.dplus} m`} color={color} />}
@@ -68,7 +68,7 @@ export function TrailStatsCard({ trailStats: t, sportColor }: Props) {
         </div>
         <div>
           <div className="text-sm font-semibold text-mist">Analyse Trail</div>
-          <div className="font-mono text-[10px] text-steel mt-0.5">
+          <div className="hw-text-caption text-steel mt-0.5">
             GAP {t.avg_gap_pace_formatted} · {t.avg_gap_kmh.toFixed(1)} km/h
           </div>
         </div>
@@ -124,7 +124,7 @@ export function TrailStatsCard({ trailStats: t, sportColor }: Props) {
         <SectionLabel>Segments les + difficiles</SectionLabel>
         <div className="grid grid-cols-2 gap-2.5">
           <div className="bg-[#111318] border border-steel/20 rounded-lg px-3 py-2.5">
-            <div className="font-mono text-[8px] uppercase tracking-[1.5px] mb-2" style={{ color: sportColor }}>↑ Montée</div>
+            <div className="hw-text-label mb-2" style={{ color: sportColor }}>↑ Montée</div>
             <div className="grid grid-cols-2 gap-1.5">
               <Kpi label="Dist." value={`${(t.hardest_up.distance_m / 1000).toFixed(1)} km`} />
               <Kpi label="Durée" value={t.hardest_up.duration_formatted} />
@@ -135,7 +135,7 @@ export function TrailStatsCard({ trailStats: t, sportColor }: Props) {
             </div>
           </div>
           <div className="bg-[#111318] border border-steel/20 rounded-lg px-3 py-2.5">
-            <div className="font-mono text-[8px] text-glacier uppercase tracking-[1.5px] mb-2">↓ Descente</div>
+            <div className="hw-text-label text-glacier mb-2">↓ Descente</div>
             <div className="grid grid-cols-2 gap-1.5">
               <Kpi label="Dist." value={`${(t.hardest_down.distance_m / 1000).toFixed(1)} km`} />
               <Kpi label="Durée" value={t.hardest_down.duration_formatted} />
@@ -155,14 +155,14 @@ export function TrailStatsCard({ trailStats: t, sportColor }: Props) {
               <div key={i} className="flex items-center justify-between bg-[#111318] border border-steel/20 rounded px-2.5 py-1.5">
                 <div>
                   <div className="text-xs text-mist">{s.name}</div>
-                  <div className="font-mono text-[9px] text-steel mt-0.5">km {s.km_point.toFixed(1)}</div>
+                  <div className="hw-text-caption text-steel mt-0.5">km {s.km_point.toFixed(1)}</div>
                 </div>
                 <div className="font-mono text-sm font-bold" style={{ color: sportColor }}>{s.duration_formatted ?? `${s.duration_min.toFixed(0)} min`}</div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="font-mono text-[10px] text-steel italic">Aucun arrêt détecté</p>
+          <p className="hw-text-caption text-steel italic">Aucun arrêt détecté</p>
         )}
       </div>
     </div>

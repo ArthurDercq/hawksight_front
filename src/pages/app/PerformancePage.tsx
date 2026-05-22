@@ -378,7 +378,7 @@ export function PerformancePage() {
               </div>
             ) : error ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">{error}</p>
+                <p className="hw-text-data text-steel/85 uppercase tracking-wider">{error}</p>
               </div>
             ) : filteredActivities.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
@@ -426,13 +426,13 @@ export function PerformancePage() {
                           <div className="flex items-center gap-2">
                             <span className="text-mist text-sm font-medium line-clamp-1">{activity.name}</span>
                             <span
-                              className="px-1.5 py-0.5 rounded font-mono text-[9px] shrink-0"
+                              className="px-1.5 py-0.5 rounded hw-text-label shrink-0"
                               style={{ backgroundColor: `${activityColor}20`, color: activityColor }}
                             >
                               {sportLabel(activity.sport_type)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1 text-steel font-mono text-[10px]">
+                          <div className="flex items-center gap-2 mt-1 hw-text-caption text-steel">
                             <span>{formatDateDisplay(activity.start_date)}</span>
                             <span className="text-steel/75">•</span>
                             <span>{distanceKm.toFixed(1)} km</span>
@@ -461,7 +461,7 @@ export function PerformancePage() {
                 <p className="text-amber text-xs font-medium">
                   {activities.length} activité{activities.length > 1 ? 's' : ''} enregistrée{activities.length > 1 ? 's' : ''}
                 </p>
-                <p className="text-steel text-[10px] mt-0.5">Sélectionnez une activité pour lancer l'analyse.</p>
+                <p className="hw-text-caption text-steel mt-0.5">Sélectionnez une activité pour lancer l'analyse.</p>
               </div>
             </div>
           </div>
@@ -526,7 +526,7 @@ export function PerformancePage() {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">Erreur lors de l'analyse</p>
+                  <p className="hw-text-data text-steel/85 uppercase tracking-wider">Erreur lors de l'analyse</p>
                   <p className="text-steel/65 text-xs font-mono mt-1">{analysisError || 'Une erreur inattendue s\'est produite'}</p>
                 </div>
                 <button

@@ -39,7 +39,7 @@ export function MarketingLayout() {
               <a
                 key={label}
                 href={href}
-                className={`font-mono text-[10px] uppercase tracking-[2px] transition-colors ${
+                className={`hw-text-caption uppercase tracking-[2px] transition-colors ${
                   isActive ? 'text-amber' : 'text-mist/70 hover:text-mist'
                 }`}
               >
@@ -51,8 +51,7 @@ export function MarketingLayout() {
 
         <button
           onClick={handleCTA}
-          className="hw-btn-amber px-6 py-3.5 text-sm"
-          style={{ color: '#F2F2F2', background: 'rgba(242,242,242,0.05)', borderColor: 'rgba(242,242,242,0.2)' }}
+          className="hw-btn-amber px-6 py-3.5 text-sm text-mist bg-mist/5 border-mist/20"
         >
           {isAuthenticated ? 'Accéder' : 'Connexion'} <ArrowRightIcon />
         </button>
@@ -68,7 +67,7 @@ export function MarketingLayout() {
 
           <div className="flex items-center gap-2.5 shrink-0 cursor-pointer" onClick={() => navigate('/')}>
             <Logo size={20} />
-            <span className="font-mono text-[11px] font-bold text-mist/60 tracking-[2px]">HAWKSIGHT</span>
+            <span className="hw-text-data font-bold text-mist/60 tracking-[2px]">HAWKSIGHT</span>
           </div>
 
           <div className="flex items-center gap-8">
@@ -76,7 +75,7 @@ export function MarketingLayout() {
               <a
                 key={label}
                 href={href}
-                className={`font-mono text-[9px] uppercase tracking-[2px] transition-colors ${
+                className={`hw-text-label uppercase tracking-[2px] transition-colors ${
                   href === pathname ? 'text-amber/80' : 'text-mist/50 hover:text-mist/80'
                 }`}
               >
@@ -84,14 +83,14 @@ export function MarketingLayout() {
               </a>
             ))}
             <span className="w-px h-3 bg-steel/20" />
-            <span className="font-mono text-[9px] text-steel/80 tracking-[1px]">© 2026 HawkSight</span>
+            <span className="hw-text-label text-steel/80 tracking-[1px]">© 2026 HawkSight</span>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <span className="font-mono text-[9px] text-steel/65 uppercase tracking-[2px]">System</span>
+            <span className="hw-text-label text-steel/65">System</span>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" style={{ boxShadow: '0 0 6px #E8832A' }} />
-              <span className="font-mono text-[9px] text-amber/70 uppercase tracking-[2px]">Online</span>
+              <span className="hw-text-label text-amber/70">Online</span>
             </div>
           </div>
 

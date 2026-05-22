@@ -50,7 +50,7 @@ export function ActivityModal({ activity, onClose, onSave }: ActivityModalProps)
       onClick={onClose}
     >
       <div
-        className="card-glass rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto relative"
+        className="hw-card-dark p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-6">

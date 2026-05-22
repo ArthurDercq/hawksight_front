@@ -220,7 +220,7 @@ export function PerformanceAnalytics() {
             const activity = activities.find(a => a.id === parseInt(e.target.value));
             if (activity) setSelectedActivity(activity);
           }}
-          className="flex-1 max-w-md px-4 py-2 bg-[#0B0C10] border border-[#3A3F47]/30 text-[#F2F2F2] rounded font-['Inter'] text-sm focus:outline-none focus:border-[#E8832A]/50"
+          className="flex-1 max-w-md px-4 py-2 bg-charcoal border border-steel/30 text-[#F2F2F2] rounded font-body text-sm focus:outline-none focus:border-[#E8832A]/50"
         >
           {activities.map((activity) => (
             <option key={activity.id} value={activity.id}>
@@ -234,14 +234,14 @@ export function PerformanceAnalytics() {
         {/* Chart 1: Heart Rate Zones */}
         <div
           ref={chart1Ref}
-          className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden"
+          className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden"
         >
           {/* Background effects */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-[#E8832A]/5 rounded-full blur-3xl" />
 
           <div className="relative space-y-6">
             {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-[#3A3F47]/30">
+            <div className="flex items-start justify-between pb-4 border-b border-steel/30">
               <div className="flex items-start gap-3">
                 <div
                   className="p-2 border rounded"
@@ -256,7 +256,7 @@ export function PerformanceAnalytics() {
                   <h3 className="font-heading text-[#F2F2F2]">
                     Zones de Fréquence Cardiaque
                   </h3>
-                  <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
+                  <p className="text-muted font-body text-xs mt-1">
                     Distribution du temps par zone
                   </p>
                 </div>
@@ -278,28 +278,28 @@ export function PerformanceAnalytics() {
                 <div key={i} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="font-['JetBrains_Mono'] text-xs text-[#F2F2F2]">
+                      <span className="font-mono text-xs text-[#F2F2F2]">
                         {zone.name}
                       </span>
-                      <span className="font-['Inter'] text-xs text-[#3A3F47]">
+                      <span className="font-body text-xs text-muted">
                         {zone.label}
                       </span>
-                      <span className="font-['JetBrains_Mono'] text-[10px] text-[#3A3F47]/60">
+                      <span className="hw-text-caption text-muted/60">
                         {zone.range}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-['JetBrains_Mono'] text-xs text-[#3A3F47]">
+                      <span className="font-mono text-xs text-muted">
                         {formatTime(zone.time)}
                       </span>
-                      <span className="font-['JetBrains_Mono'] text-sm" style={{ color: zone.color }}>
+                      <span className="font-mono text-sm" style={{ color: zone.color }}>
                         {zone.percentage.toFixed(1)}%
                       </span>
                     </div>
                   </div>
 
                   {/* Bar */}
-                  <div className="relative h-8 bg-[#0B0C10] border border-[#3A3F47]/20 rounded overflow-hidden">
+                  <div className="relative h-8 bg-charcoal border border-steel/20 rounded overflow-hidden">
                     {/* Grid background */}
                     <div
                       className="absolute inset-0 opacity-[0.03]"
@@ -340,14 +340,14 @@ export function PerformanceAnalytics() {
             </div>
 
             {/* Footer stats */}
-            <div className="flex items-center justify-between pt-4 border-t border-[#3A3F47]/30">
+            <div className="flex items-center justify-between pt-4 border-t border-steel/30">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                <span className="text-muted font-mono text-xs">
                   HR_ANALYSIS
                 </span>
               </div>
-              <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+              <span className="text-muted font-mono text-xs">
                 AVG: {selectedActivity.avgHeartRate} BPM
               </span>
             </div>
@@ -357,14 +357,14 @@ export function PerformanceAnalytics() {
         {/* Chart 2: Pace Profile */}
         <div
           ref={chart2Ref}
-          className="bg-[#0B0C10] border border-[#3A3F47]/30 rounded-lg p-6 relative overflow-hidden"
+          className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden"
         >
           {/* Background effects */}
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#3DB2E0]/5 rounded-full blur-3xl" />
 
           <div className="relative space-y-6">
             {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-[#3A3F47]/30">
+            <div className="flex items-start justify-between pb-4 border-b border-steel/30">
               <div className="flex items-start gap-3">
                 <div
                   className="p-2 border rounded"
@@ -379,7 +379,7 @@ export function PerformanceAnalytics() {
                   <h3 className="font-heading text-[#F2F2F2]">
                     Profil d'Allure
                   </h3>
-                  <p className="text-[#3A3F47] font-['Inter'] text-xs mt-1">
+                  <p className="text-muted font-body text-xs mt-1">
                     Évolution de la vitesse sur le parcours
                   </p>
                 </div>
@@ -396,7 +396,7 @@ export function PerformanceAnalytics() {
             </div>
 
             {/* Pace Chart */}
-            <div className="relative aspect-[2/1] border border-[#3A3F47]/20 rounded overflow-hidden bg-[#0B0C10]">
+            <div className="relative aspect-[2/1] border border-steel/20 rounded overflow-hidden bg-charcoal">
               {/* Grid background */}
               <div
                 className="absolute inset-0 opacity-[0.03]"
@@ -410,18 +410,18 @@ export function PerformanceAnalytics() {
               />
 
               {/* Y-axis labels */}
-              <div className="absolute left-2 top-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+              <div className="absolute left-2 top-2 hw-text-caption text-muted">
                 Rapide
               </div>
-              <div className="absolute left-2 bottom-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+              <div className="absolute left-2 bottom-2 hw-text-caption text-muted">
                 Lent
               </div>
 
               {/* X-axis labels */}
-              <div className="absolute bottom-2 left-12 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+              <div className="absolute bottom-2 left-12 hw-text-caption text-muted">
                 0 km
               </div>
-              <div className="absolute bottom-2 right-2 text-[#3A3F47] font-['JetBrains_Mono'] text-[10px]">
+              <div className="absolute bottom-2 right-2 hw-text-caption text-muted">
                 {selectedActivity.distance} km
               </div>
 
@@ -532,14 +532,14 @@ export function PerformanceAnalytics() {
             </div>
 
             {/* Footer stats */}
-            <div className="flex items-center justify-between pt-4 border-t border-[#3A3F47]/30">
+            <div className="flex items-center justify-between pt-4 border-t border-steel/30">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+                <span className="text-muted font-mono text-xs">
                   PACE_ANALYSIS
                 </span>
               </div>
-              <span className="text-[#3A3F47] font-['JetBrains_Mono'] text-xs">
+              <span className="text-muted font-mono text-xs">
                 AVG: {selectedActivity.avgPace} /km
               </span>
             </div>

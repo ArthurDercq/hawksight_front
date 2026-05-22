@@ -256,26 +256,26 @@ export function ExplorationMap({ data, className = '', coreThreshold = 10, showC
             zIndex: 20,
           }}
         >
-          <div className="bg-[#0B0C10]/95 border border-steel/30 rounded-lg p-3 shadow-card min-w-[170px]">
+          <div className="bg-charcoal/95 border border-steel/30 rounded-lg p-3 shadow-card min-w-[170px]">
             <div className="flex items-center justify-between mb-2 pb-2 border-b border-steel/20">
-              <span className="font-mono text-[9px] text-steel/85 uppercase tracking-[2px]">Zone</span>
+              <span className="hw-text-label text-steel/85">Zone</span>
               <span className="font-mono text-sm font-bold tabular-nums" style={{ color: tooltip.count >= 10 ? '#E8832A' : '#3DB2E0' }}>
                 {tooltip.count} passage{tooltip.count > 1 ? 's' : ''}
               </span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-4">
-                <span className="font-mono text-[9px] text-steel/75 uppercase">1ère fois</span>
-                <span className="font-mono text-[10px] text-mist/70">{fmtDate(tooltip.firstSeen)}</span>
+                <span className="hw-text-label text-steel/75">1ère fois</span>
+                <span className="hw-text-caption text-mist/70">{fmtDate(tooltip.firstSeen)}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="font-mono text-[9px] text-steel/75 uppercase">Dernière</span>
-                <span className="font-mono text-[10px] text-mist/70">{fmtDate(tooltip.lastSeen)}</span>
+                <span className="hw-text-label text-steel/75">Dernière</span>
+                <span className="hw-text-caption text-mist/70">{fmtDate(tooltip.lastSeen)}</span>
               </div>
               {tooltip.sports.length > 0 && (
                 <div className="flex items-center justify-between gap-4 pt-1 border-t border-steel/15">
-                  <span className="font-mono text-[9px] text-steel/75 uppercase">Sports</span>
-                  <span className="font-mono text-[10px] text-amber/80">{fmtSports(tooltip.sports)}</span>
+                  <span className="hw-text-label text-steel/75">Sports</span>
+                  <span className="hw-text-caption text-amber/80">{fmtSports(tooltip.sports)}</span>
                 </div>
               )}
             </div>
@@ -286,7 +286,7 @@ export function ExplorationMap({ data, className = '', coreThreshold = 10, showC
       {/* Reset view */}
       <button
         onClick={handleResetView}
-        className="absolute top-3 left-3 bg-[#0B0C10]/80 backdrop-blur-sm border border-steel/30 rounded-lg px-3 py-2 font-mono text-[10px] text-mist/60 hover:text-mist hover:border-amber/40 transition-all flex items-center gap-2 uppercase tracking-wider"
+        className="absolute top-3 left-3 bg-charcoal/80 backdrop-blur-sm border border-steel/30 rounded-lg px-3 py-2 hw-text-label text-mist/60 hover:text-mist hover:border-amber/40 transition-all flex items-center gap-2"
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />

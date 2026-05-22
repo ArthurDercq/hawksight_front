@@ -29,7 +29,7 @@ export function PlateformePage() {
             transition={{ duration: 0.6 }}
           >
             <div className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
-            <span className="font-mono text-[10px] text-amber uppercase tracking-[3px]">Plateforme · SaaS Trail</span>
+            <span className="hw-text-caption text-amber uppercase tracking-[3px]">Plateforme · SaaS Trail</span>
           </motion.div>
 
           <motion.h1
@@ -43,7 +43,7 @@ export function PlateformePage() {
           </motion.h1>
 
           <motion.p
-            className="font-mono text-[11px] text-steel/85 leading-relaxed tracking-wide max-w-xl mx-auto mb-10"
+            className="hw-text-data text-steel/85 leading-relaxed tracking-wide max-w-xl mx-auto mb-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.25 }}
@@ -76,7 +76,7 @@ export function PlateformePage() {
           >
             <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 bg-glacier/10 border border-glacier/30 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-glacier animate-pulse" />
-              <span className="font-mono text-[10px] text-glacier uppercase tracking-[2px]">Ce que tu obtiens</span>
+              <span className="hw-text-caption text-glacier uppercase tracking-[2px]">Ce que tu obtiens</span>
             </div>
             <h2 className="font-heading font-bold text-4xl text-mist">
               Une plateforme, trois dimensions.
@@ -123,7 +123,7 @@ export function PlateformePage() {
                 <span className={`font-mono text-3xl ${color === 'amber' ? 'text-amber' : 'text-glacier'}`}>{icon}</span>
                 <div>
                   <h3 className="font-heading font-semibold text-lg text-mist mb-2">{title}</h3>
-                  <p className="font-mono text-[9px] text-steel/80 leading-relaxed">{desc}</p>
+                  <p className="hw-text-label text-steel/80 leading-relaxed">{desc}</p>
                 </div>
                 <a href={href} className="hw-link mt-auto">{cta}</a>
               </motion.div>
@@ -147,11 +147,11 @@ export function PlateformePage() {
             <span className="hw-br hw-br-tr hw-br-amber" />
             <span className="hw-br hw-br-bl" />
             <span className="hw-br hw-br-br" />
-            <p className="font-mono text-[9px] text-amber uppercase tracking-[3px] mb-3">Connexion en 30 secondes</p>
+            <p className="hw-text-label text-amber uppercase tracking-[3px] mb-3">Connexion en 30 secondes</p>
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-mist mb-4">
               Connecte Strava.<br />Tout le reste est automatique.
             </h2>
-            <p className="font-mono text-[10px] text-steel/75 uppercase tracking-[1px] mb-8">
+            <p className="hw-text-caption text-steel/75 uppercase tracking-[1px] mb-8">
               Toutes tes activités · Aucune saisie manuelle · Mise à jour à chaque sortie
             </p>
             <button onClick={handleCTA} className="hw-btn-amber px-10 py-3.5 text-sm">

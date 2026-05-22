@@ -17,7 +17,7 @@ export function Spinner({ message, fullPage = true, size = 'lg' }: SpinnerProps)
         <div className={`absolute inset-0 rounded-full ${borderSize} border-transparent border-t-amber animate-spin`} />
       </div>
       {message && (
-        <p className="font-mono text-[10px] uppercase tracking-[2px] text-steel">{message}</p>
+        <p className="hw-text-caption uppercase tracking-[2px] text-steel">{message}</p>
       )}
     </div>
   );

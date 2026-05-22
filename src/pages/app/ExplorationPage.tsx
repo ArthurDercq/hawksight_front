@@ -39,8 +39,8 @@ const fmtPct = (v: number | undefined | null) => v == null ? '—' : `${v.toFixe
 function StatRow({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-2 py-1.5">
-      <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[1.5px]">{label}</span>
-      <span className={`font-mono text-[11px] font-semibold tabular-nums ${accent ? 'text-glacier' : 'text-mist/80'}`}>{value}</span>
+      <span className="hw-text-label">{label}</span>
+      <span className={`hw-text-data font-semibold ${accent ? 'text-glacier' : 'text-mist/80'}`}>{value}</span>
     </div>
   );
 }
@@ -59,7 +59,7 @@ function PanelSection({ title, children, defaultOpen = true }: { title: string; 
   return (
     <div className="hw-card-dark overflow-hidden">
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between px-4 py-3 hover:bg-steel/5 transition-colors">
-        <span className="font-mono text-[9px] text-steel uppercase tracking-[2px]">{title}</span>
+        <span className="hw-text-label text-steel">{title}</span>
         <ChevronIcon open={open} />
       </button>
       {open && <div className="px-4 pb-3 divide-y divide-steel/10">{children}</div>}
@@ -83,20 +83,20 @@ function StatsPanel({ stats, showCoreOnly, onToggleCoreOnly, coreThreshold }: {
           </svg>
         </div>
         <div className="min-w-0">
-          <p className="font-mono text-[9px] text-glacier/70 uppercase tracking-[2px]">Profil Explorateur</p>
-          <p className="font-mono text-[10px] text-mist/50 truncate">Score · Archétype · Tendances</p>
+          <p className="hw-text-label text-glacier/70 tracking-[2px]">Profil Explorateur</p>
+          <p className="hw-text-caption text-mist/50 truncate">Score · Archétype · Tendances</p>
         </div>
-        <span className="font-mono text-[8px] text-steel/60 uppercase tracking-wider shrink-0 border border-steel/20 rounded px-1.5 py-0.5">Soon</span>
+        <span className="hw-text-label text-muted shrink-0 border border-steel/20 rounded px-1.5 py-0.5">Soon</span>
       </div>
 
       {/* Core toggle */}
       <button onClick={onToggleCoreOnly}
-        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all font-mono text-[9px] uppercase tracking-[1.5px] ${
-          showCoreOnly ? 'bg-glacier/10 border-glacier/40 text-glacier' : 'bg-charcoal border-steel/20 text-steel/60 hover:border-steel/40 hover:text-mist/60'
+        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all hw-text-label ${
+          showCoreOnly ? 'bg-glacier/10 border-glacier/40 text-glacier' : 'bg-charcoal border-steel/20 text-muted hover:border-steel/40 hover:text-mist/60'
         }`}>
         <span>Cœur de territoire</span>
-        <span className={`font-mono text-[8px] px-2 py-0.5 rounded border ${
-          showCoreOnly ? 'border-glacier/40 text-glacier/70 bg-glacier/5' : 'border-steel/20 text-steel/60'
+        <span className={`hw-text-label px-2 py-0.5 rounded border ${
+          showCoreOnly ? 'border-glacier/40 text-glacier/70 bg-glacier/5' : 'border-steel/20 text-muted'
         }`}>≥ {coreThreshold} passages</span>
       </button>
 
@@ -110,8 +110,8 @@ function StatsPanel({ stats, showCoreOnly, onToggleCoreOnly, coreThreshold }: {
       <PanelSection title="Ancrage">
         <div className="py-1.5">
           <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[1.5px]">Zones cœur</span>
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-glacier">
+            <span className="hw-text-label">Zones cœur</span>
+            <span className="hw-text-data font-semibold text-glacier">
               {fmtPct(stats.core_ratio != null ? stats.core_ratio * 100 : null)}
             </span>
           </div>
@@ -125,8 +125,8 @@ function StatsPanel({ stats, showCoreOnly, onToggleCoreOnly, coreThreshold }: {
       <PanelSection title="Récence">
         <div className="py-1.5">
           <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[1.5px]">Taux de nouveauté</span>
-            <span className="font-mono text-[11px] font-semibold tabular-nums text-moss">{fmtPct(stats.novelty_percent)}</span>
+            <span className="hw-text-label">Taux de nouveauté</span>
+            <span className="hw-text-data font-semibold text-moss">{fmtPct(stats.novelty_percent)}</span>
           </div>
           <ProgressBar value={stats.novelty_percent ?? 0} max={100} color="#6DAA75" />
         </div>
@@ -136,8 +136,8 @@ function StatsPanel({ stats, showCoreOnly, onToggleCoreOnly, coreThreshold }: {
         {stats.rotation_activity != null && (
           <div className="pt-1.5 mt-0.5 flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-glacier animate-pulse shrink-0" />
-            <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[1.5px]">Rotation terrain</span>
-            <span className="font-mono text-[10px] text-glacier/80 ml-auto">{fmtPct(stats.rotation_activity)}</span>
+            <span className="hw-text-label">Rotation terrain</span>
+            <span className="hw-text-caption text-glacier/80 ml-auto">{fmtPct(stats.rotation_activity)}</span>
           </div>
         )}
       </PanelSection>
@@ -150,7 +150,7 @@ function LargestTerritoriesSection({ territories, isComputing }: { territories: 
   if (isComputing) return (
     <div className="flex items-center gap-3">
       <Spinner size="sm" fullPage={false} />
-      <span className="font-mono text-[10px] text-steel/60 uppercase tracking-[2px]">Calcul des territoires...</span>
+      <span className="hw-text-label text-muted tracking-[2px]">Calcul des territoires...</span>
     </div>
   );
   if (!territories.length) return null;
@@ -159,8 +159,8 @@ function LargestTerritoriesSection({ territories, isComputing }: { territories: 
 
   return (
     <div>
-      <div className="hw-section-sep mb-4" style={{ position: 'relative' }}>
-        <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[2px]">Tes plus grands territoires</span>
+      <div className="hw-section-sep mb-4 relative">
+        <span className="hw-text-label text-muted tracking-[2px]">Tes plus grands territoires</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {territories.map((t) => {
@@ -172,20 +172,20 @@ function LargestTerritoriesSection({ territories, isComputing }: { territories: 
               <span className="hw-br hw-br-tl hw-br-glacier" />
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <span className="font-mono text-[9px] text-steel/40 uppercase tracking-[2px]">#{t.rank}</span>
+                  <span className="hw-text-label text-steel/40">#{t.rank}</span>
                   <p className="font-heading font-semibold text-mist text-sm mt-0.5 leading-tight">{location || 'Zone inconnue'}</p>
-                  {country && <p className="font-mono text-[9px] text-steel/60 mt-0.5">{country}</p>}
+                  {country && <p className="hw-text-caption mt-0.5">{country}</p>}
                 </div>
                 <div className="text-right shrink-0">
                   <p className="font-mono text-2xl font-bold text-glacier tabular-nums leading-none">{fmt(t.surface_km2)}</p>
-                  <p className="font-mono text-[9px] text-steel/60 mt-0.5">km²</p>
+                  <p className="hw-text-caption mt-0.5">km²</p>
                 </div>
               </div>
               <div>
                 <div className="hw-pb-bg">
-                  <div className="hw-pb-fill" style={{ width: `${pct}%`, background: '#3DB2E0' }} />
+                  <div className="hw-pb-fill bg-glacier" style={{ width: `${pct}%` }} />
                 </div>
-                <p className="font-mono text-[9px] text-steel/60 mt-1">{fmt(t.cells_count)} zones hexagonales</p>
+                <p className="hw-text-caption mt-1">{fmt(t.cells_count)} zones hexagonales</p>
               </div>
             </div>
           );
@@ -201,26 +201,26 @@ function ProfilExplorateur({ stats }: { stats: ExplorationStats }) {
 
   return (
     <div>
-      <div className="hw-section-sep mb-4" style={{ position: 'relative' }}>
-        <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[2px]">Profil Explorateur</span>
+      <div className="hw-section-sep mb-4 relative">
+        <span className="hw-text-label text-muted tracking-[2px]">Profil Explorateur</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
         {/* Score */}
         <div className="hw-card-dark p-4 flex flex-col gap-2">
           <span className="hw-br hw-br-tl hw-br-glacier" />
-          <p className="font-mono text-[9px] text-steel/60 uppercase tracking-[2px]">Score exploration</p>
+          <p className="hw-text-label text-muted tracking-[2px]">Score exploration</p>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="font-mono text-3xl font-bold text-glacier tabular-nums">{score ?? '—'}</span>
-            <span className="font-mono text-[10px] text-steel/60">m²/km</span>
+            <span className="hw-text-caption">m²/km</span>
           </div>
-          <p className="font-mono text-[9px] text-steel/50 mt-auto">Surface explorée par km parcouru</p>
+          <p className="hw-text-caption text-steel/50 mt-auto">Surface explorée par km parcouru</p>
         </div>
 
         {/* Archétype — placeholder */}
         <div className="hw-card-dark p-4 flex flex-col gap-2">
           <span className="hw-br hw-br-tl hw-br-glacier" />
-          <p className="font-mono text-[9px] text-steel/60 uppercase tracking-[2px]">Archétype</p>
+          <p className="hw-text-label text-muted tracking-[2px]">Archétype</p>
           <div className="flex items-center gap-2 mt-1">
             <div className="w-8 h-8 rounded-full bg-glacier/10 border border-glacier/30 flex items-center justify-center">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -229,19 +229,19 @@ function ProfilExplorateur({ stats }: { stats: ExplorationStats }) {
             </div>
             <div>
               <p className="font-heading font-semibold text-mist text-sm">Explorateur</p>
-              <p className="font-mono text-[9px] text-steel/60">Ancré & curieux</p>
+              <p className="hw-text-caption">Ancré & curieux</p>
             </div>
           </div>
           <div className="mt-auto flex items-center gap-1.5 border border-steel/15 rounded px-2 py-1 w-fit">
             <div className="w-1 h-1 rounded-full bg-glacier/50" />
-            <span className="font-mono text-[8px] text-steel/50 uppercase tracking-wider">Algo en cours</span>
+            <span className="hw-text-label text-steel/50">Algo en cours</span>
           </div>
         </div>
 
         {/* Tendances — placeholder */}
         <div className="hw-card-dark p-4 flex flex-col gap-2">
           <span className="hw-br hw-br-tl hw-br-glacier" />
-          <p className="font-mono text-[9px] text-steel/60 uppercase tracking-[2px]">Tendances</p>
+          <p className="hw-text-label text-muted tracking-[2px]">Tendances</p>
           <div className="flex flex-col gap-1.5 mt-1">
             {[
               { label: 'Nouveauté', value: fmtPct(stats.novelty_percent), color: '#6DAA75' },
@@ -249,14 +249,14 @@ function ProfilExplorateur({ stats }: { stats: ExplorationStats }) {
               { label: 'Récence', value: `${fmt(stats.recent_4w)} zones`, color: '#3DB2E0' },
             ].map(({ label, value, color }) => (
               <div key={label} className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[1px]">{label}</span>
-                <span className="font-mono text-[10px] font-semibold tabular-nums" style={{ color }}>{value}</span>
+                <span className="hw-text-label text-muted tracking-[1px]">{label}</span>
+                <span className="hw-text-caption font-semibold tabular-nums" style={{ color }}>{value}</span>
               </div>
             ))}
           </div>
           <div className="mt-auto flex items-center gap-1.5 border border-steel/15 rounded px-2 py-1 w-fit">
             <div className="w-1 h-1 rounded-full bg-glacier/50" />
-            <span className="font-mono text-[8px] text-steel/50 uppercase tracking-wider">Données live</span>
+            <span className="hw-text-label text-steel/50">Données live</span>
           </div>
         </div>
       </div>
@@ -325,7 +325,7 @@ function ExplorationChart() {
     ctx.beginPath();
     data.forEach((d, i) => {
       const x = xAt(i), y = yRate(d.exploration_rate * 100);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
     });
     ctx.strokeStyle = '#3DB2E0';
     ctx.lineWidth = 2;
@@ -336,7 +336,7 @@ function ExplorationChart() {
     ctx.beginPath();
     data.forEach((d, i) => {
       const x = xAt(i), y = yRate(d.exploration_rate * 100);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
     });
     ctx.lineTo(xAt(n - 1), pad.top + chartH);
     ctx.lineTo(xAt(0), pad.top + chartH);
@@ -373,19 +373,19 @@ function ExplorationChart() {
 
   return (
     <div>
-      <div className="hw-section-sep mb-4" style={{ position: 'relative' }}>
-        <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[2px]">Évolution de l'exploration</span>
+      <div className="hw-section-sep mb-4 relative">
+        <span className="hw-text-label text-muted tracking-[2px]">Évolution de l'exploration</span>
       </div>
       <div className="hw-card-dark p-4">
         <span className="hw-br hw-br-tl hw-br-glacier" />
         <div className="flex items-center gap-4 mb-3">
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-[2px] bg-glacier rounded" />
-            <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[1px]">Taux d'exploration</span>
+            <span className="hw-text-label text-muted tracking-[1px]">Taux d'exploration</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm bg-glacier/20" />
-            <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[1px]">Nouvelles zones</span>
+            <span className="hw-text-label text-muted tracking-[1px]">Nouvelles zones</span>
           </div>
         </div>
         {isLoading ? (
@@ -394,10 +394,10 @@ function ExplorationChart() {
           </div>
         ) : data.length === 0 ? (
           <div className="flex items-center justify-center h-[180px]">
-            <p className="font-mono text-[10px] text-steel/60">Pas encore de données</p>
+            <p className="hw-text-caption">Pas encore de données</p>
           </div>
         ) : (
-          <canvas ref={canvasRef} className="w-full" style={{ height: 180 }} />
+          <canvas ref={canvasRef} className="w-full h-[180px]" />
         )}
       </div>
     </div>
@@ -431,8 +431,8 @@ function ZonesFetichesSection({ data: geoData }: { data: { features: { propertie
 
   return (
     <div>
-      <div className="hw-section-sep mb-4" style={{ position: 'relative' }}>
-        <span className="font-mono text-[9px] text-steel/60 uppercase tracking-[2px]">Zones fétiches</span>
+      <div className="hw-section-sep mb-4 relative">
+        <span className="hw-text-label text-muted tracking-[2px]">Zones fétiches</span>
       </div>
       <div className="hw-card-dark p-4">
         <span className="hw-br hw-br-tl hw-br-glacier" />
@@ -441,10 +441,10 @@ function ZonesFetichesSection({ data: geoData }: { data: { features: { propertie
         <div className="flex items-center gap-1 mb-4">
           {HOTSPOT_PERIODS.map(p => (
             <button key={p.value} onClick={() => setPeriod(p.value)}
-              className={`font-mono text-[9px] uppercase tracking-[1.5px] px-3 py-1.5 rounded border transition-all ${
+              className={`hw-text-label px-3 py-1.5 rounded border transition-all ${
                 period === p.value
                   ? 'bg-glacier/15 border-glacier/50 text-glacier'
-                  : 'bg-transparent border-steel/20 text-steel/60 hover:border-steel/40 hover:text-mist/60'
+                  : 'bg-transparent border-steel/20 text-muted hover:border-steel/40 hover:text-mist/60'
               }`}>
               {p.label}
             </button>
@@ -452,7 +452,7 @@ function ZonesFetichesSection({ data: geoData }: { data: { features: { propertie
         </div>
 
         {zones.length === 0 ? (
-          <p className="font-mono text-[10px] text-steel/60 py-4 text-center">Aucune zone sur cette période</p>
+          <p className="hw-text-caption py-4 text-center">Aucune zone sur cette période</p>
         ) : (
           <div className="flex flex-col gap-2">
             {zones.map((z, i) => {
@@ -461,17 +461,17 @@ function ZonesFetichesSection({ data: geoData }: { data: { features: { propertie
               const lastDate = p.last_seen ? new Date(p.last_seen).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—';
               return (
                 <div key={p.h3_id} className="flex items-center gap-3">
-                  <span className="font-mono text-[9px] text-steel/40 w-4 shrink-0 text-right">#{i + 1}</span>
+                  <span className="hw-text-label text-steel/40 w-4 shrink-0 text-right">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="font-mono text-[9px] text-steel/50 truncate">{p.h3_id.slice(0, 12)}…</span>
-                      <span className="font-mono text-[10px] font-bold text-mist/80 tabular-nums shrink-0">{p.activity_count}×</span>
+                      <span className="hw-text-caption text-steel/50 truncate">{p.h3_id.slice(0, 12)}…</span>
+                      <span className="hw-text-caption font-bold text-mist/80 tabular-nums shrink-0">{p.activity_count}×</span>
                     </div>
                     <div className="hw-pb-bg">
                       <div className="hw-pb-fill" style={{ width: `${pct}%`, background: pct === 100 ? '#3DB2E0' : 'rgba(61,178,224,0.6)' }} />
                     </div>
                   </div>
-                  <span className="font-mono text-[8px] text-steel/40 shrink-0 w-16 text-right">{lastDate}</span>
+                  <span className="hw-text-label text-steel/40 shrink-0 w-16 text-right">{lastDate}</span>
                 </div>
               );
             })}
@@ -505,7 +505,7 @@ export function ExplorationPage() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-        <p className="font-mono text-[11px] text-steel/60 uppercase tracking-wider">{error}</p>
+        <p className="hw-text-data text-muted uppercase tracking-wider">{error}</p>
       </div>
     </div>
   );
@@ -521,20 +521,20 @@ export function ExplorationPage() {
           <div className="flex items-center gap-1">
             {SPORT_FILTERS.map(f => (
               <button key={f.value} onClick={() => setSportFilter(f.value)}
-                className={`font-mono text-[9px] uppercase tracking-[1.5px] px-3 py-1.5 rounded border transition-all ${
-                  sportFilter === f.value ? 'bg-glacier/15 border-glacier/50 text-glacier' : 'bg-transparent border-steel/20 text-steel/60 hover:border-steel/40 hover:text-mist/60'
+                className={`hw-text-label px-3 py-1.5 rounded border transition-all ${
+                  sportFilter === f.value ? 'bg-glacier/15 border-glacier/50 text-glacier' : 'bg-transparent border-steel/20 text-muted hover:border-steel/40 hover:text-mist/60'
                 }`}>{f.label}</button>
             ))}
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => setSelectedYear(null)}
-              className={`font-mono text-[9px] uppercase tracking-[1.5px] px-3 py-1.5 rounded border transition-all ${
-                !selectedYear ? 'bg-glacier/15 border-glacier/50 text-glacier' : 'bg-transparent border-steel/20 text-steel/60 hover:border-steel/40 hover:text-mist/60'
+              className={`hw-text-label px-3 py-1.5 rounded border transition-all ${
+                !selectedYear ? 'bg-glacier/15 border-glacier/50 text-glacier' : 'bg-transparent border-steel/20 text-muted hover:border-steel/40 hover:text-mist/60'
               }`}>Tout</button>
             {years.map(y => (
               <button key={y} onClick={() => setSelectedYear(y)}
-                className={`font-mono text-[9px] uppercase tracking-[1.5px] px-3 py-1.5 rounded border transition-all ${
-                  selectedYear === y ? 'bg-glacier/15 border-glacier/50 text-glacier' : 'bg-transparent border-steel/20 text-steel/60 hover:border-steel/40 hover:text-mist/60'
+                className={`hw-text-label px-3 py-1.5 rounded border transition-all ${
+                  selectedYear === y ? 'bg-glacier/15 border-glacier/50 text-glacier' : 'bg-transparent border-steel/20 text-muted hover:border-steel/40 hover:text-mist/60'
                 }`}>{y}</button>
             ))}
           </div>
@@ -543,14 +543,14 @@ export function ExplorationPage() {
 
       {/* Map + Stats panel */}
       {data && (
-        <div className="flex gap-4" style={{ height: 'calc(100vh - 140px)' }}>
+        <div className="flex gap-4 h-[calc(100vh-140px)]">
           <div className="flex-1 relative bg-charcoal border border-steel/30 rounded-lg overflow-hidden">
             <span className="hw-br hw-br-tl hw-br-glacier" />
             <span className="hw-br hw-br-br hw-br-glacier-dim" />
             <ExplorationMap data={data} className="h-full" coreThreshold={coreThreshold} showCoreOnly={showCoreOnly} />
             {data.features.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <p className="font-mono text-xs text-steel/60">Aucune zone explorée trouvée</p>
+                <p className="font-mono text-xs text-muted">Aucune zone explorée trouvée</p>
               </div>
             )}
           </div>

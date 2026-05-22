@@ -181,42 +181,6 @@ export function DashboardChartsSection({
     },
   };
 
-  const styleA = {
-    background: '#0B0C10',
-    border: '1px solid rgba(58,63,71,0.3)',
-    borderRadius: '8px',
-    padding: '20px',
-    position: 'relative' as const,
-    overflow: 'hidden' as const,
-  };
-
-  const titleA: React.CSSProperties = {
-    fontSize: '10px', fontWeight: 600, color: 'rgba(242,242,242,0.7)',
-    fontFamily: 'JetBrains Mono, monospace', marginBottom: '4px',
-  };
-
-  const subtitleA: React.CSSProperties = {
-    fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47',
-  };
-
-  const selectA: React.CSSProperties = {
-    fontSize: '9px', fontFamily: 'JetBrains Mono, monospace',
-    background: 'rgba(58,63,71,0.2)', border: '1px solid rgba(58,63,71,0.4)',
-    borderRadius: '4px', padding: '3px 6px', color: 'rgba(242,242,242,0.6)', outline: 'none',
-  };
-
-  const navBtnA = (disabled = false): React.CSSProperties => ({
-    padding: '2px 6px', background: 'none', border: 'none',
-    color: disabled ? '#3A3F47' : 'rgba(242,242,242,0.4)',
-    cursor: disabled ? 'not-allowed' : 'pointer', fontSize: '12px',
-  });
-
-  const emptyA = (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(242,242,242,0.2)', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>
-      Pas de données
-    </div>
-  );
-
   const axisStyle = { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } };
   const gridStyle = { color: 'rgba(255,255,255,0.03)' };
 
@@ -225,27 +189,27 @@ export function DashboardChartsSection({
       <SectionTitle icon={<BarChartIcon />} title="Analyses hebdomadaires" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Daily Hours — Style A */}
-        <div style={styleA}>
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(232,131,42,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(232,131,42,0.3)' }} />
+        {/* Daily Hours */}
+        <div className="hw-chart-card">
+          <span className="hw-br hw-br-tl hw-br-amber" />
+          <span className="hw-br hw-br-br hw-br-amber-dark" />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 style={titleA}>Minutes d'activités quotidiennes</h3>
+              <h3 className="hw-chart-title">Minutes d'activités quotidiennes</h3>
               {weekStats && (
-                <p style={subtitleA}>
-                  <span style={{ color: '#E8832A' }}>{weekStats.distance.toFixed(1)} km</span>
+                <p className="hw-chart-subtitle">
+                  <span className="text-amber">{weekStats.distance.toFixed(1)} km</span>
                   {' · '}
-                  <span style={{ color: '#3DB2E0' }}>{weekStats.elevation} D+</span>
+                  <span className="text-glacier">{weekStats.elevation} D+</span>
                   {' · '}
                   <span>{weekStats.time}</span>
                 </p>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-              <button onClick={() => setWeekOffset(weekOffset + 1)} style={navBtnA()}>←</button>
-              <span style={{ ...subtitleA, minWidth: '100px', textAlign: 'center' }}>{weekLabel}</span>
-              <button onClick={() => setWeekOffset(weekOffset - 1)} disabled={weekOffset <= 0} style={navBtnA(weekOffset <= 0)}>→</button>
+            <div className="flex items-center gap-0.5">
+              <button onClick={() => setWeekOffset(weekOffset + 1)} className="hw-chart-nav-btn">←</button>
+              <span className="hw-chart-subtitle min-w-[100px] text-center">{weekLabel}</span>
+              <button onClick={() => setWeekOffset(weekOffset - 1)} disabled={weekOffset <= 0} className="hw-chart-nav-btn">→</button>
             </div>
           </div>
           <div className={`h-[200px] relative transition-opacity duration-300 ${isRefetchingDailyHours ? 'opacity-50' : 'opacity-100'}`}>
@@ -264,23 +228,23 @@ export function DashboardChartsSection({
                 }}
                 options={{ ...barChartOptionsMinutes, scales: { x: { stacked: true, grid: { display: false }, ticks: axisStyle }, y: { stacked: true, grid: gridStyle, ticks: { ...axisStyle, stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}` : null } } }, plugins: { legend: { display: true, position: 'bottom' as const, labels: { color: 'rgba(242,242,242,0.4)', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 10 } } } }}
               />
-            ) : emptyA}
+            ) : <div className="hw-chart-empty">Pas de données</div>}
           </div>
         </div>
 
-        {/* Weekly Hours — Style A */}
-        <div style={styleA}>
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
+        {/* Weekly Hours */}
+        <div className="hw-chart-card">
+          <span className="hw-br hw-br-tl hw-br-glacier" />
+          <span className="hw-br hw-br-br hw-br-glacier-dim" />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 style={titleA}>Heures d'activité par semaine</h3>
-              <p style={subtitleA}>{weeklyHoursAverage}</p>
+              <h3 className="hw-chart-title">Heures d'activité par semaine</h3>
+              <p className="hw-chart-subtitle">{weeklyHoursAverage}</p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-              <button onClick={() => setGlobalOffset(globalOffset + 1)} style={navBtnA()}>←</button>
-              <span style={{ ...subtitleA, minWidth: '72px', textAlign: 'center' }}>10 semaines</span>
-              <button onClick={() => setGlobalOffset(globalOffset - 1)} disabled={globalOffset <= 0} style={navBtnA(globalOffset <= 0)}>→</button>
+            <div className="flex items-center gap-0.5">
+              <button onClick={() => setGlobalOffset(globalOffset + 1)} className="hw-chart-nav-btn">←</button>
+              <span className="hw-chart-subtitle min-w-[72px] text-center">10 semaines</span>
+              <button onClick={() => setGlobalOffset(globalOffset - 1)} disabled={globalOffset <= 0} className="hw-chart-nav-btn">→</button>
             </div>
           </div>
           <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingWeeklyHours ? 'opacity-50' : 'opacity-100'}`}>
@@ -300,21 +264,20 @@ export function DashboardChartsSection({
                 }}
                 options={{ ...lineChartOptions, scales: { x: { grid: { display: false }, ticks: axisStyle }, y: { grid: gridStyle, ticks: { ...axisStyle, stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}h` : null } } } }}
               />
-            ) : emptyA}
+            ) : <div className="hw-chart-empty">Pas de données</div>}
           </div>
         </div>
 
-        {/* Weekly Distance — Style A */}
-        <div style={{ background: '#0B0C10', border: '1px solid rgba(58,63,71,0.3)', borderRadius: '8px', padding: '20px', position: 'relative', overflow: 'hidden' }}>
-          {/* Corner brackets TL+BR glacier */}
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
+        {/* Weekly Distance */}
+        <div className="hw-chart-card">
+          <span className="hw-br hw-br-tl hw-br-glacier" />
+          <span className="hw-br hw-br-br hw-br-glacier-dim" />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(242,242,242,0.7)', fontFamily: 'JetBrains Mono, monospace', marginBottom: '4px' }}>Kilomètres par semaine</h3>
-              <span style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', color: '#3A3F47' }}>{weeklyDistanceAverage} · <span style={{ color: '#C4561A' }}>{weeklyElevationAverage}</span></span>
+              <h3 className="hw-chart-title">Kilomètres par semaine</h3>
+              <span className="hw-chart-subtitle">{weeklyDistanceAverage} · <span className="text-amber-dark">{weeklyElevationAverage}</span></span>
             </div>
-            <select value={distanceSport} onChange={(e) => setDistanceSport(e.target.value)} style={{ fontSize: '9px', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(58,63,71,0.2)', border: '1px solid rgba(58,63,71,0.4)', borderRadius: '4px', padding: '3px 6px', color: 'rgba(242,242,242,0.6)', outline: 'none' }}>
+            <select value={distanceSport} onChange={(e) => setDistanceSport(e.target.value)} className="hw-chart-select">
               <option value="Run">Run</option>
               <option value="Trail">Trail</option>
               <option value="Bike">Bike</option>
@@ -372,26 +335,24 @@ export function DashboardChartsSection({
                   },
                 }}
               />
-            ) : (
-              <div className="flex items-center justify-center h-full" style={{ color: 'rgba(242,242,242,0.2)', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>Pas de données</div>
-            )}
+            ) : <div className="hw-chart-empty">Pas de données</div>}
           </div>
         </div>
 
-        {/* Repartition — Style A */}
-        <div style={styleA}>
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(109,170,117,0.3)' }} />
+        {/* Repartition */}
+        <div className="hw-chart-card">
+          <span className="hw-br hw-br-tl hw-br-moss" />
+          <span className="hw-br hw-br-br hw-br-moss" />
           <div className="flex items-center justify-between mb-4">
-            <h3 style={titleA}>Répartition des activités</h3>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <select value={repartitionSport} onChange={(e) => setRepartitionSport(e.target.value)} style={selectA}>
+            <h3 className="hw-chart-title">Répartition des activités</h3>
+            <div className="flex gap-1.5">
+              <select value={repartitionSport} onChange={(e) => setRepartitionSport(e.target.value)} className="hw-chart-select">
                 <option value="Run,Trail">Run & Trail</option>
                 <option value="Run">Run</option>
                 <option value="Trail">Trail</option>
                 <option value="Bike">Bike</option>
               </select>
-              <select value={repartitionWeeks} onChange={(e) => setRepartitionWeeks(parseInt(e.target.value))} style={selectA}>
+              <select value={repartitionWeeks} onChange={(e) => setRepartitionWeeks(parseInt(e.target.value))} className="hw-chart-select">
                 <option value={4}>Ce mois</option>
                 <option value={8}>2 mois</option>
                 <option value={12}>3 mois</option>
@@ -424,20 +385,20 @@ export function DashboardChartsSection({
                   },
                 }}
               />
-            ) : emptyA}
+            ) : <div className="hw-chart-empty">Pas de données</div>}
           </div>
         </div>
 
-        {/* Weekly Pace — Style A */}
-        <div style={styleA}>
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(109,170,117,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(109,170,117,0.3)' }} />
+        {/* Weekly Pace */}
+        <div className="hw-chart-card">
+          <span className="hw-br hw-br-tl hw-br-moss" />
+          <span className="hw-br hw-br-br hw-br-moss" />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 style={titleA}>Allure moyenne par semaine</h3>
-              <p style={subtitleA}>{weeklyPaceAverage}</p>
+              <h3 className="hw-chart-title">Allure moyenne par semaine</h3>
+              <p className="hw-chart-subtitle">{weeklyPaceAverage}</p>
             </div>
-            <select value={paceSport} onChange={(e) => setPaceSport(e.target.value)} style={selectA}>
+            <select value={paceSport} onChange={(e) => setPaceSport(e.target.value)} className="hw-chart-select">
               <option value="Run">Run</option>
               <option value="Trail">Trail</option>
               <option value="Bike">Bike</option>
@@ -460,18 +421,18 @@ export function DashboardChartsSection({
                 }}
                 options={{ ...paceChartOptions, scales: { ...paceChartOptions.scales, x: { grid: { display: false }, ticks: axisStyle }, y: { ...paceChartOptions.scales.y, grid: gridStyle, ticks: { ...paceChartOptions.scales.y.ticks, color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } } } } }}
               />
-            ) : emptyA}
+            ) : <div className="hw-chart-empty">Pas de données</div>}
           </div>
         </div>
 
-        {/* Conquête — Style A */}
-        <div style={styleA}>
-          <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(61,178,224,0.4)' }} />
-          <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(61,178,224,0.3)' }} />
+        {/* Conquête */}
+        <div className="hw-chart-card">
+          <span className="hw-br hw-br-tl hw-br-glacier" />
+          <span className="hw-br hw-br-br hw-br-glacier-dim" />
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 style={titleA}>Taux de conquête</h3>
-              <p style={subtitleA}>{conqueteAverage}</p>
+              <h3 className="hw-chart-title">Taux de conquête</h3>
+              <p className="hw-chart-subtitle">{conqueteAverage}</p>
             </div>
           </div>
           <div className={`h-[200px] transition-opacity duration-300 ${isRefetchingConquete ? 'opacity-50' : 'opacity-100'}`}>
@@ -489,7 +450,7 @@ export function DashboardChartsSection({
                 }}
                 options={{ responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false }, ticks: axisStyle }, y: { grid: gridStyle, ticks: { ...axisStyle, stepSize: 1, callback: (v: number | string) => Number.isInteger(Number(v)) ? `${v}` : null } } }, plugins: { legend: { display: false } } }}
               />
-            ) : emptyA}
+            ) : <div className="hw-chart-empty">Pas de données</div>}
           </div>
         </div>
       </div>

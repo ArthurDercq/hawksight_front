@@ -67,20 +67,20 @@ function RecordsCard({ records }: { records: ActivityRecord[] }) {
         </div>
         <div>
           <div className="text-sm font-semibold text-mist">Records personnels</div>
-          <div className="font-mono text-[10px] text-steel mt-0.5">{records.length} record{records.length > 1 ? 's' : ''} détenu{records.length > 1 ? 's' : ''} sur cette activité</div>
+          <div className="hw-text-caption text-steel mt-0.5">{records.length} record{records.length > 1 ? 's' : ''} détenu{records.length > 1 ? 's' : ''} sur cette activité</div>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
         {records.map(r => (
           <div key={r.id} className="bg-steel/10 border border-steel/20 rounded-lg px-3 py-2.5">
-            <div className="font-mono text-[9px] text-steel uppercase tracking-[1.5px] mb-1">
+            <div className="hw-text-label text-steel mb-1">
               {RECORD_LABELS[r.distance_key] ?? r.distance_key}
             </div>
             <div className="text-base font-bold font-mono tabular-nums text-amber-400">
               {r.time_formatted ?? r.value_formatted ?? r.value}
             </div>
             {r.pace_formatted && (
-              <div className="font-mono text-[9px] text-steel mt-0.5">{r.pace_formatted} /km</div>
+              <div className="hw-text-caption text-steel mt-0.5">{r.pace_formatted} /km</div>
             )}
           </div>
         ))}
@@ -95,7 +95,7 @@ const chartCard = 'hw-card-dark-lg';
 // ── Back link — used in loading/error states ──────────────────────────────────
 function BackLink() {
   return (
-    <Link to="/activities" className="inline-flex items-center gap-1.5 font-mono text-[11px] text-steel no-underline mb-4 hover:text-mist/60 transition-colors">
+    <Link to="/activities" className="inline-flex items-center gap-1.5 hw-text-data text-steel no-underline mb-4 hover:text-mist/60 transition-colors">
       <ArrowLeftIcon /> Retour aux activités
     </Link>
   );
@@ -181,7 +181,7 @@ export function ActivityDetailPage() {
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <p className="font-mono text-[11px] text-steel/85 uppercase tracking-wider">{error || 'Activité non trouvée'}</p>
+          <p className="hw-text-data text-steel/85 uppercase tracking-wider">{error || 'Activité non trouvée'}</p>
         </div>
       </div>
     );
@@ -203,16 +203,16 @@ export function ActivityDetailPage() {
             <div className="flex items-center gap-2.5 flex-wrap">
               {/* Sport badge */}
               <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase tracking-wider"
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full hw-text-caption font-semibold uppercase tracking-wider"
                 style={{ backgroundColor: `${activitySportColor}26`, color: activitySportColor, border: `1px solid ${activitySportColor}59` }}
               >
                 {sportLabel(activity.sport_type)}
               </span>
               {/* Date */}
-              <span className="font-mono text-[11px] text-steel">{formatDateLong(activity.start_date)}</span>
+              <span className="hw-text-data text-steel">{formatDateLong(activity.start_date)}</span>
               {/* Event */}
               {linkedEvent ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[10px] text-glacier bg-glacier/10 border border-glacier/30">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full hw-text-caption text-glacier bg-glacier/10 border border-glacier/30">
                   🏁 {linkedEvent.name}
                   <button
                     onClick={handleUnlinkEvent}
@@ -225,23 +225,23 @@ export function ActivityDetailPage() {
                 <div className="relative">
                   <button
                     onClick={() => setShowEventPicker(v => !v)}
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-mono text-[10px] text-steel border border-steel/30 bg-transparent cursor-pointer hover:border-steel/60 hover:text-mist/60 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full hw-text-caption text-steel border border-steel/30 bg-transparent cursor-pointer hover:border-steel/60 hover:text-mist/60 transition-colors"
                   >
                     🏁 Lier un événement
                   </button>
                   {showEventPicker && (
                     <div className="absolute top-full left-0 mt-1 z-20 bg-charcoal border border-steel/40 rounded-lg min-w-[200px] max-h-48 overflow-y-auto shadow-2xl">
                       {events.length === 0 ? (
-                        <p className="px-3 py-2 font-mono text-[11px] text-steel">Aucun événement</p>
+                        <p className="px-3 py-2 hw-text-data text-steel">Aucun événement</p>
                       ) : events.map(ev => (
                         <button
                           key={ev.id}
                           onClick={() => handleLinkEvent(ev.id)}
                           disabled={linkingEvent}
-                          className="w-full text-left px-3 py-2 font-mono text-[11px] text-mist/70 bg-transparent border-none cursor-pointer hover:bg-steel/20 transition-colors"
+                          className="w-full text-left px-3 py-2 hw-text-data text-mist/70 bg-transparent border-none cursor-pointer hover:bg-steel/20 transition-colors"
                         >
                           <div className="font-medium truncate">{ev.name}</div>
-                          <div className="text-[9px] text-steel mt-0.5">{new Date(ev.date).toLocaleDateString('fr-FR')} · {ev.type}</div>
+                          <div className="hw-text-caption text-steel mt-0.5">{new Date(ev.date).toLocaleDateString('fr-FR')} · {ev.type}</div>
                         </button>
                       ))}
                     </div>
@@ -253,7 +253,7 @@ export function ActivityDetailPage() {
           {/* Edit button */}
           <button
             onClick={() => setShowEditModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] text-mist/40 border border-steel/35 bg-transparent cursor-pointer hover:text-mist/80 hover:border-steel/70 hover:bg-steel/10 transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hw-text-data text-mist/40 border border-steel/35 bg-transparent cursor-pointer hover:text-mist/80 hover:border-steel/70 hover:bg-steel/10 transition-all"
           >
             <EditIcon /> Modifier
           </button>
@@ -294,7 +294,7 @@ export function ActivityDetailPage() {
             <AnalyticsIcon />
           </div>
           <div>
-            <div className="text-[15px] font-semibold text-mist">Analyses détaillées</div>
+            <div className="font-mono text-[15px] font-semibold text-mist">Analyses détaillées</div>
             <div className="flex items-center gap-1 mt-1.5">
               <div className="w-16 h-px bg-gradient-to-r from-glacier to-transparent" />
               <div className="w-1 h-1 rounded-full bg-glacier" />
@@ -322,8 +322,7 @@ export function ActivityDetailPage() {
       {/* ── Row 3 : HR Profile + HR Zones + Exploration (trail) ── */}
       {hasStreams && activity.has_heartrate && (
         <div
-          className="grid gap-4 mb-8"
-          style={{ gridTemplateColumns: trail && explorationRate ? '1fr 1fr 1fr' : '1fr 1fr' }}
+          className={`grid gap-4 mb-8 ${trail && explorationRate ? 'grid-cols-3' : 'grid-cols-2'}`}
         >
           <div className={chartCard}>
             <span className="hw-br hw-br-tl hw-br-moss" />
@@ -372,7 +371,7 @@ function ExplorationCard({ explorationRate, sportColor }: {
         </div>
         <div>
           <div className="text-sm font-semibold text-mist">Exploration</div>
-          <div className="font-mono text-[10px] text-steel mt-0.5">Territoire découvert</div>
+          <div className="hw-text-caption text-steel mt-0.5">Territoire découvert</div>
         </div>
       </div>
       {/* KPIs */}
@@ -383,9 +382,9 @@ function ExplorationCard({ explorationRate, sportColor }: {
           { label: 'Surface', value: `${(explorationRate.total_cells * 0.737).toFixed(1)}`, sub: 'km² couverts', color: '#F2F2F2' },
         ].map(({ label, value, sub, color }) => (
           <div key={label}>
-            <div className="font-mono text-[8px] text-steel uppercase tracking-[1.5px] mb-0.5">{label}</div>
+            <div className="hw-text-label text-steel mb-0.5">{label}</div>
             <div className="text-2xl font-bold font-mono tabular-nums" style={{ color }}>{value}</div>
-            <div className="text-[9px] text-mist/30 mt-0.5">{sub}</div>
+            <div className="hw-text-caption text-mist/30 mt-0.5">{sub}</div>
           </div>
         ))}
       </div>

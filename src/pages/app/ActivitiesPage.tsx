@@ -141,14 +141,14 @@ export function ActivitiesPage() {
             />
           </div>
           <input type="date" value={searchDateFrom} onChange={(e) => setSearchDateFrom(e.target.value)} className={inputCls} />
-          <span className="font-mono text-[9px] text-steel">→</span>
+          <span className="hw-text-caption text-steel">→</span>
           <input type="date" value={searchDateTo} onChange={(e) => setSearchDateTo(e.target.value)} className={inputCls} />
           {hasFilters && (
             <>
               <button onClick={clearFilters} className={`${inputCls} cursor-pointer`} title="Effacer les filtres">
                 <XIcon />
               </button>
-              <span className="font-mono text-[9px] text-amber">
+              <span className="hw-text-caption text-amber">
                 {filteredActivities.length} résultat{filteredActivities.length !== 1 ? 's' : ''}
               </span>
             </>
@@ -215,8 +215,8 @@ export function ActivitiesPage() {
         {deleteConfirm && (
           <div className="fixed inset-0 bg-black/75 backdrop-blur flex items-center justify-center z-50 p-4">
             <div className="hw-card-dark p-6 max-w-sm w-full">
-              <span className="hw-br hw-br-tl" style={{ borderColor: 'rgba(252,129,129,0.35)' }} />
-              <span className="hw-br hw-br-br" style={{ borderColor: 'rgba(252,129,129,0.2)' }} />
+              <span className="hw-br hw-br-tl hw-br-red" />
+              <span className="hw-br hw-br-br hw-br-red-dim" />
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="p-1.5 bg-red-500/10 border border-red-500/25 rounded-md text-red-400">
                   <TrashIcon />

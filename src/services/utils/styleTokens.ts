@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react';
+import { COLORS } from './constants';
 
 // ── Style A — card standard (dashboard + activity page) ───────────────────────
 export const CARD_STYLE: CSSProperties = {
-  background: '#0B0C10',
-  border: '1px solid rgba(58,63,71,0.3)',
+  background: COLORS.charcoal,
+  border: `1px solid rgba(58,63,71,0.3)`,
   borderRadius: '8px',
   padding: '16px',
   position: 'relative',
@@ -29,16 +30,16 @@ export const CHART_TITLE_STYLE: CSSProperties = {
 export const CHART_SUBTITLE_STYLE: CSSProperties = {
   fontSize: '9px',
   fontFamily: 'JetBrains Mono, monospace',
-  color: '#3A3F47',
+  color: '#8B95A1',  // muted
   marginBottom: '12px',
 };
 
 export const LABEL_STYLE: CSSProperties = {
   fontSize: '9px',
   fontFamily: 'JetBrains Mono, monospace',
-  color: 'rgba(242,242,242,0.3)',
+  color: '#8B95A1',  // muted
   textTransform: 'uppercase',
-  letterSpacing: '1px',
+  letterSpacing: '1.5px',
 };
 
 export const VALUE_STYLE: CSSProperties = {
@@ -50,17 +51,18 @@ export const VALUE_STYLE: CSSProperties = {
 
 // ── Couleurs sémantiques inline (éviter les magic strings) ───────────────────
 export const COLOR = {
-  bg:         '#0B0C10',
-  bgDark:     '#060c18',
-  border:     'rgba(58,63,71,0.3)',
-  borderHover:'rgba(58,63,71,0.6)',
-  steel:      '#3A3F47',
-  mist:       '#F2F2F2',
-  amber:      '#E8832A',
-  glacier:    '#3DB2E0',
-  moss:       '#6DAA75',
-  red:        '#E84242',
-  mono:       'JetBrains Mono, monospace',
+  bg:          COLORS.charcoal,
+  bgDark:      '#060c18',
+  border:      'rgba(58,63,71,0.3)',
+  borderHover: 'rgba(58,63,71,0.6)',
+  steel:       COLORS.steel,
+  muted:       '#8B95A1',
+  mist:        COLORS.mist,
+  amber:       COLORS.amber,
+  glacier:     COLORS.glacier,
+  moss:        COLORS.moss,
+  red:         '#E84242',
+  mono:        'JetBrains Mono, monospace',
 } as const;
 
 // ── SVG chart constants partagées ─────────────────────────────────────────────
@@ -68,7 +70,7 @@ export const SVG_CHART = {
   W: 440,
   H: 180,
   MARGIN: { top: 8, right: 16, bottom: 22, left: 28 },
-  gridColor: 'rgba(255,255,255,0.04)',
-  axisColor: 'rgba(58,63,71,0.4)',
-  tickColor: '#3A3F47',
+  gridColor:  'rgba(255,255,255,0.04)',
+  axisColor:  'rgba(58,63,71,0.4)',
+  tickColor:  '#8B95A1',  // muted — lisible sur fond sombre
 } as const;

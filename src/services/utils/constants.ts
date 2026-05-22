@@ -74,6 +74,29 @@ export const CHART_SPORT_COLORS: Record<string, string> = {
   Hike: '#5A5F6C',
 };
 
+// ── Palettes cartographiques ──────────────────────────────────────────────────
+// Ces couleurs sont intentionnellement interpolées (Mapbox expressions) et ne
+// peuvent pas être remplacées par des tokens simples. Documentées ici comme
+// source de vérité pour les deux cartes.
+export const MAP_PALETTE = {
+  // ExplorationMap — gradient froid (peu de passages) → chaud (zone ancrée)
+  exploration: {
+    cold0:   '#0D2A38',  // 0 passage  — glacier très sombre
+    cold1:   '#1A5C80',  // 2-3 passages
+    glacier: '#3DB2E0',  // ~4 passages — glacier plein
+    warm1:   '#C96A1A',  // ~7 passages — amber chaud
+    hot:     '#E8832A',  // 20+ passages — amber vif
+  },
+  // DashboardMap — densité d'activité (monochrome glacier)
+  dashboard: {
+    cold0: '#0B1E33',
+    cold1: '#1F4E79',
+    mid:   '#2EA6D6',
+    hot1:  '#60D5FF',
+    hot2:  '#B3ECFF',
+  },
+} as const;
+
 // ── Misc ──────────────────────────────────────────────────────────────────────
 export const SPORT_TYPES = ['Run', 'Trail', 'Bike', 'Swim', 'Hike', 'WeightTraining'] as const;
 

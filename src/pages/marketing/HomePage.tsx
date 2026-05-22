@@ -311,7 +311,7 @@ export function HomePage() {
             transition={{ duration: 0.6 }}
           >
             <div className="w-1.5 h-1.5 rounded-full bg-amber" style={{ boxShadow: '0 0 10px #E8832A' }} />
-            <span className="font-mono text-[10px] text-amber uppercase tracking-[3px]">Live · Trail Intelligence</span>
+            <span className="hw-text-caption text-amber uppercase tracking-[3px]">Live · Trail Intelligence</span>
           </motion.div>
 
           <motion.h1
@@ -331,7 +331,7 @@ export function HomePage() {
             transition={{ duration: 0.8, delay: 0.55 }}
           >
             <span className="h-px w-14" style={{ background: 'linear-gradient(90deg, transparent, #E8832A)' }} />
-            <span className="font-mono text-[10px] text-steel uppercase tracking-[3px]">Analyse · Territoire · Performance</span>
+            <span className="hw-text-caption text-steel uppercase tracking-[3px]">Analyse · Territoire · Performance</span>
             <span className="h-px w-14" style={{ background: 'linear-gradient(90deg, #E8832A, transparent)' }} />
           </motion.div>
 
@@ -362,8 +362,8 @@ export function HomePage() {
               { label: 'ELEV', value: '1 397 m' },
             ].map(({ label, value }) => (
               <div key={label}>
-                <p className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px] mb-1">{label}</p>
-                <p className="font-mono text-[13px] text-mist/80 font-medium tracking-wide">{value}</p>
+                <p className="hw-text-label text-steel/75 mb-1">{label}</p>
+                <p className="hw-text-value text-mist/80 font-medium tracking-wide">{value}</p>
               </div>
             ))}
           </motion.div>
@@ -374,7 +374,7 @@ export function HomePage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 1.2 }}
           >
-            <p className="font-mono text-[8px] text-mist/50 uppercase tracking-[3px] mb-1">Scroll pour explorer</p>
+            <p className="hw-text-label text-mist/50 uppercase tracking-[3px] mb-1">Scroll pour explorer</p>
             <svg width="14" height="22" viewBox="0 0 14 22">
               <rect x="1" y="1" width="12" height="20" rx="6" fill="none" stroke="rgba(242,242,242,0.3)" strokeWidth="1" />
               <circle cx="7" cy="7" r="1.5" fill="#E8832A">
@@ -396,16 +396,15 @@ export function HomePage() {
               { label: 'STATUS', value: 'TRACKING', amber: true },
             ].map(({ label, value, amber }) => (
               <div key={label}>
-                <p className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px] mb-1">{label}</p>
-                <p className={`font-mono text-[13px] font-medium tracking-wide ${amber ? 'text-amber' : 'text-mist/80'}`}>{value}</p>
+                <p className="hw-text-label text-steel/75 mb-1">{label}</p>
+                <p className={`hw-text-value font-medium tracking-wide ${amber ? 'text-amber' : 'text-mist/80'}`}>{value}</p>
               </div>
             ))}
           </motion.div>
         </div>
 
         <motion.div
-          className="absolute left-12 top-1/2 font-mono text-[8px] text-mist/40 uppercase tracking-[4px] whitespace-nowrap pointer-events-none"
-          style={{ transform: 'translateY(-50%) rotate(-90deg)', transformOrigin: 'left center' }}
+          className="absolute left-12 top-1/2 -translate-y-1/2 -rotate-90 origin-left hw-text-label text-mist/40 uppercase tracking-[4px] whitespace-nowrap pointer-events-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1.5 }}
@@ -435,9 +434,9 @@ export function HomePage() {
               { label: 'Sorties analysées', value: '147', unit: '' },
             ].map(({ label, value, unit }) => (
               <div key={label} className="flex flex-col gap-0.5 whitespace-nowrap">
-                <span className="font-mono text-[8px] text-steel/85 uppercase tracking-[2px]">{label}</span>
-                <span className="font-mono text-[12px] text-mist/70 font-medium tabular-nums">
-                  {value}{unit && <span className="font-mono text-[9px] text-steel/75 ml-1">{unit}</span>}
+                <span className="hw-text-label text-steel/85">{label}</span>
+                <span className="hw-text-data text-mist/70 font-medium tabular-nums">
+                  {value}{unit && <span className="hw-text-label text-steel/75 ml-1">{unit}</span>}
                 </span>
               </div>
             ))}
@@ -446,7 +445,7 @@ export function HomePage() {
           {/* Centre — séparateur gradient */}
           <div className="flex items-center gap-4 shrink-0">
             <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, transparent, #E8832A)' }} />
-            <span className="font-mono text-[8px] text-steel/75 uppercase tracking-[3px]">Données terrain</span>
+            <span className="hw-text-label text-steel/75 uppercase tracking-[3px]">Données terrain</span>
             <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #3DB2E0, transparent)' }} />
           </div>
 
@@ -458,8 +457,8 @@ export function HomePage() {
               { label: 'Statut', value: 'ACTIF', amber: true },
             ].map(({ label, value, amber }) => (
               <div key={label} className="flex flex-col gap-0.5 whitespace-nowrap">
-                <span className="font-mono text-[8px] text-steel/85 uppercase tracking-[2px]">{label}</span>
-                <span className={`font-mono text-[12px] font-medium tabular-nums ${amber ? 'text-amber/70' : 'text-mist/70'}`}>{value}</span>
+                <span className="hw-text-label text-steel/85">{label}</span>
+                <span className={`hw-text-data font-medium tabular-nums ${amber ? 'text-amber/70' : 'text-mist/70'}`}>{value}</span>
               </div>
             ))}
           </div>
@@ -481,7 +480,7 @@ export function HomePage() {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber/10 border border-amber/30 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
-              <span className="font-mono text-[10px] text-amber uppercase tracking-[2px]">Territoire</span>
+              <span className="hw-text-caption text-amber uppercase tracking-[2px]">Territoire</span>
             </div>
 
             <h2 className="font-heading font-bold text-4xl md:text-5xl text-mist leading-tight">
@@ -489,7 +488,7 @@ export function HomePage() {
               <span className="text-amber font-normal italic">trace ton empire.</span>
             </h2>
 
-            <p className="font-mono text-[11px] text-steel/70 leading-relaxed tracking-wide max-w-sm">
+            <p className="hw-text-data text-steel/70 leading-relaxed tracking-wide max-w-sm">
               HawkSight cartographie chaque kilomètre couru en cellules hexagonales H3. Au fil des sorties, ton territoire se construit — visible, mesurable, expansible.
             </p>
 
@@ -503,7 +502,7 @@ export function HomePage() {
                 <div key={label} className="hw-card-dark relative p-3">
                   <span className={`hw-br hw-br-tl hw-br-${br}`} />
                   <span className={`hw-br hw-br-br hw-br-${br}`} />
-                  <p className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px] mb-1.5">{label}</p>
+                  <p className="hw-text-label text-steel/75 mb-1.5">{label}</p>
                   <p className={`font-heading text-xl font-bold tabular-nums ${color}`}>{value}</p>
                 </div>
               ))}
@@ -512,8 +511,8 @@ export function HomePage() {
             {/* Barre de progression conquête */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[8px] text-steel/75 uppercase tracking-[2px]">Niveau de conquête</span>
-                <span className="font-mono text-[8px] text-amber uppercase tracking-[2px]">Traileur Confirmé</span>
+                <span className="hw-text-label text-steel/75">Niveau de conquête</span>
+                <span className="hw-text-label text-amber">Traileur Confirmé</span>
               </div>
               <div className="h-1 bg-steel/10 rounded-full overflow-hidden">
                 <motion.div
@@ -527,7 +526,7 @@ export function HomePage() {
               </div>
               <div className="flex justify-between">
                 {['Explorateur', 'Confirmé', 'Territoire Libre', 'Légende'].map((s, i) => (
-                  <span key={s} className={`font-mono text-[7px] uppercase tracking-[1px] ${i <= 1 ? 'text-amber/60' : 'text-steel/80'}`}>{s}</span>
+                  <span key={s} className={`hw-text-label uppercase tracking-[1px] ${i <= 1 ? 'text-amber/60' : 'text-steel/80'}`}>{s}</span>
                 ))}
               </div>
             </div>
@@ -536,7 +535,7 @@ export function HomePage() {
               href="/terrain"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-amber/30 bg-amber/5 hover:bg-amber/10 hover:border-amber/50 transition-all"
             >
-              <span className="font-mono text-[10px] text-amber uppercase tracking-[2px]">Explorer le terrain</span>
+              <span className="hw-text-caption text-amber uppercase tracking-[2px]">Explorer le terrain</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8832A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
               </svg>
@@ -551,7 +550,7 @@ export function HomePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <div className="hw-card-dark-lg p-0 overflow-hidden aspect-[3/2]" style={{ background: '#05060A' }}>
+            <div className="hw-card-dark-lg p-0 overflow-hidden aspect-[3/2] bg-[#05060A]">
               <span className="hw-br hw-br-tl hw-br-amber" />
               <span className="hw-br hw-br-tr hw-br-amber" />
               <span className="hw-br hw-br-bl" />
@@ -563,14 +562,14 @@ export function HomePage() {
               <div className="hw-card-dark absolute top-4 right-4 px-3 py-2">
                 <span className="hw-br hw-br-tl hw-br-amber" />
                 <span className="hw-br hw-br-br hw-br-amber" />
-                <p className="font-mono text-[7px] text-steel/75 uppercase tracking-[2px] mb-0.5">Dernière sortie</p>
-                <p className="font-mono text-[11px] text-amber font-medium">+12 cellules</p>
+                <p className="hw-text-label text-steel/75 mb-0.5">Dernière sortie</p>
+                <p className="hw-text-data text-amber font-medium">+12 cellules</p>
               </div>
               <div className="hw-card-dark absolute bottom-4 left-4 px-3 py-2">
                 <span className="hw-br hw-br-tl hw-br-glacier" />
                 <span className="hw-br hw-br-br hw-br-glacier" />
-                <p className="font-mono text-[7px] text-steel/75 uppercase tracking-[2px] mb-0.5">Zone glacier</p>
-                <p className="font-mono text-[11px] text-glacier font-medium">Nouveau massif</p>
+                <p className="hw-text-label text-steel/75 mb-0.5">Zone glacier</p>
+                <p className="hw-text-data text-glacier font-medium">Nouveau massif</p>
               </div>
             </div>
             <div className="absolute -inset-4 bg-amber/5 rounded-3xl blur-3xl -z-10 pointer-events-none" />
@@ -595,12 +594,12 @@ export function HomePage() {
           >
             <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 bg-glacier/10 border border-glacier/30 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-glacier animate-pulse" />
-              <span className="font-mono text-[10px] text-glacier uppercase tracking-[2px]">Profil Trailer</span>
+              <span className="hw-text-caption text-glacier uppercase tracking-[2px]">Profil Trailer</span>
             </div>
             <h2 className="font-heading font-bold text-4xl md:text-6xl text-mist leading-tight mb-6">
               Ton ADN de trailer,<br /><span className="text-glacier">révélé par tes données.</span>
             </h2>
-            <p className="font-mono text-[11px] text-steel uppercase tracking-[2px] max-w-2xl mx-auto leading-relaxed">
+            <p className="hw-text-data text-steel uppercase tracking-[2px] max-w-2xl mx-auto leading-relaxed">
               HawkSight analyse l'ensemble de tes sorties pour construire ton profil unique.<br />
               5 dimensions. Des centaines de sorties. Une seule vérité.
             </p>
@@ -622,12 +621,12 @@ export function HomePage() {
                 <div key={label} className="text-right">
                   <div className="flex items-center justify-end gap-3 mb-1.5">
                     <div>
-                      <p className="font-mono text-[9px] uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
-                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/75 ml-0.5">/100</span></p>
+                      <p className="hw-text-label uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
+                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="hw-text-caption text-steel/75 ml-0.5">/100</span></p>
                     </div>
                     <div className="w-1 h-10 rounded-full shrink-0" style={{ background: `linear-gradient(to bottom, ${color}, ${color}40)` }} />
                   </div>
-                  <p className="font-mono text-[9px] text-steel/85 leading-relaxed max-w-xs ml-auto">{desc}</p>
+                  <p className="hw-text-label text-steel/85 leading-relaxed max-w-xs ml-auto">{desc}</p>
                   <div className="mt-2 h-px bg-steel/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
@@ -667,11 +666,11 @@ export function HomePage() {
                   <div className="flex items-center gap-3 mb-1.5">
                     <div className="w-1 h-10 rounded-full shrink-0" style={{ background: `linear-gradient(to bottom, ${color}, ${color}40)` }} />
                     <div>
-                      <p className="font-mono text-[9px] uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
-                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="font-mono text-[10px] text-steel/75 ml-0.5">/100</span></p>
+                      <p className="hw-text-label uppercase tracking-[2px] mb-0.5" style={{ color }}>{label}</p>
+                      <p className="font-heading text-2xl font-bold tabular-nums" style={{ color }}>{score}<span className="hw-text-caption text-steel/75 ml-0.5">/100</span></p>
                     </div>
                   </div>
-                  <p className="font-mono text-[9px] text-steel/85 leading-relaxed max-w-xs">{desc}</p>
+                  <p className="hw-text-label text-steel/85 leading-relaxed max-w-xs">{desc}</p>
                   <div className="mt-2 h-px bg-steel/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
@@ -694,16 +693,16 @@ export function HomePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.5 }}
           >
-            <div className="flex items-center gap-6 font-mono text-[9px] text-steel/75 uppercase tracking-[2px]">
+            <div className="flex items-center gap-6 hw-text-label text-steel/75 uppercase tracking-[2px]">
               <div className="flex items-center gap-2"><div className="w-6 h-px bg-glacier/60" /><span>Ton profil</span></div>
               <div className="flex items-center gap-2"><div className="w-6 h-px border-t border-dashed border-steel/40" /><span>Référence élite</span></div>
             </div>
-            <p className="font-mono text-[9px] text-steel/65 uppercase tracking-[1px]">Calculé sur 147 sorties · 1 842 km · 68 000 m D+</p>
+            <p className="hw-text-label text-steel/65">Calculé sur 147 sorties · 1 842 km · 68 000 m D+</p>
             <a
               href="/methode"
               className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full border border-glacier/30 bg-glacier/5 hover:bg-glacier/10 hover:border-glacier/50 transition-all"
             >
-              <span className="font-mono text-[10px] text-glacier uppercase tracking-[2px]">Découvrir la méthode</span>
+              <span className="hw-text-caption text-glacier uppercase tracking-[2px]">Découvrir la méthode</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
               </svg>
@@ -734,7 +733,7 @@ export function HomePage() {
             <ArrowRightIcon />
           </button>
 
-          <div className="flex items-center justify-center gap-3 text-steel font-mono text-[9px] uppercase tracking-[2px]">
+          <div className="flex items-center justify-center gap-3 text-steel hw-text-label uppercase tracking-[2px]">
             <div className="flex gap-1">
               {[1, 0.6, 0.3].map((op, i) => (
                 <div key={i} className="w-1 h-1 rounded-full bg-amber" style={{ opacity: op }} />

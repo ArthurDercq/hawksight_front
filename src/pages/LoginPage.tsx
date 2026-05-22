@@ -108,7 +108,7 @@ export function LoginPage() {
               {/* Credentials form */}
               <form onSubmit={handleCredentialLogin} className="space-y-4 mb-6">
                 <div>
-                  <label className="block font-mono text-[9px] text-mist/40 uppercase tracking-[2px] mb-2">
+                  <label className="block hw-text-label text-mist/40 mb-2">
                     Email ou nom d'utilisateur
                   </label>
                   <input
@@ -121,7 +121,7 @@ export function LoginPage() {
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[9px] text-mist/40 uppercase tracking-[2px] mb-2">
+                  <label className="block hw-text-label text-mist/40 mb-2">
                     Mot de passe
                   </label>
                   <input
@@ -146,7 +146,7 @@ export function LoginPage() {
               {/* Separator */}
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex-1 h-px bg-steel/20" />
-                <span className="font-mono text-[9px] text-mist/25 uppercase tracking-[2px]">ou</span>
+                <span className="hw-text-label text-mist/25">ou</span>
                 <div className="flex-1 h-px bg-steel/20" />
               </div>
 
@@ -162,7 +162,7 @@ export function LoginPage() {
                 {isStravaLoading ? 'Redirection…' : 'Première connexion via Strava'}
               </button>
 
-              <p className="mt-5 text-center text-[10px] text-mist/25 font-mono">
+              <p className="mt-5 text-center hw-text-caption text-mist/25">
                 HawkSight ne stocke jamais ton mot de passe Strava
               </p>
             </div>

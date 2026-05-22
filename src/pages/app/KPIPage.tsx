@@ -271,7 +271,7 @@ export function KPIPage() {
                         <span className="text-2xl font-bold font-mono text-mist">
                           {chartData.datasets[0].data.reduce((a: number, b: number) => a + b, 0)}
                         </span>
-                        <span className="font-mono text-[10px] text-steel uppercase tracking-wider">activites</span>
+                        <span className="hw-text-label text-steel">activites</span>
                       </div>
                     </div>
                   </div>
@@ -292,7 +292,7 @@ export function KPIPage() {
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
                           <span className="text-mist text-xs">{label}</span>
                           <span className="font-mono text-xs font-semibold" style={{ color }}>{value}</span>
-                          <span className="font-mono text-[10px] text-steel">({percentage}%)</span>
+                          <span className="hw-text-caption text-steel">({percentage}%)</span>
                         </div>
                       );
                     })}
@@ -389,14 +389,14 @@ export function KPIPage() {
                       return (
                         <div key={group}>
                           <div className="px-4 py-1.5 border-y" style={{ backgroundColor: `${color}10`, borderColor: `${color}15` }}>
-                            <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: `${color}99` }}>{group}</span>
+                            <span className="hw-text-label" style={{ color: `${color}99` }}>{group}</span>
                           </div>
                           {groupItems.map(({ key, label }) => {
                             const raw = trailRecordsMap[key];
                             const candidates = Array.isArray(raw) ? raw : (raw ? [raw as unknown as TrailRecord] : []);
                             const record = candidates.find(r => !(excludedOverrides[r.id] ?? r.is_excluded)) ?? null;
                             const rawFormatted = record?.time_formatted ?? record?.value_formatted ?? (record ? `${Math.round(record.value)}` : null);
-                            const displayValue = rawFormatted ? rawFormatted.replace(/[a-zA-Z\/]+$/, '').trim() : '—';
+                            const displayValue = rawFormatted ? rawFormatted.replace(/[a-zA-Z/]+$/, '').trim() : '—';
                             const unit = record?.metric_type === 'time' ? '' :
                                          record?.metric_type === 'dplus_per_km' ? 'm/km' : 'm';
                             return (
