@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useState, useCallback, ReactNode } from 'react';
 import { authApi, apiClient } from '@/services/api';
 import type { CurrentUser } from '@/types';
 
@@ -50,20 +50,18 @@ function handleApiError(error: unknown): string {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('eyesight_token');
-    if (storedToken && !isTokenExpired(storedToken)) {
-      setToken(storedToken);
-      setCurrentUser(decodeUser(storedToken));
-    } else {
-      localStorage.removeItem('eyesight_token');
-    }
-    setIsLoading(false);
-  }, []);
+  const [token, setToken] = useState<string | null>(() => {
+    const t = localStorage.getItem('eyesight_token');
+    if (t && !isTokenExpired(t)) return t;
+    localStorage.removeItem('eyesight_token');
+    return null;
+  });
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => {
+    const t = localStorage.getItem('eyesight_token');
+    return (t && !isTokenExpired(t)) ? decodeUser(t) : null;
+  });
+  // localStorage is synchronous — token is known before first render, no loading state needed
+  const isLoading = false;
 
   const _persistToken = useCallback((access_token: string) => {
     localStorage.setItem('eyesight_token', access_token);

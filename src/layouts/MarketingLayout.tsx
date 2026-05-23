@@ -27,10 +27,10 @@ export function MarketingLayout() {
 
       {/* ── Navbar ── */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5">
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/')}>
+        <button className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/')} aria-label="Accueil HawkSight">
           <Logo size={26} />
           <span className="font-mono text-sm font-bold text-mist tracking-[1px]">HAWKSIGHT</span>
-        </div>
+        </button>
 
         <nav className="hidden md:flex items-center gap-10">
           {NAV_LINKS.map(({ label, href }) => {
@@ -65,10 +65,10 @@ export function MarketingLayout() {
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(232,131,42,0.03) 40%, rgba(61,178,224,0.02) 60%, transparent)' }} />
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
 
-          <div className="flex items-center gap-2.5 shrink-0 cursor-pointer" onClick={() => navigate('/')}>
+          <button className="flex items-center gap-2.5 shrink-0 cursor-pointer" onClick={() => navigate('/')} aria-label="Accueil HawkSight">
             <Logo size={20} />
             <span className="hw-text-data font-bold text-mist/60 tracking-[2px]">HAWKSIGHT</span>
-          </div>
+          </button>
 
           <div className="flex items-center gap-8">
             {NAV_LINKS.map(({ label, href }) => (

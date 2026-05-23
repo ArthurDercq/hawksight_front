@@ -194,7 +194,7 @@ export function KPIPage() {
       title="Mes chiffres clefs"
       loadingMessage="Chargement des statistiques..."
     >
-    <div className="max-w-7xl mx-auto px-6">
+    <div className="max-w-7xl mx-auto">
       {/* Two-column asymmetric layout like vanilla JS */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
         {/* Left Column: Title + Filters + KPIs + Chart */}

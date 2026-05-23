@@ -492,14 +492,14 @@ export function ExplorationPage() {
   const years = useMemo(() => Array.from({ length: 5 }, (_, i) => currentYear - i), [currentYear]);
 
   if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-6">
+    <div className="max-w-7xl mx-auto">
       <SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" />
       <div className="flex items-center justify-center py-24"><Spinner message="Chargement de la carte..." /></div>
     </div>
   );
 
   if (error) return (
-    <div className="max-w-7xl mx-auto px-6">
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8"><SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" /></div>
       <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -511,7 +511,7 @@ export function ExplorationPage() {
   );
 
   return (
-    <div className="flex flex-col px-6 pt-6 pb-8 gap-6">
+    <div className="max-w-7xl mx-auto flex flex-col gap-6">
 
       {/* Header */}
       <div className="flex items-center justify-between gap-4 shrink-0">
@@ -543,7 +543,7 @@ export function ExplorationPage() {
 
       {/* Map + Stats panel */}
       {data && (
-        <div className="flex gap-4 h-[calc(100vh-140px)]">
+        <div className="flex gap-4 h-[calc(100vh-200px)]">
           <div className="flex-1 relative bg-charcoal border border-steel/30 rounded-lg overflow-hidden">
             <span className="hw-br hw-br-tl hw-br-glacier" />
             <span className="hw-br hw-br-br hw-br-glacier-dim" />

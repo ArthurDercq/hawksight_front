@@ -72,7 +72,7 @@ export function EventModal({ open, onClose, onSubmit, initialDate, editEvent }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" role="presentation" onClick={onClose}>
       <div
         className="bg-charcoal border border-steel/40 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl"
         onClick={e => e.stopPropagation()}

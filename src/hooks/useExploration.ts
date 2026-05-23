@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { explorationApi } from '@/services/api';
+import { cache } from '@/services/cache';
 import type { ExplorationGeoJSON, ExplorationStats, ExplorationFeature, SportFilter } from '@/types';
+
+const explorationCacheKey = (year: number | null) => `exploration:geojson:${year ?? 'all'}`;
 
 // H3 resolution 6 cell area in km²
 const H3_RES6_AREA_KM2 = 0.7373;
@@ -64,17 +67,23 @@ function computeStats(
 }
 
 export function useExploration(): UseExplorationReturn {
-  const [allData, setAllData] = useState<ExplorationGeoJSON | null>(null);
-  const [baseStats, setBaseStats] = useState<ExplorationStats | null>(null);
   const [sportFilter, setSportFilter] = useState<SportFilter>('all');
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [allData, setAllData] = useState<ExplorationGeoJSON | null>(() =>
+    cache.get<ExplorationGeoJSON>(explorationCacheKey(null))
+  );
+  const [baseStats, setBaseStats] = useState<ExplorationStats | null>(() => {
+    const stale = cache.get<ExplorationGeoJSON>(explorationCacheKey(null));
+    return stale?.stats ?? null;
+  });
+  const [isLoading, setIsLoading] = useState(() => cache.get<ExplorationGeoJSON>(explorationCacheKey(null)) === null);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hasLoadedOnce = useRef(false);
 
   const fetchData = useCallback(async () => {
-    if (hasLoadedOnce.current) {
+    const key = explorationCacheKey(selectedYear);
+    const hasCached = cache.get<ExplorationGeoJSON>(key) !== null;
+    if (hasCached) {
       setIsFetching(true);
     } else {
       setIsLoading(true);
@@ -82,12 +91,18 @@ export function useExploration(): UseExplorationReturn {
     setError(null);
 
     try {
-      const geojson = await explorationApi.getExploration({
-        year: selectedYear || undefined,
-      });
+      const { data: geojson } = await cache.fetch<ExplorationGeoJSON>(
+        key,
+        () => explorationApi.getExploration({ year: selectedYear || undefined }),
+        {
+          onBackground: (fresh) => {
+            setAllData(fresh);
+            setBaseStats(fresh.stats);
+          },
+        }
+      );
       setAllData(geojson);
       setBaseStats(geojson.stats);
-      hasLoadedOnce.current = true;
     } catch (err) {
       console.error('Error fetching exploration data:', err);
       setError("Erreur lors du chargement des données d'exploration");

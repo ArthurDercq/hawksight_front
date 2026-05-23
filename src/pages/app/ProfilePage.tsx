@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { useProfile, useKPI, useEvents, useTrailProfile } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
 import { EventModal } from '@/components/ui/EventModal';
 import { useAuth } from '@/context';
-import type { TrainingEvent, TrailAxisScores, TrailReferenceProfile } from '@/types';
+import type { TrainingEvent, TrailAxisScores, TrailReferenceProfile, TrailProfileHistory } from '@/types';
 import { activitiesApi } from '@/services/api';
 import { formatRelativeTime, formatMembershipDuration } from '@/services/utils/formatters';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -461,7 +474,7 @@ export function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-center py-24">
+      <div className="max-w-7xl mx-auto flex items-center justify-center py-24">
         <Spinner message="Chargement du profil..." />
       </div>
     );
@@ -469,7 +482,7 @@ export function ProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto">
         <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
@@ -490,7 +503,7 @@ export function ProfilePage() {
     : [];
 
   return (
-    <div className="max-w-7xl mx-auto px-6">
+    <div className="max-w-7xl mx-auto">
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
 

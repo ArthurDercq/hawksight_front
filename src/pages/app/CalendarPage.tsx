@@ -50,7 +50,7 @@ export function CalendarPage() {
   };
 
   return (
-    <div className="max-w-[1280px] mx-auto px-7">
+    <div className="max-w-[1280px] mx-auto">
       {/* ── Header ── */}
       <div className="flex items-end justify-between mb-6">
         <div>
@@ -104,8 +104,8 @@ export function CalendarPage() {
 
           {/* Weeks */}
           <div className="flex flex-col gap-1">
-            {weeks.map((week, i) => (
-              <CalendarWeekRow key={i} week={week} onAddEvent={openEventModal} />
+            {weeks.map((week) => (
+              <CalendarWeekRow key={week.days[0].date.toISOString().slice(0, 10)} week={week} onAddEvent={openEventModal} />
             ))}
           </div>
         </div>
@@ -144,8 +144,8 @@ function CalendarWeekRow({ week, onAddEvent }: CalendarWeekRowProps) {
 
   return (
     <div className="grid gap-1 grid-cols-[repeat(7,1fr)_90px]">
-      {week.days.map((day, i) => (
-        <CalendarDayCell key={i} day={day} onAddEvent={onAddEvent} />
+      {week.days.map((day) => (
+        <CalendarDayCell key={day.date.toISOString().slice(0, 10)} day={day} onAddEvent={onAddEvent} />
       ))}
 
       {/* Week summary */}
@@ -176,7 +176,6 @@ interface CalendarDayCellProps {
 
 function CalendarDayCell({ day, onAddEvent }: CalendarDayCellProps) {
   const { date, isCurrentMonth, isToday, activities, events } = day;
-  const [hovered, setHovered] = useState(false);
 
   const uniqueSports = [...new Set(activities.map((a) => a.sport_type))];
   const dateKey = [
@@ -186,27 +185,23 @@ function CalendarDayCell({ day, onAddEvent }: CalendarDayCellProps) {
   ].join('-');
 
   const cellClass = isToday
-    ? 'hw-cal-day hw-cal-day--today'
+    ? 'hw-cal-day hw-cal-day--today group'
     : !isCurrentMonth
     ? 'hw-cal-day hw-cal-day--other-month'
-    : 'hw-cal-day';
+    : 'hw-cal-day group';
 
   return (
-    <div
-      className={cellClass}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div className={cellClass}>
       {/* Day number + add button */}
       <div className="flex items-center justify-between mb-1.5">
         <span className={`hw-text-data ${isToday ? 'font-bold text-amber' : isCurrentMonth ? 'font-medium text-mist' : 'text-steel'}`}>
           {date.getDate()}
         </span>
-        {isCurrentMonth && hovered && (
+        {isCurrentMonth && (
           <button
             onClick={() => onAddEvent(dateKey)}
-            className="flex items-center justify-center w-4 h-4 rounded bg-amber/10 border border-amber/20 text-amber cursor-pointer"
-            title="Ajouter un événement"
+            className="flex items-center justify-center w-4 h-4 rounded bg-amber/10 border border-amber/20 text-amber cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Ajouter un événement"
           >
             <PlusIcon />
           </button>

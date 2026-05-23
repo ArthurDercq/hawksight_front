@@ -30,7 +30,7 @@ The app has two completely separate surfaces that must not share layout or shell
 **Marketing** (public, no auth, own navbar/footer per page):
 - `/` → `HomePage.tsx`
 - `/terrain` → `TerrainPage.tsx`
-- More pages coming (Analytics, Méthode, …)
+- More pages: Analytics, Méthode, Plateforme
 
 **SaaS app** (auth required, sidebar + footer shell):
 - `/dashboard`, `/activities`, `/exploration`, `/kpi`, `/calendar`, `/performance`, `/profile`
@@ -45,7 +45,7 @@ When adding a new marketing page, add its path to the `isLanding` check until th
 
 ### Auth
 
-JWT stored in `localStorage['eyesight_token']`. Decoded client-side on mount — no API call needed to restore session. `AuthContext` exposes `{ token, isAuthenticated, isLoading, currentUser, loginWithStravaCode, logout }`.
+JWT stored in `localStorage['eyesight_token']`. Decoded **synchronously** on first render — `isLoading` in `AuthContext` is always `false` (localStorage is synchronous, no `useEffect` needed). `AuthContext` exposes `{ token, isAuthenticated, isLoading, currentUser, loginWithStravaCode, logout }`.
 
 Strava OAuth flow:
 1. `GET /auth/strava/login?invite?` → redirect URL
@@ -106,23 +106,245 @@ VITE_MAPBOX_ACCESS_TOKEN=pk.xxx
 
 ---
 
+## Performance rules
+
+These rules are non-negotiable. Every page must follow all of them.
+
+### 1. Seed state from cache — never start loading from scratch
+
+Every domain hook must initialize `useState` lazily from `cache.get()`. This ensures stale data is visible on the very first render, before any `useEffect` fires.
+
+```ts
+// ✅ — stale data shows immediately, spinner only if cache is empty
+const [data, setData] = useState<Activity[]>(() => cache.get<Activity[]>(CACHE_KEY) ?? []);
+const [isLoading, setIsLoading] = useState(() => cache.get<Activity[]>(CACHE_KEY) === null);
+
+// ❌ — spinner always shows, even when data was cached 30 seconds ago
+const [data, setData] = useState([]);
+const [isLoading, setIsLoading] = useState(true);
+```
+
+Then use `cache.fetch()` (not the raw API) so the SWR background-refresh pattern kicks in automatically:
+
+```ts
+const { data } = await cache.fetch<Activity[]>(CACHE_KEY, () => activitiesApi.getActivities(), {
+  onBackground: (fresh) => setData(fresh),
+});
+setData(data);
+```
+
+After mutations, always call `cache.invalidate(CACHE_KEY)` before refetching so the next consumer gets fresh data.
+
+### 2. Never bypass QueryCache for read operations
+
+All reads must go through `cache.fetch()`. **Never** call `apiClient.get()` or `apiClient.fetchWithCache()` directly from a hook for data that benefits from caching (i.e., anything that doesn't change per-request). Bypass only for mutations (POST/PUT/DELETE).
+
+Cache key conventions:
+- `activities:all` — full activity list
+- `activity-detail-{id}` — single activity detail + streams
+- `profile:me` — user profile
+- `exploration:geojson:{year|'all'}` — exploration GeoJSON
+- `kpi:{year}` — KPI data
+- `chart:{type}:{sports}:{year}` — chart data
+
+Exception: `useTerritories` polls a 202 endpoint — do not seed stale data there as it would show outdated territory snapshots.
+
+### 3. Lazy-load all page-level components
+
+All pages must be imported with `React.lazy()` in `App.tsx`. No eager imports for route-level components.
+
+```tsx
+// ✅
+const DashboardPage = lazy(() => import('@/pages/app/DashboardPage'));
+
+// ❌
+import { DashboardPage } from '@/pages/app/DashboardPage';
+```
+
+Wrap lazy routes in `<Suspense fallback={<Spinner />}>`. This keeps the initial JS bundle small and lets each page load on demand.
+
+### 4. Page layout — one source of padding
+
+The `AppLayout` shell in `App.tsx` provides `px-6 py-6` for all app pages. **Pages must never add their own `px-*` padding** at the root level. Use `max-w-*` without `px-*`.
+
+```tsx
+// ✅ — correct page root
+<div className="max-w-7xl mx-auto flex flex-col gap-6">
+
+// ❌ — double padding
+<div className="max-w-7xl mx-auto px-6 flex flex-col gap-6">
+```
+
+The same applies to `PageStateWrapper` — it must not add horizontal padding either.
+
+### 5. No useState for hover/focus — use Tailwind
+
+Interactive states must use Tailwind pseudo-classes, not JS state. JS re-renders for hover are expensive and cause jank.
+
+```tsx
+// ✅
+<div className="hw-card-dark hover:border-steel/60 transition-colors cursor-pointer">
+
+// ❌
+const [hovered, setHovered] = useState(false);
+<div onMouseEnter={() => setHovered(true)} style={{ border: hovered ? ... : ... }}>
+```
+
+### 6. Memoize expensive derived values
+
+Use `useMemo` for data transforms that depend on large lists (activity filtering, calendar week generation, chart data aggregation). Use `useCallback` for event handlers passed as props to child components.
+
+```tsx
+// ✅
+const weeks = useMemo(
+  () => generateCalendarWeeks(year, month, activities, events),
+  [year, month, activities, events],
+);
+```
+
+### 7. Background data refresh — use `onBackground`, not refetch loops
+
+When cache is valid and you want fresh data silently, use the `onBackground` callback in `cache.fetch()`. Never poll with `setInterval` or `setTimeout` for data that has a natural cache TTL.
+
+```ts
+// ✅
+await cache.fetch(KEY, fetcher, { onBackground: (fresh) => setData(fresh) });
+
+// ❌
+useEffect(() => {
+  const id = setInterval(() => refetch(), 30000);
+  return () => clearInterval(id);
+}, []);
+```
+
+Exception: 202-polling endpoints (`/sync/status`, `/trail/profile`, territory snapshots) — these are genuinely async server operations that require explicit polling.
+
+### 8. Cancel in-flight requests on unmount
+
+Every hook that fetches in a `useEffect` must use a cancellation guard to avoid setting state on an unmounted component.
+
+```ts
+// ✅
+useEffect(() => {
+  const cancelled = { current: false };
+  fetchData(cancelled);
+  return () => { cancelled.current = true; };
+}, [fetchData]);
+
+// inside fetchData:
+if (cancelled?.current) return;
+setData(result);
+```
+
+This prevents stale state bugs when the user navigates away before a fetch completes.
+
+### 9. List keys — always use stable IDs
+
+Never use array index as `key`. Use the item's business ID. Index keys cause silent bugs with React reconciliation and break animations.
+
+```tsx
+// ✅
+activities.map((a) => <ActivityRow key={a.id} activity={a} />)
+events.map((e) => <EventBadge key={e.id} event={e} />)
+
+// ❌
+activities.map((a, i) => <ActivityRow key={i} activity={a} />)
+```
+
+### 10. After mutations — always invalidate cache AND dispatch event
+
+After any write (create/update/delete), two things must happen:
+1. `cache.invalidate(CACHE_KEY)` — clears the QueryCache entry so the next `cache.fetch()` gets fresh data
+2. `window.dispatchEvent(new CustomEvent('activities-updated'))` — notifies all `useQuery` subscribers to refetch
+
+The `activitiesApi` mutations already do both. Follow the same pattern for any new domain (profile, events, etc.).
+
+```ts
+// After a mutation in any API module:
+cache.invalidate('profile:me');
+window.dispatchEvent(new CustomEvent('activities-updated'));
+```
+
+### 11. No `console.log` — `console.error` only for caught errors
+
+Never leave `console.log` in committed code. Use `console.error` only in `catch` blocks for real errors, with enough context to debug:
+
+```ts
+// ✅
+console.error('Error fetching profile — status:', err.response?.status, err.message);
+
+// ❌
+console.log('data:', data);
+console.error('error');
+```
+
+### 12. Component size and co-location
+
+- Sub-components used only once in a page file: define them at the bottom of the same file (e.g. `CalendarWeekRow`, `CalendarDayCell` in `CalendarPage.tsx`).
+- Extract to a separate file when: the component is used in more than one page, OR it exceeds ~80 lines, OR it has its own data-fetching logic.
+- Never create a new file just to split a small presentational piece — co-location is preferred for readability.
+
+---
+
+## Accessibility rules
+
+### aria-label on icon-only controls
+
+Any button or link without visible text must have an `aria-label`:
+
+```tsx
+// ✅
+<button aria-label="Mois précédent" onClick={previousMonth}><ChevronLeftIcon /></button>
+<Link aria-label="Voir l'activité Trail du 12 mai" to={`/activity/${id}`}>...</Link>
+
+// ❌
+<button onClick={previousMonth}><ChevronLeftIcon /></button>
+```
+
+### Semantic HTML
+
+Use `<button>` for actions, `<a>`/`<Link>` for navigation. Never use `<div onClick>` for interactive elements — it breaks keyboard navigation and screen readers.
+
+---
+
 ## Styling rules
 
 ### 1. Tailwind for all static styles
-Layout, spacing, typography, semantic colors → always Tailwind classes.
+
+Layout, spacing, typography, semantic colors → always Tailwind classes. Never hardcode colors or sizes in `style={{}}`.
 
 ```tsx
 // ✅
 <div className="hw-card-dark flex items-center gap-3 p-4">
-  <span className="font-mono text-[9px] text-steel uppercase tracking-[2px]">Label</span>
-  <span className="font-mono text-sm font-bold text-amber tabular-nums">42.1</span>
+  <span className="hw-text-label text-steel">DISTANCE</span>
+  <span className="hw-value text-amber">42.1</span>
 </div>
 
 // ❌
 <div style={{ background: '#0B0C10', border: '1px solid rgba(58,63,71,0.3)' }}>
 ```
 
-### 2. `.hw-*` classes for design system patterns
+### 2. Typography scale — always use `.hw-text-*`
+
+Never write `font-mono text-[Npx]` directly. Use the semantic scale:
+
+| Class | Size | Usage |
+|---|---|---|
+| `.hw-text-label` | 9px mono uppercase | Field labels, axis labels, tags: "DISTANCE", "ALLURE" |
+| `.hw-text-caption` | 10px mono | Secondary text, metadata, chart subtitles |
+| `.hw-text-data` | 11px mono tabular | Intermediate stats, secondary values |
+| `.hw-text-value` | 13px mono semibold tabular | Primary metrics |
+| `.hw-value` | 16px mono bold tabular | KPI counters, hero numbers |
+| `.hw-page-title` | 22px/700 | Page H1 |
+| `.hw-section-label` | alias of `.hw-text-label` | Section eyebrows |
+| `.hw-chart-title` | 10px/600 mono | Chart card titles |
+| `.hw-chart-subtitle` | 9px mono muted | Chart card subtitles |
+
+For larger intentional sizes (e.g. `text-[84px]` on DashboardPage, `text-[15px]` in ActivityDetail) — these are deliberate exceptions, keep them as-is.
+
+### 3. `.hw-*` component classes
+
+Use these for recurring UI patterns instead of repeating raw Tailwind:
 
 | Class | Usage |
 |---|---|
@@ -131,13 +353,6 @@ Layout, spacing, typography, semantic colors → always Tailwind classes.
 | `.hw-card-weekly` | Gradient amber → glacier |
 | `.hw-card-monthly` | Gradient glacier → moss |
 | `.hw-card-records` | Subtle amber gradient |
-| `.hw-label` | 9px mono uppercase stat label |
-| `.hw-value` | 16px bold mono tabular stat value |
-| `.hw-chart-title` | 10px/600 mono chart title |
-| `.hw-chart-subtitle` | 9px mono muted chart subtitle |
-| `.hw-section-label` | 9px mono uppercase section label |
-| `.hw-page-title` | 22px/700 page title |
-| `.hw-link` | 9px mono glacier uppercase link |
 | `.hw-btn-ghost` | Ghost mono button |
 | `.hw-btn-amber` | Amber accent button |
 | `.hw-btn-group` / `.hw-btn-group-item` | Prev/next button group |
@@ -156,7 +371,7 @@ Layout, spacing, typography, semantic colors → always Tailwind classes.
 | `.hw-score-eyebrow` | Score label with amber line |
 | `.hw-grad-sep` | Amber → glacier gradient separator |
 
-### 3. Inline style only for runtime values
+### 4. Inline `style` only for runtime values
 
 ```tsx
 // ✅ — computed at runtime
@@ -168,7 +383,10 @@ Layout, spacing, typography, semantic colors → always Tailwind classes.
 <div style={{ padding: '16px' }}>   // → className="p-4"
 ```
 
-### 4. Available Tailwind tokens
+Gradients and complex shadows with no Tailwind equivalent may stay as `style={{}}`.
+
+### 5. Available Tailwind tokens
+
 ```
 bg-charcoal / bg-charcoal-dark / bg-charcoal-light
 text-steel / text-mist / text-amber / text-glacier / text-moss / text-event / text-event-light
@@ -180,15 +398,30 @@ shadow-card / shadow-card-hover
 
 With opacity modifiers: `text-steel/50`, `border-amber/30`, `bg-glacier/10`.
 
-### 5. Hover/focus/transitions → native Tailwind
+---
 
-```tsx
-// ✅
-<div className="hw-card-dark hover:border-steel/60 transition-colors cursor-pointer">
+## UX consistency rules
 
-// ❌
-const [hovered, setHovered] = useState(false);
-```
+These ensure the app feels coherent across all pages.
+
+### Loading states
+
+- If cache is populated: show stale data immediately, no spinner.
+- If cache is empty (first visit or after logout): show `<Spinner />` or `<PageStateWrapper>` — never a blank screen.
+- Never show a full-page spinner for auth state — `AuthContext.isLoading` is always `false`.
+- For background refreshes: use a subtle `isFetching` indicator (e.g. a small spinner in a corner), never block the page.
+
+### Error states
+
+- Use `<PageStateWrapper>` for page-level errors. Never render raw error strings.
+- On 403 (demo mode): show disabled UI + "Mode démo" badge. Do not redirect, do not throw.
+- On 401: `apiClient` redirects automatically to `/login`.
+
+### Transitions and animations
+
+- Use `transition-colors`, `transition-opacity`, `transition-transform` for hover/focus states.
+- Use `motion/react` only for meaningful entry animations (page load, modal open) — not for every micro-interaction.
+- Import from `motion/react`, never from `framer-motion`.
 
 ---
 
@@ -210,6 +443,7 @@ import { CARD_STYLE, COLOR, SVG_CHART } from '@/services/utils/styleTokens';
 ---
 
 ## TypeScript rules
+
 - No explicit `any`
 - Dynamic sport colors via `sportColor()`, never local `Record<SportType, string>`
 - `sportBarColor(type ?? '')` when `type` can be `undefined`

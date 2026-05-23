@@ -104,7 +104,7 @@ export function ActivitiesPage() {
 
   return (
     <PageStateWrapper isLoading={isLoading} error={error} icon={<ActivityIcon />} title="Mes activités" loadingMessage="Chargement des activités...">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto">
         {isDemo && <DemoBanner />}
 
         {/* Header */}

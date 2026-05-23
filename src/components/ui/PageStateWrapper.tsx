@@ -20,7 +20,7 @@ export function PageStateWrapper({
 }: PageStateWrapperProps) {
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <SectionTitle icon={icon} title={title} />
         </div>
@@ -33,7 +33,7 @@ export function PageStateWrapper({
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <SectionTitle icon={icon} title={title} />
         </div>

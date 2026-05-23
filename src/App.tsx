@@ -53,7 +53,7 @@ function AppShell() {
               <Route path="calendar"     element={<div className="px-6 py-6"><CalendarPage /><Footer /></div>} />
               <Route path="profile"      element={<div className="px-6 py-6"><ProfilePage /><Footer /></div>} />
               <Route path="performance"  element={<div className="px-6 py-6"><PerformancePage /><Footer /></div>} />
-              <Route path="exploration"  element={<><ExplorationPage /><Footer /></>} />
+              <Route path="exploration"  element={<div className="px-6 py-6"><ExplorationPage /><Footer /></div>} />
             </Routes>
           </Suspense>
         </main>

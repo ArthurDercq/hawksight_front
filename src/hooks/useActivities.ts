@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { activitiesApi } from '@/services/api';
+import { cache } from '@/services/cache';
 import type { Activity, ActivityFormData } from '@/types';
+
+const CACHE_KEY = 'activities:all';
+
+function sortByDate(data: Activity[]): Activity[] {
+  return [...data].sort((a, b) =>
+    new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+  );
+}
 
 interface UseActivitiesReturn {
   activities: Activity[];
@@ -14,8 +23,11 @@ interface UseActivitiesReturn {
 }
 
 export function useActivities(): UseActivitiesReturn {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activities, setActivities] = useState<Activity[]>(() => {
+    const stale = cache.get<Activity[]>(CACHE_KEY);
+    return stale ? sortByDate(stale) : [];
+  });
+  const [isLoading, setIsLoading] = useState(() => cache.get<Activity[]>(CACHE_KEY) === null);
   const [error, setError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
@@ -24,21 +36,19 @@ export function useActivities(): UseActivitiesReturn {
     setError(null);
 
     try {
-      const data = await activitiesApi.getActivities();
+      const { data } = await cache.fetch<Activity[]>(CACHE_KEY, () => activitiesApi.getActivities(), {
+        onBackground: (fresh) => {
+          if (!cancelled?.current) setActivities(sortByDate(fresh));
+        },
+      });
       if (cancelled?.current) return;
-      // Sort by date descending (most recent first)
-      const sorted = data.sort((a, b) =>
-        new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
-      );
-      setActivities(sorted);
+      setActivities(sortByDate(data));
     } catch (err) {
       if (cancelled?.current) return;
       console.error('Error fetching activities:', err);
       setError('Erreur lors du chargement des activités');
     } finally {
-      if (!cancelled?.current) {
-        setIsLoading(false);
-      }
+      if (!cancelled?.current) setIsLoading(false);
     }
   }, []);
 
@@ -56,6 +66,7 @@ export function useActivities(): UseActivitiesReturn {
     setMutationError(null);
     try {
       await activitiesApi.createActivity(data);
+      cache.invalidate(CACHE_KEY);
       await fetchActivities(undefined, true);
       return true;
     } catch (err) {
@@ -76,6 +87,7 @@ export function useActivities(): UseActivitiesReturn {
     setMutationError(null);
     try {
       await activitiesApi.updateActivity(id, data, adjustStreams);
+      cache.invalidate(CACHE_KEY);
       await fetchActivities(undefined, true);
       return true;
     } catch (err) {
@@ -92,6 +104,7 @@ export function useActivities(): UseActivitiesReturn {
     setMutationError(null);
     try {
       await activitiesApi.deleteActivity(id);
+      cache.invalidate(CACHE_KEY);
       await fetchActivities(undefined, true);
       return true;
     } catch (err) {

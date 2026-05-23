@@ -164,7 +164,7 @@ export function ActivityDetailPage() {
   // ── Loading / Error states ──────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="max-w-[1280px] mx-auto px-7">
+      <div className="max-w-[1280px] mx-auto">
         <BackLink />
         <div className="flex justify-center py-12"><Spinner message="Chargement des détails..." /></div>
       </div>
@@ -173,7 +173,7 @@ export function ActivityDetailPage() {
 
   if (error || !activity) {
     return (
-      <div className="max-w-[1280px] mx-auto px-7">
+      <div className="max-w-[1280px] mx-auto">
         <BackLink />
         <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -192,7 +192,7 @@ export function ActivityDetailPage() {
   const trail = isTrail(activity.sport_type);
 
   return (
-    <div className="max-w-[1280px] mx-auto px-7 flex flex-col gap-5">
+    <div className="max-w-[1280px] mx-auto flex flex-col gap-5">
 
       {/* ── Back + Header ── */}
       <div>

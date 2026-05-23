@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { activitiesApi } from '@/services/api';
+import { cache } from '@/services/cache';
 import type { Activity, TrainingEvent } from '@/types';
+
+const ACTIVITIES_CACHE_KEY = 'activities:all';
 
 interface UseCalendarReturn {
   currentDate: Date;
@@ -14,17 +17,19 @@ interface UseCalendarReturn {
 
 export function useCalendar(): UseCalendarReturn {
   const [currentDate, setCurrentDate] = useState(() => new Date());
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activities, setActivities] = useState<Activity[]>(() =>
+    cache.get<Activity[]>(ACTIVITIES_CACHE_KEY) ?? []
+  );
+  const [isLoading, setIsLoading] = useState(() => cache.get<Activity[]>(ACTIVITIES_CACHE_KEY) === null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchActivities = useCallback(async () => {
-    setIsLoading(true);
     setError(null);
 
     try {
-      // Get all activities and filter client-side for simplicity
-      const data = await activitiesApi.getActivities();
+      const { data } = await cache.fetch<Activity[]>(ACTIVITIES_CACHE_KEY, () => activitiesApi.getActivities(), {
+        onBackground: (fresh) => setActivities(fresh),
+      });
       setActivities(data);
     } catch (err) {
       console.error('Error fetching calendar activities:', err);
