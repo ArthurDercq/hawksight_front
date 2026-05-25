@@ -252,7 +252,7 @@ export function PerformancePage() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <UploadIcon className="w-5 h-5 text-mist" />
-            <h2 className="font-heading text-lg text-mist">Importer un fichier</h2>
+            <h2 className="font-heading text-sm font-semibold text-mist">Importer un fichier</h2>
           </div>
 
           {/* Drop Zone or Selected File */}
@@ -268,12 +268,12 @@ export function PerformancePage() {
                   <CheckIcon className="text-moss" />
                 </div>
                 <div className="text-center">
-                  <p className="text-mist font-medium">Fichier sélectionné</p>
-                  <p className="text-moss font-mono text-sm mt-1">{uploadedFile.name}</p>
+                  <p className="hw-text-data text-mist font-medium">Fichier sélectionné</p>
+                  <p className="hw-text-data text-moss mt-1">{uploadedFile.name}</p>
                 </div>
                 <button
                   onClick={() => { setUploadedFile(null); setAnalysisStarted(false); }}
-                  className="text-steel hover:text-amber text-sm transition-colors"
+                  className="hw-text-caption text-steel hover:text-amber transition-colors"
                 >
                   Changer de fichier
                 </button>
@@ -299,12 +299,12 @@ export function PerformancePage() {
                   <FileIcon color="#E8832A" />
                 </div>
                 <div className="text-center">
-                  <p className="text-mist">Glissez-déposez votre fichier ici</p>
-                  <p className="text-steel text-sm mt-1">ou cliquez pour sélectionner</p>
+                  <p className="hw-text-data text-mist">Glissez-déposez votre fichier ici</p>
+                  <p className="hw-text-caption text-steel mt-1">ou cliquez pour sélectionner</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="px-3 py-1.5 bg-amber/10 border border-amber/30 text-amber rounded font-mono text-xs">.GPX</span>
-                  <span className="px-3 py-1.5 bg-glacier/10 border border-glacier/30 text-glacier rounded font-mono text-xs">.FIT</span>
+                  <span className="px-3 py-1.5 bg-amber/10 border border-amber/30 text-amber rounded hw-text-caption">.GPX</span>
+                  <span className="px-3 py-1.5 bg-glacier/10 border border-glacier/30 text-glacier rounded hw-text-caption">.FIT</span>
                 </div>
               </div>
 
@@ -317,8 +317,8 @@ export function PerformancePage() {
             <div className="flex items-start gap-3">
               <ZapIcon color="#E8832A" size={20} />
               <div>
-                <p className="text-amber text-sm font-medium">Formats supportés</p>
-                <p className="text-steel text-xs mt-1">
+                <p className="hw-text-data text-amber font-medium">Formats supportés</p>
+                <p className="hw-text-caption text-steel mt-1">
                   Les fichiers GPX et FIT contiennent les données GPS, cardio, cadence et élévation nécessaires pour une analyse complète.
                 </p>
               </div>
@@ -331,7 +331,7 @@ export function PerformancePage() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <TrendingUpIcon color="#F2F2F2" size={20} />
-              <h2 className="font-heading text-lg text-mist">Sélectionner une activité</h2>
+              <h2 className="font-heading text-sm font-semibold text-mist">Sélectionner une activité</h2>
             </div>
             {/* Compact Date Picker */}
             <div className="flex items-center gap-2">
@@ -356,7 +356,7 @@ export function PerformancePage() {
           </div>
 
           {selectedDate && (
-            <div className="text-amber text-xs">
+            <div className="hw-text-caption text-amber">
               {filteredActivities.length === 0
                 ? 'Aucune activité à cette date'
                 : `${filteredActivities.length} activité${filteredActivities.length > 1 ? 's' : ''}`
@@ -373,7 +373,7 @@ export function PerformancePage() {
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-8 h-8 border-2 border-amber/30 border-t-amber rounded-full animate-spin mx-auto" />
-                  <p className="text-steel text-sm mt-3">Chargement...</p>
+                  <p className="hw-text-caption text-steel mt-3">Chargement...</p>
                 </div>
               </div>
             ) : error ? (
@@ -384,13 +384,13 @@ export function PerformancePage() {
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <CalendarIcon className="w-10 h-10 mx-auto text-steel/75 mb-2" />
-                  <p className="text-steel text-sm">
+                  <p className="hw-text-caption text-steel">
                     {selectedDate ? 'Aucune activité à cette date' : 'Aucune activité'}
                   </p>
                   {selectedDate && (
                     <button
                       onClick={() => setSelectedDate('')}
-                      className="mt-2 text-amber text-xs hover:underline"
+                      className="mt-2 hw-text-caption text-amber hover:underline"
                     >
                       Voir toutes les activités
                     </button>
@@ -424,7 +424,7 @@ export function PerformancePage() {
                         </div>
                         <div className="text-left">
                           <div className="flex items-center gap-2">
-                            <span className="text-mist text-sm font-medium line-clamp-1">{activity.name}</span>
+                            <span className="hw-text-data text-mist font-medium line-clamp-1">{activity.name}</span>
                             <span
                               className="px-1.5 py-0.5 rounded hw-text-label shrink-0"
                               style={{ backgroundColor: `${activityColor}20`, color: activityColor }}
@@ -458,7 +458,7 @@ export function PerformancePage() {
             <div className="flex items-start gap-2">
               <DatabaseIcon color="#E8832A" size={16} />
               <div>
-                <p className="text-amber text-xs font-medium">
+                <p className="hw-text-caption text-amber font-medium">
                   {activities.length} activité{activities.length > 1 ? 's' : ''} enregistrée{activities.length > 1 ? 's' : ''}
                 </p>
                 <p className="hw-text-caption text-steel mt-0.5">Sélectionnez une activité pour lancer l'analyse.</p>
@@ -472,12 +472,12 @@ export function PerformancePage() {
       <div className="flex flex-col items-center gap-4 py-6 border-t border-b border-steel/30">
         {canLaunchAnalysis ? (
           <>
-            <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-3">
               <CheckIcon className="text-moss" />
-              <span className="text-mist">
+              <span className="hw-text-data text-mist">
                 {selectedActivity ? `Activité sélectionnée : ${selectedActivity.name}` : `Fichier sélectionné : ${uploadedFile?.name}`}
               </span>
-              <button onClick={handleReset} className="text-steel hover:text-amber transition-colors">
+              <button onClick={handleReset} className="hw-text-caption text-steel hover:text-amber transition-colors">
                 (modifier)
               </button>
             </div>
@@ -490,7 +490,7 @@ export function PerformancePage() {
                 Lancer l'analyse
               </button>
             ) : (
-              <div className="flex items-center gap-2 text-moss text-sm">
+              <div className="flex items-center gap-2 hw-text-data text-moss">
                 <CheckIcon className="w-4 h-4" />
                 Analyse en cours d'affichage
               </div>
@@ -498,7 +498,7 @@ export function PerformancePage() {
           </>
         ) : (
           <div className="text-center">
-            <p className="text-steel text-sm">
+            <p className="hw-text-caption text-steel">
               Sélectionnez une activité ou importez un fichier pour lancer l'analyse
             </p>
           </div>
@@ -588,12 +588,12 @@ function AnalysisLoader({ activityName, isFile }: { activityName?: string; isFil
           </div>
         </div>
         <div className="text-center space-y-2">
-          <p className="text-mist font-medium">Analyse en cours...</p>
-          <p className="text-amber text-sm font-medium">{ANALYSIS_STEPS[stepIndex]}</p>
-          <p className="text-steel text-sm">{isFile ? `Traitement de ${activityName}` : `Analyse de ${activityName}`}</p>
-          <p className="font-mono text-xs text-steel/85 mt-2">{timeStr}</p>
+          <p className="hw-text-data text-mist font-medium">Analyse en cours...</p>
+          <p className="hw-text-data text-amber font-medium">{ANALYSIS_STEPS[stepIndex]}</p>
+          <p className="hw-text-caption text-steel">{isFile ? `Traitement de ${activityName}` : `Analyse de ${activityName}`}</p>
+          <p className="hw-text-caption text-steel/85 mt-2">{timeStr}</p>
           {elapsed >= 15 && (
-            <p className="text-steel text-xs mt-1">L'analyse peut prendre jusqu'à 2 minutes pour les activités longues</p>
+            <p className="hw-text-caption text-steel mt-1">L'analyse peut prendre jusqu'à 2 minutes pour les activités longues</p>
           )}
         </div>
       </div>

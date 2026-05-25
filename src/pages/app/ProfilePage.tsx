@@ -81,9 +81,117 @@ const SPORT_TAGS: Record<string, { label: string; color: string; emoji: string }
 };
 
 
-// ─── Trail Profile Radar ──────────────────────────────────────────────────────
+// ─── Trail Score History Chart ────────────────────────────────────────────────
 
 const TRAIL_COLOR = '#C96A1A';
+
+function TrailScoreHistoryChart({ history }: { history: TrailProfileHistory[] }) {
+  if (history.length === 0) {
+    return (
+      <div className="hw-chart-card mt-6">
+        <span className="hw-br hw-br-tl hw-br-amber" />
+        <h3 className="hw-chart-title mb-1">Score trail — évolution</h3>
+        <p className="hw-chart-subtitle mb-4">Historique hebdomadaire</p>
+        <div className="hw-chart-empty">Pas encore assez de données</div>
+      </div>
+    );
+  }
+
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.snapshot_date).getTime() - new Date(b.snapshot_date).getTime()
+  );
+
+  const labels = sorted.map((s) => s.week_label);
+  const scores = sorted.map((s) => Math.round(s.trail_score_final));
+  const latest = scores[scores.length - 1];
+  const first  = scores[0];
+  const delta  = latest - first;
+  const deltaStr = delta > 0 ? `+${delta} pts` : delta < 0 ? `${delta} pts` : 'stable';
+
+  const axisStyle = { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } as const };
+  const gridStyle = { color: 'rgba(255,255,255,0.03)' };
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        data: scores,
+        borderColor: TRAIL_COLOR,
+        backgroundColor: 'rgba(201,106,26,0.08)',
+        fill: true,
+        tension: 0,
+        pointRadius: sorted.length <= 12 ? 3 : 2,
+        pointBackgroundColor: TRAIL_COLOR,
+        pointBorderColor: 'transparent',
+        borderWidth: 1.5,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          ...axisStyle,
+          maxTicksLimit: 8,
+          maxRotation: 0,
+        },
+      },
+      y: {
+        min: 0,
+        max: 100,
+        grid: gridStyle,
+        ticks: {
+          ...axisStyle,
+          stepSize: 25,
+          callback: (v: number | string) => `${v}`,
+        },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0B0C10',
+        borderColor: 'rgba(58,63,71,0.6)',
+        borderWidth: 1,
+        titleColor: 'rgba(242,242,242,0.4)',
+        bodyColor: '#E8832A',
+        titleFont: { size: 10, family: 'JetBrains Mono' } as const,
+        bodyFont: { size: 12, family: 'JetBrains Mono' } as const,
+        callbacks: {
+          title: (items: import('chart.js').TooltipItem<'line'>[]) => items[0]?.label ?? '',
+          label: (item: import('chart.js').TooltipItem<'line'>) => `${item.raw} / 100`,
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="hw-chart-card mt-6">
+      <span className="hw-br hw-br-tl hw-br-amber" />
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="hw-chart-title">Score trail — évolution</h3>
+          <p className="hw-chart-subtitle">
+            {sorted.length} semaines ·{' '}
+            <span style={{ color: delta >= 0 ? '#6DAA75' : '#F87171' }}>{deltaStr}</span>
+          </p>
+        </div>
+        <span className="hw-text-value font-bold tabular-nums" style={{ color: TRAIL_COLOR }}>
+          {latest}<span className="hw-text-label text-steel/60 ml-0.5">/100</span>
+        </span>
+      </div>
+      <div className="h-[180px]">
+        <Line data={data} options={options} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Trail Profile Radar ──────────────────────────────────────────────────────
 
 const TRAIL_AXES: { key: keyof TrailAxisScores; label: string; desc: string }[] = [
   { key: 'engine',    label: 'Engine',    desc: 'VAM & vitesse en montée' },
@@ -191,7 +299,6 @@ function RadarChart({ scores, referenceScores, color = TRAIL_COLOR }: {
 function TrailProfileCard() {
   const { profile, history, references, isLoading, isComputing, error, compute } = useTrailProfile();
   const [selectedRef, setSelectedRef] = useState<TrailReferenceProfile | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
 
   const color = TRAIL_COLOR;
   const score100 = profile ? Math.round(profile.trail_score_final) : null;
@@ -372,41 +479,8 @@ function TrailProfileCard() {
               </div>
             </div>
 
-            {/* History toggle */}
-            {history.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-steel/20">
-                <button
-                  onClick={() => setShowHistory(v => !v)}
-                  className="flex items-center gap-2 hw-text-caption text-muted hover:text-mist/60 transition-colors"
-                >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                    strokeLinecap="round" strokeLinejoin="round"
-                    className={`transition-transform ${showHistory ? 'rotate-90' : ''}`}>
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                  HISTORIQUE ({history.length} semaines)
-                </button>
-
-                {showHistory && (
-                  <div className="mt-3 space-y-1 max-h-48 overflow-y-auto pr-1">
-                    {[...history].reverse().map(snap => (
-                      <div key={snap.snapshot_date}
-                        className="flex items-center justify-between px-3 py-1.5 rounded bg-steel/10 hover:bg-steel/15 transition-colors">
-                        <span className="hw-text-caption">{snap.week_label}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="hw-text-caption text-muted/60">
-                            {snap.dominant_profile}
-                          </span>
-                          <span className="hw-text-data font-semibold" style={{ color }}>
-                            {Math.round(snap.trail_score_final)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Score history chart */}
+            <TrailScoreHistoryChart history={history} />
 
             {/* Footer meta */}
             <div className="mt-4 flex items-center justify-between">
