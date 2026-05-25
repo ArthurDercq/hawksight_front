@@ -82,6 +82,8 @@ src/services/api/*.ts     → raw API modules called by hooks
 Cache invalidation: `cache.invalidate(key)`, `cache.invalidateByPrefix(prefix)`.
 After mutations, dispatch `window.dispatchEvent(new Event('activities-updated'))` — `useQuery` listens and auto-refetches.
 
+**localStorage persistence**: `QueryCache` automatically persists to localStorage (keys prefixed `hw_cache_*`). On first `get()` miss, it hydrates from localStorage before returning null. This means cached data survives page reloads. Keys in `PERSIST_BLOCKLIST` (`profile:me`, `sync:status`) are never persisted. `invalidateAll()` (called on logout) purges all `hw_cache_*` entries from localStorage.
+
 ### API client
 
 `apiClient` singleton (`src/services/api/client.ts`) — axios with Bearer token injection.
@@ -284,6 +286,21 @@ console.error('error');
 - Extract to a separate file when: the component is used in more than one page, OR it exceeds ~80 lines, OR it has its own data-fetching logic.
 - Never create a new file just to split a small presentational piece — co-location is preferred for readability.
 
+### 13. Cache persistence — key rules
+
+- `QueryCache` persists to localStorage automatically — no extra work needed in hooks.
+- Keys in `PERSIST_BLOCKLIST` (`profile:me`, `sync:status`) are never written to localStorage.
+- On logout, `cache.invalidateAll()` is called in `AuthContext.logout()` — this wipes all `hw_cache_*` from localStorage. **Every new domain's logout cleanup happens here automatically.**
+- Never call `localStorage.setItem/getItem` directly for cache data — always go through `cache.set/get`.
+- The `backend-ok` / `backend-error` custom events on `window` are the signaling mechanism between `QueryCache` and `NetworkStatusContext`. Do not remove these dispatches from `_doFetch`.
+
+### 14. Error resilience — do not hide failures silently
+
+- Network errors in background fetches (`_launchBackground`) are swallowed intentionally — stale data stays visible.
+- Network errors in foreground fetches propagate to the hook's `error` state, which the page renders inline.
+- `backend-error` is dispatched on **any** fetch failure (including 404/403). This is a known limitation — the offline banner may appear for non-network errors. Do not change this behavior without auditing all callers.
+- `ErrorBoundary` resets on button click (`setState({ hasError: false })`). If the underlying error persists, the component re-crashes immediately — this is correct behavior (avoids hiding permanent failures).
+
 ---
 
 ## Accessibility rules
@@ -406,16 +423,27 @@ These ensure the app feels coherent across all pages.
 
 ### Loading states
 
-- If cache is populated: show stale data immediately, no spinner.
-- If cache is empty (first visit or after logout): show `<Spinner />` or `<PageStateWrapper>` — never a blank screen.
+- **Page shell always renders** — never use early `return <Spinner>` or `return <ErrorPage>` at the page root. The header/title/navigation must be visible even while data loads.
+- **Inline conditional pattern**: `{isLoading && !hasData ? <Skeleton /> : error && !hasData ? <InlineError /> : <Content />}`. `hasData` = stale data present (list non-empty, object non-null).
+- If cache is populated (data seeded from `cache.get()`): `hasData` is true → no spinner, stale data shows immediately.
+- If cache is empty (first visit, post-logout): `hasData` is false → show skeleton rows or a spinner in the data zone only, not the full page.
 - Never show a full-page spinner for auth state — `AuthContext.isLoading` is always `false`.
-- For background refreshes: use a subtle `isFetching` indicator (e.g. a small spinner in a corner), never block the page.
+- For background refreshes: use a subtle `isFetching` indicator (small spinner in a corner), never block the page.
+- `<PageStateWrapper>` is still available but **do not use it for app pages** — it replaces the entire page on load/error, preventing the shell from rendering. Reserve it only for very simple standalone screens.
 
 ### Error states
 
-- Use `<PageStateWrapper>` for page-level errors. Never render raw error strings.
+- **Inline error card pattern**: show error in the data zone only (not full-page replacement). The page header must always remain visible.
 - On 403 (demo mode): show disabled UI + "Mode démo" badge. Do not redirect, do not throw.
 - On 401: `apiClient` redirects automatically to `/login`.
+- Wrap data-heavy sections in `<ErrorBoundary>` to prevent uncaught render errors from crashing the whole page. The `ErrorBoundary` component is at `src/components/ui/ErrorBoundary.tsx`.
+
+### Offline / backend unreachable
+
+- `NetworkStatusContext` (`src/context/NetworkStatusContext.tsx`) tracks backend reachability via `backend-ok`/`backend-error` events dispatched by `QueryCache._doFetch()` after every fetch attempt.
+- `useNetworkStatus()` hook exposes `{ isOnline, isBackendReachable, lastSuccessAt }`.
+- The `NetworkBanner` in `AppShell` (App.tsx) automatically shows an amber "Données hors ligne" banner when `isBackendReachable === false`.
+- Because data survives in localStorage, users see stale data even when the backend is unreachable — never show a full error page in this case.
 
 ### Transitions and animations
 

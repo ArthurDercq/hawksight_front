@@ -75,11 +75,11 @@ export function CalendarPage() {
       </div>
 
       {/* ── Content ── */}
-      {isLoading ? (
+      {isLoading && weeks.length === 0 ? (
         <div className="flex items-center justify-center py-16">
           <Spinner message="Chargement du calendrier..." />
         </div>
-      ) : error ? (
+      ) : error && weeks.length === 0 ? (
         <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />

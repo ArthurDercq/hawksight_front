@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { AuthProvider } from '@/context';
+import { AuthProvider, NetworkStatusProvider, useNetworkStatus } from '@/context';
 import { Sidebar, Footer, AppHeader } from '@/components/layout';
 import { Spinner } from '@/components/ui/Spinner';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { MarketingLayout } from '@/layouts/MarketingLayout';
 import { RequireAuth, RequireOnboarding } from '@/router/guards';
 
@@ -36,13 +37,31 @@ function StravaInviteRedirect() {
   return <Navigate to={invite ? `/login?invite=${invite}` : '/login'} replace />;
 }
 
+function NetworkBanner() {
+  const { isBackendReachable, lastSuccessAt } = useNetworkStatus();
+  if (isBackendReachable) return null;
+  const ago = lastSuccessAt
+    ? (() => { const d = Math.round((Date.now() - lastSuccessAt) / 60000); return d < 1 ? "à l'instant" : `il y a ${d} min`; })()
+    : null;
+  return (
+    <div className="flex items-center justify-center gap-2 px-4 py-1.5 bg-charcoal-dark border-b border-amber/20 shrink-0">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber/60 animate-pulse" />
+      <span className="hw-text-caption text-amber/70 tracking-wider">
+        Données hors ligne{ago ? ` · ${ago}` : ''}
+      </span>
+    </div>
+  );
+}
+
 function AppShell() {
   return (
     <div className="h-screen bg-charcoal text-mist font-body flex overflow-hidden">
       <Sidebar />
       <div className="ml-[196px] flex flex-col flex-1 h-screen overflow-hidden">
         <AppHeader />
+        <NetworkBanner />
         <main className="flex-1 overflow-y-auto flex flex-col">
+          <ErrorBoundary>
           <Suspense fallback={<Spinner />}>
             <Routes>
               <Route index element={<Navigate to="/dashboard" replace />} />
@@ -56,6 +75,7 @@ function AppShell() {
               <Route path="exploration"  element={<div className="px-6 py-6"><ExplorationPage /><Footer /></div>} />
             </Routes>
           </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>
@@ -65,6 +85,7 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
+      <NetworkStatusProvider>
       <BrowserRouter>
         <Suspense fallback={<Spinner />}>
           <Routes>
@@ -98,6 +119,7 @@ export default function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      </NetworkStatusProvider>
     </AuthProvider>
   );
 }

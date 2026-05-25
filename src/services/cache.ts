@@ -17,6 +17,10 @@
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000;
 
+const LS_PREFIX = 'hw_cache_';
+const PERSIST_BLOCKLIST = new Set(['profile:me', 'sync:status']);
+const MAX_LS_ENTRY_BYTES = 500_000;
+
 interface CacheEntry<T> {
   data: T;
   expiresAt: number;
@@ -44,16 +48,20 @@ class QueryCache {
 
   get<T>(key: string): T | null {
     const entry = this.store.get(key) as CacheEntry<T> | undefined;
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-      this.store.delete(key);
-      return null;
+    if (entry) {
+      if (Date.now() > entry.expiresAt) { this.store.delete(key); return null; }
+      return entry.data;
     }
-    return entry.data;
+    // Hydrate depuis localStorage si absent du store in-memory
+    const lsEntry = this._lsRead<T>(key);
+    if (lsEntry) { this.store.set(key, lsEntry); return lsEntry.data; }
+    return null;
   }
 
   set<T>(key: string, data: T, ttlMs = DEFAULT_TTL_MS): void {
-    this.store.set(key, { data, expiresAt: Date.now() + ttlMs });
+    const entry: CacheEntry<T> = { data, expiresAt: Date.now() + ttlMs };
+    this.store.set(key, entry);
+    this._lsPersist(key, entry);
   }
 
   // ── Invalidation ────────────────────────────────────────────────────────────
@@ -62,24 +70,37 @@ class QueryCache {
     this.store.delete(key);
     this.inFlight.delete(key);
     this.bgListeners.delete(key);
+    localStorage.removeItem(LS_PREFIX + key);
   }
 
   invalidateByPrefix(prefix: string): void {
-    for (const key of this.store.keys()) {
+    for (const key of [...this.store.keys()]) {
       if (key.startsWith(prefix)) this.store.delete(key);
     }
-    for (const key of this.inFlight.keys()) {
+    for (const key of [...this.inFlight.keys()]) {
       if (key.startsWith(prefix)) this.inFlight.delete(key);
     }
-    for (const key of this.bgListeners.keys()) {
+    for (const key of [...this.bgListeners.keys()]) {
       if (key.startsWith(prefix)) this.bgListeners.delete(key);
     }
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(LS_PREFIX + prefix)) toRemove.push(k);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
   }
 
   invalidateAll(): void {
     this.store.clear();
     this.inFlight.clear();
     this.bgListeners.clear();
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(LS_PREFIX)) toRemove.push(k);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
   }
 
   // ── Cœur : fetch avec SWR + dedupe ─────────────────────────────────────────
@@ -144,15 +165,36 @@ class QueryCache {
 
   // ── Helpers internes ────────────────────────────────────────────────────────
 
+  private _lsPersist<T>(key: string, entry: CacheEntry<T>): void {
+    if (PERSIST_BLOCKLIST.has(key)) return;
+    try {
+      const s = JSON.stringify(entry);
+      if (s.length > MAX_LS_ENTRY_BYTES) return;
+      localStorage.setItem(LS_PREFIX + key, s);
+    } catch { /* localStorage full — fail silently */ }
+  }
+
+  private _lsRead<T>(key: string): CacheEntry<T> | null {
+    try {
+      const raw = localStorage.getItem(LS_PREFIX + key);
+      if (!raw) return null;
+      const entry = JSON.parse(raw) as CacheEntry<T>;
+      if (Date.now() > entry.expiresAt) { localStorage.removeItem(LS_PREFIX + key); return null; }
+      return entry;
+    } catch { return null; }
+  }
+
   private _doFetch<T>(key: string, fetcher: () => Promise<T>, ttl: number): Promise<T> {
     const promise = fetcher().then((data) => {
       this.set(key, data, ttl);
       this.inFlight.delete(key);
       // Notifier les background listeners
       this._notifyBgListeners(key, data);
+      window.dispatchEvent(new Event('backend-ok'));
       return data;
     }).catch((err) => {
       this.inFlight.delete(key);
+      window.dispatchEvent(new Event('backend-error'));
       throw err;
     });
     this.inFlight.set(key, promise);

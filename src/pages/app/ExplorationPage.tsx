@@ -491,29 +491,12 @@ export function ExplorationPage() {
   const currentYear = new Date().getFullYear();
   const years = useMemo(() => Array.from({ length: 5 }, (_, i) => currentYear - i), [currentYear]);
 
-  if (isLoading) return (
-    <div className="max-w-7xl mx-auto">
-      <SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" />
-      <div className="flex items-center justify-center py-24"><Spinner message="Chargement de la carte..." /></div>
-    </div>
-  );
-
-  if (error) return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8"><SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" /></div>
-      <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <p className="hw-text-data text-muted uppercase tracking-wider">{error}</p>
-      </div>
-    </div>
-  );
+  const hasData = data !== null;
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6">
 
-      {/* Header */}
+      {/* Header — toujours visible */}
       <div className="flex items-center justify-between gap-4 shrink-0">
         <SectionTitle icon={<GlobeIcon />} title="Exploration du Territoire" />
         <div className="flex items-center gap-2">
@@ -540,6 +523,21 @@ export function ExplorationPage() {
           </div>
         </div>
       </div>
+
+      {/* Loading / error inline — seulement si aucune donnée stale */}
+      {isLoading && !hasData && (
+        <div className="flex items-center justify-center py-24">
+          <Spinner message="Chargement de la carte..." />
+        </div>
+      )}
+      {error && !hasData && (
+        <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="hw-text-data text-steel/85 uppercase tracking-wider">{error}</p>
+        </div>
+      )}
 
       {/* Map + Stats panel */}
       {data && (

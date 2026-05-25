@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useKPI } from '@/hooks';
 import { kpiApi } from '@/services/api';
 import { SectionTitle } from '@/components/ui/SectionTitle';
-import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
 import type { TrailRecord } from '@/types';
 import { sportBarColor } from '@/services/utils/constants';
 
@@ -186,14 +185,9 @@ export function KPIPage() {
     }
   }, [refetch]);
 
+  const hasData = kpis !== null;
+
   return (
-    <PageStateWrapper
-      isLoading={isLoading}
-      error={error}
-      icon={<ChartIcon />}
-      title="Mes chiffres clefs"
-      loadingMessage="Chargement des statistiques..."
-    >
     <div className="max-w-7xl mx-auto">
       {/* Two-column asymmetric layout like vanilla JS */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
@@ -221,6 +215,23 @@ export function KPIPage() {
               </select>
             </div>
           </div>
+
+          {/* Loading skeleton ou error inline */}
+          {isLoading && !hasData && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div key={i} className="hw-card-dark h-20 animate-pulse opacity-40" />
+              ))}
+            </div>
+          )}
+          {error && !hasData && (
+            <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center mb-6">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="hw-text-data text-steel/85 uppercase tracking-wider">{error}</p>
+            </div>
+          )}
 
           {/* Metrics Grid */}
           {kpis && (
@@ -446,7 +457,6 @@ export function KPIPage() {
         </Suspense>
       </div>
     </div>
-    </PageStateWrapper>
   );
 }
 

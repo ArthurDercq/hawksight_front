@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { useActivities, usePermissions } from '@/hooks';
 import { ActivityCard, ActivityModal } from '@/components/activity';
 import { SectionTitle } from '@/components/ui/SectionTitle';
-import { PageStateWrapper } from '@/components/ui/PageStateWrapper';
 import { DemoBanner } from '@/components/ui/DemoBanner';
 import type { Activity, ActivityFormData } from '@/types';
 
@@ -102,23 +101,40 @@ export function ActivitiesPage() {
   const hasFilters = !!(searchName || searchDateFrom || searchDateTo);
   const clearFilters = () => { setSearchName(''); setSearchDateFrom(''); setSearchDateTo(''); };
 
+  const hasData = activities.length > 0;
+
   return (
-    <PageStateWrapper isLoading={isLoading} error={error} icon={<ActivityIcon />} title="Mes activités" loadingMessage="Chargement des activités...">
-      <div className="max-w-7xl mx-auto">
-        {isDemo && <DemoBanner />}
+    <div className="max-w-7xl mx-auto">
+      {isDemo && <DemoBanner />}
 
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
-          <div className="flex-1">
-            <SectionTitle icon={<ActivityIcon />} title="Mes activités" subtitle={`${activities.length} activités au total`} />
-          </div>
-          {canWrite && (
-            <button onClick={handleCreate} className="hw-btn-amber">
-              <PlusIcon /> Nouvelle activité
-            </button>
-          )}
+      {/* Header */}
+      <div className="flex items-start justify-between mb-8">
+        <div className="flex-1">
+          <SectionTitle icon={<ActivityIcon />} title="Mes activités" subtitle={hasData ? `${activities.length} activités au total` : undefined} />
         </div>
+        {canWrite && (
+          <button onClick={handleCreate} className="hw-btn-amber">
+            <PlusIcon /> Nouvelle activité
+          </button>
+        )}
+      </div>
 
+      {/* Loading skeleton — seulement si aucune donnée stale */}
+      {isLoading && !hasData ? (
+        <div className="flex flex-col gap-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="hw-act-row animate-pulse opacity-40" />
+          ))}
+        </div>
+      ) : error && !hasData ? (
+        <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="hw-text-data text-steel/85 uppercase tracking-wider">{error}</p>
+        </div>
+      ) : (
+        <>
         {/* Mutation error */}
         {mutationError && (
           <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6 text-center">
@@ -210,49 +226,49 @@ export function ActivitiesPage() {
             )}
           </>
         )}
+        </>
+      )}
 
-        {/* Delete confirmation modal */}
-        {deleteConfirm && (
-          <div className="fixed inset-0 bg-black/75 backdrop-blur flex items-center justify-center z-50 p-4">
-            <div className="hw-card-dark p-6 max-w-sm w-full">
-              <span className="hw-br hw-br-tl hw-br-red" />
-              <span className="hw-br hw-br-br hw-br-red-dim" />
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="p-1.5 bg-red-500/10 border border-red-500/25 rounded-md text-red-400">
-                  <TrashIcon />
-                </div>
-                <h3 className="text-sm font-semibold text-mist">Confirmer la suppression</h3>
+      {showModal && (
+        <ActivityModal
+          activity={editingActivity}
+          onClose={() => { setShowModal(false); setEditingActivity(null); }}
+          onSave={handleSave}
+        />
+      )}
+
+      {/* Delete confirmation modal — hors du conditionnel pour rester accessible */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur flex items-center justify-center z-50 p-4">
+          <div className="hw-card-dark p-6 max-w-sm w-full">
+            <span className="hw-br hw-br-tl hw-br-red" />
+            <span className="hw-br hw-br-br hw-br-red-dim" />
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="p-1.5 bg-red-500/10 border border-red-500/25 rounded-md text-red-400">
+                <TrashIcon />
               </div>
-              <p className="font-mono text-xs text-mist/40 mb-5 leading-relaxed">
-                Supprimer "{deleteConfirm.name}" ? Cette action est irréversible.
-              </p>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="px-3.5 py-1.5 bg-steel/20 border border-steel/35 rounded-md text-mist/50 font-mono text-xs cursor-pointer hover:text-mist/70 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="px-3.5 py-1.5 bg-red-500/10 border border-red-500/40 rounded-md text-red-400 font-mono text-xs cursor-pointer hover:bg-red-500/20 transition-colors"
-                >
-                  Supprimer
-                </button>
-              </div>
+              <h3 className="text-sm font-semibold text-mist">Confirmer la suppression</h3>
+            </div>
+            <p className="font-mono text-xs text-mist/40 mb-5 leading-relaxed">
+              Supprimer "{deleteConfirm.name}" ? Cette action est irréversible.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-3.5 py-1.5 bg-steel/20 border border-steel/35 rounded-md text-mist/50 font-mono text-xs cursor-pointer hover:text-mist/70 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-3.5 py-1.5 bg-red-500/10 border border-red-500/40 rounded-md text-red-400 font-mono text-xs cursor-pointer hover:bg-red-500/20 transition-colors"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
-        )}
-
-        {/* Activity modal */}
-        {showModal && (
-          <ActivityModal
-            activity={editingActivity}
-            onClose={() => { setShowModal(false); setEditingActivity(null); }}
-            onSave={handleSave}
-          />
-        )}
-      </div>
-    </PageStateWrapper>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import { createContext, useState, useCallback, ReactNode } from 'react';
 import { authApi, apiClient } from '@/services/api';
+import { cache } from '@/services/cache';
 import type { CurrentUser } from '@/types';
 
 interface AuthContextType {
@@ -120,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem('eyesight_token');
     apiClient.clearCache();
+    cache.invalidateAll();
     setToken(null);
     setCurrentUser(null);
   }, []);

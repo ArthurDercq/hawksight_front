@@ -546,7 +546,7 @@ export function ProfilePage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !profile) {
     return (
       <div className="max-w-7xl mx-auto flex items-center justify-center py-24">
         <Spinner message="Chargement du profil..." />
@@ -554,7 +554,7 @@ export function ProfilePage() {
     );
   }
 
-  if (error || !profile) {
+  if ((error || !profile) && !isLoading) {
     return (
       <div className="max-w-7xl mx-auto">
         <div className="hw-card-dark p-6 flex flex-col items-center gap-3 text-center">
@@ -568,6 +568,8 @@ export function ProfilePage() {
       </div>
     );
   }
+
+  if (!profile) return null;
 
   const fullName = profile.username || 'Utilisateur';
 
