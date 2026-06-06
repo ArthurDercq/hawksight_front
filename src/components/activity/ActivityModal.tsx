@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import type { Activity, ActivityFormData } from '@/types';
 
+const inputCls = 'w-full bg-charcoal-light/50 border border-steel/50 rounded-lg px-3 py-2 text-mist text-sm focus:outline-none focus:border-amber/50 transition-colors';
+const inputSmCls = 'w-16 bg-charcoal-light/50 border border-steel/50 rounded-lg px-2 py-2 text-mist text-sm focus:outline-none focus:border-amber/50 transition-colors text-center';
+const labelCls = 'block hw-text-caption uppercase tracking-widest text-mist/40 mb-1';
+
 const PlusIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -54,68 +58,68 @@ export function ActivityModal({ activity, onClose, onSave }: ActivityModalProps)
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-amber/10 border border-amber/30 text-amber">
+          <div className="p-1.5 rounded-lg bg-amber/10 border border-amber/30 text-amber">
             <PlusIcon />
           </div>
-          <h3 className="font-heading text-lg font-semibold text-mist">
-            {activity ? "Modifier l'activite" : 'Nouvelle activite'}
+          <h3 className="font-heading font-semibold text-mist text-sm">
+            {activity ? "Modifier l'activité" : 'Nouvelle activité'}
           </h3>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-mist/70 mb-2">Nom</label>
+            <label className={labelCls}>Nom</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               autoFocus
-              className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors"
+              className={inputCls}
             />
           </div>
 
           <div>
-            <label className="block text-sm text-mist/70 mb-2">Type de sport</label>
+            <label className={labelCls}>Type de sport</label>
             <select
               value={formData.sport_type}
               onChange={(e) => setFormData({ ...formData, sport_type: e.target.value as ActivityFormData['sport_type'] })}
-              className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors cursor-pointer"
+              className={inputCls + ' cursor-pointer'}
             >
               <option value="Run">Course</option>
               <option value="Trail">Trail</option>
-              <option value="Bike">Velo</option>
+              <option value="Bike">Vélo</option>
               <option value="Swim">Natation</option>
-              <option value="Hike">Randonnee</option>
+              <option value="Hike">Randonnée</option>
               <option value="WeightTraining">Musculation</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm text-mist/70 mb-2">Date et heure</label>
+            <label className={labelCls}>Date et heure</label>
             <input
               type="datetime-local"
               value={formData.start_date}
               onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
               required
-              className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors"
+              className={inputCls}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-mist/70 mb-2">Distance (km)</label>
+              <label className={labelCls}>Distance (km)</label>
               <input
                 type="number"
                 step="0.1"
                 value={formData.distance}
                 onChange={(e) => setFormData({ ...formData, distance: parseFloat(e.target.value) || 0 })}
                 required
-                className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors"
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="block text-sm text-mist/70 mb-2">Durée</label>
+              <label className={labelCls}>Durée</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number" min="0" max="23" value={durationHours}
@@ -124,63 +128,60 @@ export function ActivityModal({ activity, onClose, onSave }: ActivityModalProps)
                     setFormData({ ...formData, moving_time: h * 60 + durationMins });
                   }}
                   required
-                  className="w-16 px-2 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors text-center"
+                  className={inputSmCls}
                 />
-                <span className="text-mist/50 text-sm">h</span>
+                <span className="hw-text-caption text-steel">h</span>
                 <input
                   type="number" min="0" max="59" value={durationMins}
                   onChange={(e) => {
                     const m = parseInt(e.target.value) || 0;
                     setFormData({ ...formData, moving_time: durationHours * 60 + m });
                   }}
-                  className="w-16 px-2 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors text-center"
+                  className={inputSmCls}
                 />
-                <span className="text-mist/50 text-sm">min</span>
+                <span className="hw-text-caption text-steel">min</span>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-mist/70 mb-2">Denivele positif (m)</label>
+            <label className={labelCls}>Dénivelé positif (m)</label>
             <input
               type="number"
               value={formData.total_elevation_gain || ''}
               onChange={(e) => setFormData({ ...formData, total_elevation_gain: parseFloat(e.target.value) || 0 })}
-              className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors"
+              className={inputCls}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-mist/70 mb-2">FC moyenne</label>
+              <label className={labelCls}>FC moyenne</label>
               <input
                 type="number"
                 value={formData.average_heartrate || ''}
                 onChange={(e) => setFormData({ ...formData, average_heartrate: parseFloat(e.target.value) || undefined })}
-                className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors"
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="block text-sm text-mist/70 mb-2">FC max</label>
+              <label className={labelCls}>FC max</label>
               <input
                 type="number"
                 value={formData.max_heartrate || ''}
                 onChange={(e) => setFormData({ ...formData, max_heartrate: parseFloat(e.target.value) || undefined })}
-                className="w-full px-4 py-3 bg-steel/20 border border-steel/30 rounded-lg text-mist focus:border-amber focus:outline-none transition-colors"
+                className={inputCls}
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-steel/20">
-            <button
-              type="button" onClick={onClose}
-              className="px-4 py-2 bg-steel/30 hover:bg-steel/50 text-mist rounded-lg transition-all hover:-translate-y-0.5"
-            >
+          <div className="flex justify-end gap-3 pt-4 border-t border-steel/20">
+            <button type="button" onClick={onClose} className="hw-btn-ghost">
               Annuler
             </button>
             <button
               type="submit" disabled={isSubmitting}
-              className="px-4 py-2 bg-amber hover:bg-amber-light disabled:opacity-50 text-charcoal font-medium rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber/30"
+              className="hw-btn-amber disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
             </button>

@@ -304,7 +304,7 @@ function TrailProfileCard() {
   const score100 = profile ? Math.round(profile.trail_score_final) : null;
 
   return (
-    <div className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden">
+    <div className="hw-card-dark p-6">
       <div className="absolute top-0 right-0 w-48 h-48 bg-[#C96A1A]/5 rounded-full blur-3xl" />
 
       <div className="relative">
@@ -587,12 +587,9 @@ export function ProfilePage() {
         <div className="space-y-6">
 
           {/* Hero card */}
-          <div className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden">
-            {/* Corner brackets */}
-            <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-amber/30 rounded-tl" />
-            <div className="absolute top-0 right-0 w-6 h-6 border-r-2 border-t-2 border-amber/30 rounded-tr" />
-            <div className="absolute bottom-0 left-0 w-6 h-6 border-l-2 border-b-2 border-amber/30 rounded-bl" />
-            <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-amber/30 rounded-br" />
+          <div className="hw-card-dark p-6">
+            <span className="hw-br hw-br-tl hw-br-amber" />
+            <span className="hw-br hw-br-br hw-br-amber-dark" />
 
             {/* Glow behind avatar */}
             <div className="absolute top-4 left-4 w-32 h-32 bg-amber/10 rounded-full blur-3xl pointer-events-none" />
@@ -618,7 +615,7 @@ export function ProfilePage() {
                 <div className="h-px bg-gradient-to-r from-amber via-glacier to-transparent mb-3 w-48" />
 
                 {profile.created_at && (
-                  <p className="text-steel text-xs font-mono mb-3">
+                  <p className="hw-text-caption text-steel mb-3">
                     MEMBRE DEPUIS {formatMembershipDuration(profile.created_at).toUpperCase()}
                   </p>
                 )}
@@ -629,7 +626,7 @@ export function ProfilePage() {
                     {activeSports.map(([key, tag]) => (
                       <span
                         key={key}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-body border"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md hw-text-label border"
                         style={{ backgroundColor: `${tag.color}12`, borderColor: `${tag.color}30`, color: tag.color }}
                       >
                         {tag.emoji} {tag.label}
@@ -651,7 +648,7 @@ export function ProfilePage() {
                 </div>
                 <button
                   onClick={() => { logout(); navigate('/'); }}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-muted hover:text-red-400 hover:bg-red-500/10 border border-steel/20 hover:border-red-500/30 transition-all hw-text-data"
+                  className="hw-btn-ghost hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 flex items-center gap-1.5"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -666,7 +663,7 @@ export function ProfilePage() {
           <TrailProfileCard />
 
           {/* Account details */}
-          <div className="bg-charcoal border border-steel/30 rounded-lg p-6 relative overflow-hidden">
+          <div className="hw-card-dark p-6">
                   <div className="relative">
               <div className="flex items-center gap-2 mb-5 pb-4 border-b border-steel/30">
                 <div className="p-1.5 rounded-lg bg-steel/10 border border-steel/20 text-mist/50">
@@ -694,7 +691,7 @@ export function ProfilePage() {
         <div className="space-y-4">
 
           {/* Events card */}
-          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
+          <div className="hw-card-dark p-5">
             <div className="absolute top-0 right-0 w-24 h-24 bg-[#7B6BC8]/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-steel/30">
@@ -708,7 +705,7 @@ export function ProfilePage() {
                 </div>
                 <button
                   onClick={() => setEventModalOpen(true)}
-                  className="text-xs text-amber hover:text-amber/80 font-medium transition-colors"
+                  className="hw-btn-amber"
                 >
                   + Ajouter
                 </button>
@@ -716,10 +713,10 @@ export function ProfilePage() {
 
               {events.length === 0 ? (
                 <div className="text-center py-6">
-                  <p className="text-mist/30 text-sm mb-3">Aucun événement planifié</p>
+                  <p className="hw-text-data text-steel/60 mb-3">Aucun événement planifié</p>
                   <button
                     onClick={() => setEventModalOpen(true)}
-                    className="text-xs text-amber hover:text-amber/80 font-medium transition-colors"
+                    className="hw-btn-amber"
                   >
                     + Ajouter mon premier événement
                   </button>
@@ -743,7 +740,7 @@ export function ProfilePage() {
           </div>
 
           {/* Sync card */}
-          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
+          <div className="hw-card-dark p-5">
             <div className="absolute top-0 right-0 w-32 h-32 bg-moss/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-4 pb-4 border-b border-steel/30">
@@ -752,7 +749,7 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="font-heading font-semibold text-mist text-sm">Synchronisation</h3>
-                  <p className="text-muted text-xs font-mono mt-0.5">
+                  <p className="hw-text-label text-steel mt-0.5">
                     {profile.last_activity_at
                       ? formatRelativeTime(profile.last_activity_at)
                       : 'Aucune activité'}
@@ -790,11 +787,11 @@ export function ProfilePage() {
               {(profile.activities_count !== undefined || profile.features_count !== undefined) && (
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="px-3 py-2 bg-charcoal/60 rounded-lg border border-steel/20 text-center">
-                    <p className="font-mono text-lg font-bold text-mist tabular-nums">{profile.activities_count ?? '—'}</p>
+                    <p className="font-mono text-lg font-bold tabular-nums text-mist">{profile.activities_count ?? '—'}</p>
                     <p className="hw-text-label text-steel mt-0.5">Activités</p>
                   </div>
                   <div className="relative group px-3 py-2 bg-charcoal/60 rounded-lg border border-steel/20 text-center cursor-default">
-                    <p className="font-mono text-lg font-bold text-glacier tabular-nums">{profile.features_count ?? '—'}</p>
+                    <p className="font-mono text-lg font-bold tabular-nums text-glacier">{profile.features_count ?? '—'}</p>
                     <p className="hw-text-label text-steel mt-0.5">Analysées</p>
                     {/* Tooltip */}
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 px-3 py-2 bg-charcoal border border-steel/50 rounded-lg text-left opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-card">
@@ -809,7 +806,7 @@ export function ProfilePage() {
           </div>
 
           {/* FC Max card */}
-          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
+          <div className="hw-card-dark p-5">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#E8832A]/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-4 pb-4 border-b border-steel/30">
@@ -818,7 +815,7 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="font-heading font-semibold text-mist text-sm">FC Max personnelle</h3>
-                  <p className="text-muted text-xs font-mono mt-0.5">Utilisée pour les zones cardiaques</p>
+                  <p className="hw-text-label text-steel mt-0.5">Utilisée pour les zones cardiaques</p>
                 </div>
               </div>
               <FCMaxInput />
@@ -826,7 +823,7 @@ export function ProfilePage() {
           </div>
 
           {/* Strava connection card */}
-          <div className="bg-charcoal border border-steel/30 rounded-lg p-5 relative overflow-hidden">
+          <div className="hw-card-dark p-5">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#FC4C02]/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-4 pb-4 border-b border-steel/30">
@@ -835,7 +832,7 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="font-heading font-semibold text-mist text-sm">Connexion Strava</h3>
-                  <p className="text-muted text-xs font-mono mt-0.5">Compte lié</p>
+                  <p className="hw-text-label text-steel mt-0.5">Compte lié</p>
                 </div>
               </div>
 

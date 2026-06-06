@@ -74,9 +74,11 @@ export function EventModal({ open, onClose, onSubmit, initialDate, editEvent }: 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" role="presentation" onClick={onClose}>
       <div
-        className="bg-charcoal border border-steel/40 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="hw-card-dark p-6 w-full max-w-md mx-4 relative"
         onClick={e => e.stopPropagation()}
       >
+        <span className="hw-br hw-br-tl hw-br-amber" />
+        <span className="hw-br hw-br-br hw-br-amber-dark" />
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -141,10 +143,10 @@ export function EventModal({ open, onClose, onSubmit, initialDate, editEvent }: 
           {error && <p className="text-red-400 text-xs">{error}</p>}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-steel/50 text-mist/60 text-sm hover:text-mist hover:border-steel transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 hw-btn-ghost justify-center">
               Annuler
             </button>
-            <button type="submit" disabled={isSubmitting || !form.name || !form.date} className="flex-1 px-4 py-2 rounded-lg bg-amber text-charcoal text-sm font-semibold hover:bg-amber-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="submit" disabled={isSubmitting || !form.name || !form.date} className="flex-1 hw-btn-amber justify-center disabled:opacity-50 disabled:cursor-not-allowed">
               {isSubmitting ? (isEdit ? 'Modification...' : 'Création...') : (isEdit ? 'Modifier' : 'Créer')}
             </button>
           </div>
