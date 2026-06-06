@@ -77,7 +77,7 @@ export const CHART_SPORT_COLORS: Record<string, string> = {
   Bike: '#7B6BC8',
   VirtualRide: '#5A4FA0',
   Swim: '#8B92A0',
-  WeightTraining: '#9477D9',
+  WeightTraining: '#9ca3af',
   Hike: '#5A5F6C',
 };
 
