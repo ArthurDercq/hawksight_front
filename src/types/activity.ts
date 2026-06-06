@@ -1,4 +1,4 @@
-export type SportType = 'Run' | 'Trail' | 'Bike' | 'Swim' | 'Hike' | 'WeightTraining';
+export type SportType = 'Run' | 'Trail' | 'Bike' | 'VirtualRide' | 'Swim' | 'Hike' | 'WeightTraining';
 
 export interface TrailClimb {
   duration_s: number;

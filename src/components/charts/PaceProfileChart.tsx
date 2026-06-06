@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState, useCallback } from "react";
 import type { Activity, ActivityStream } from "@/types";
-import { sportColor } from '@/services/utils/constants';
+import { sportColor, isBikeType } from '@/services/utils/constants';
 import { computeYTicks } from '@/services/utils/chartHelpers';
 import { formatPaceSeconds } from '@/services/utils/formatters';
 
@@ -18,7 +18,7 @@ const CHART_H = SVG_H - MARGIN.top - MARGIN.bottom;
 export function PaceProfileChart({ activity, streams }: PaceProfileChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const color = sportColor(activity.sport_type);
-  const isBike = activity.sport_type === "Bike";
+  const isBike = isBikeType(activity.sport_type);
   const [hover, setHover] = useState<{ x: number; dist: number; value: number } | null>(null);
 
   const paceProfile = useMemo(() => {

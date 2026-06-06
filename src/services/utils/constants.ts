@@ -30,6 +30,7 @@ export const SPORT_META: Record<SportType, {
   Run:           { color: '#E8832A', barColor: '#3DB2E0', bg: 'rgba(232,131,42,0.12)',  label: 'Course' },
   Trail:         { color: '#E8832A', barColor: '#C96A1A', bg: 'rgba(232,131,42,0.12)',  label: 'Trail' },
   Bike:          { color: '#3DB2E0', barColor: '#7B6BC8', bg: 'rgba(61,178,224,0.12)',  label: 'Vélo' },
+  VirtualRide:   { color: '#7B6BC8', barColor: '#3DB2E0', bg: 'rgba(123,107,200,0.12)', label: 'Vélo Virtuel' },
   Swim:          { color: '#6DAA75', barColor: '#8B92A0', bg: 'rgba(109,170,117,0.12)', label: 'Natation' },
   Hike:          { color: '#6DAA75', barColor: '#5A5F6C', bg: 'rgba(109,170,117,0.12)', label: 'Randonnée' },
   WeightTraining:{ color: '#9ca3af', barColor: '#9ca3af', bg: 'rgba(58,63,71,0.12)',    label: 'Muscu' },
@@ -48,6 +49,11 @@ export function sportBarColor(type: SportType | string): string {
 // Accès rapide : sportLabel(type) → libellé FR
 export function sportLabel(type: SportType | string): string {
   return (SPORT_META as Record<string, { label: string }>)[type]?.label ?? type;
+}
+
+// Vrai pour tout sport traité comme du vélo (vitesse km/h, pas d'allure /km)
+export function isBikeType(type: SportType | string): boolean {
+  return type === 'Bike' || type === 'VirtualRide';
 }
 
 // Compat : objets plats pour les composants qui les consomment directement
@@ -69,6 +75,7 @@ export const CHART_SPORT_COLORS: Record<string, string> = {
   Run: '#3DB2E0',
   Trail: '#1E6A8F',
   Bike: '#7B6BC8',
+  VirtualRide: '#5A4FA0',
   Swim: '#8B92A0',
   WeightTraining: '#9477D9',
   Hike: '#5A5F6C',
@@ -98,7 +105,7 @@ export const MAP_PALETTE = {
 } as const;
 
 // ── Misc ──────────────────────────────────────────────────────────────────────
-export const SPORT_TYPES = ['Run', 'Trail', 'Bike', 'Swim', 'Hike', 'WeightTraining'] as const;
+export const SPORT_TYPES = ['Run', 'Trail', 'Bike', 'VirtualRide', 'Swim', 'Hike', 'WeightTraining'] as const;
 
 export const TAG_ICONS: Record<string, string> = {
   treadmill: '🏃',

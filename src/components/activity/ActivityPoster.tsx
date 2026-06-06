@@ -1,7 +1,7 @@
 import { useMemo, useState, RefObject } from "react";
 import type { Activity, ActivityStream, ActivityExplorationRate } from "@/types";
 import { buildStaticMapUrl } from "@/services/mapbox/staticMap";
-import { sportColor } from "@/services/utils/constants";
+import { sportColor, isBikeType } from "@/services/utils/constants";
 import { projectCoordsToSVG, createSmoothPath } from "@/services/utils/chartHelpers";
 import { formatDurationCompact } from "@/services/utils/formatters";
 
@@ -66,7 +66,7 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
 
   const distance = activity.distance_km || activity.distance || 0;
   const duration = activity.moving_time_hms ?? formatDurationCompact(activity.moving_time);
-  const isBike = activity.sport_type === "Bike";
+  const isBike = isBikeType(activity.sport_type);
   const pace = isBike
     ? (activity.average_speed != null ? activity.average_speed.toFixed(1) : "--")
     : (activity.speed_minutes_per_km_hms ?? "--");

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Activity } from '@/types';
-import { sportBarColor, SPORT_COLORS } from '@/services/utils/constants';
+import { sportBarColor, SPORT_COLORS, isBikeType } from '@/services/utils/constants';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -11,7 +11,7 @@ interface ActivityCardProps {
 export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) {
   const sportStyle = SPORT_COLORS[activity.sport_type] || SPORT_COLORS.Run;
   const barColor = sportBarColor(activity.sport_type);
-  const isBike = activity.sport_type === 'Bike';
+  const isBike = isBikeType(activity.sport_type);
   const isWeightTraining = activity.sport_type === 'WeightTraining';
 
   const formatDate = (dateString: string) => {
