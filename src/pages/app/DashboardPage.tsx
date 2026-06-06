@@ -9,7 +9,7 @@ import { EventModal } from '@/components/ui/EventModal';
 import { DashboardMap } from '@/components/maps';
 import { trailApi, kpiApi } from '@/services/api';
 import type { TrailProfile, TrailRecord } from '@/types';
-import { sportBarColor } from '@/services/utils/constants';
+import { sportBarColor, isBikeType } from '@/services/utils/constants';
 
 const DashboardChartsSection = lazy(() =>
   import('./DashboardChartsSection').then(m => ({ default: m.DashboardChartsSection }))
@@ -351,10 +351,10 @@ export function DashboardPage() {
                 )}
                 {lastActivity.type !== 'WeightTraining' && (
                   <div>
-                    <p className="hw-text-label text-mist/30 mb-0.5">{lastActivity.type === 'Bike' ? 'Vitesse' : 'Allure'}</p>
+                    <p className="hw-text-label text-mist/30 mb-0.5">{isBikeType(lastActivity.type ?? '') ? 'Vitesse' : 'Allure'}</p>
                     <p className="font-mono text-sm font-bold tabular-nums text-moss">
-                      {lastActivity.type === 'Bike' ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'}` : (lastActivity.allure_min_per_km ?? '--')}
-                      <span className="hw-text-label text-moss/50 ml-0.5">{lastActivity.type === 'Bike' ? 'km/h' : '/km'}</span>
+                      {isBikeType(lastActivity.type ?? '') ? `${lastActivity.vitesse_kmh?.toFixed(1) ?? '--'}` : (lastActivity.allure_min_per_km ?? '--')}
+                      <span className="hw-text-label text-moss/50 ml-0.5">{isBikeType(lastActivity.type ?? '') ? 'km/h' : '/km'}</span>
                     </p>
                   </div>
                 )}
@@ -375,7 +375,7 @@ export function DashboardPage() {
           <div>
             {recentActivities.filter(a => a.id !== lastActivity?.id).slice(0, 2).map((activity) => {
               const color = sportBarColor(activity.type ?? '');
-              const isBike = activity.type === 'Bike';
+              const isBike = isBikeType(activity.type ?? '');
               const isWeightTraining = activity.type === 'WeightTraining';
               const paceUnit = isBike ? ' km/h' : '/km';
               const pace = isBike ? (activity.vitesse_kmh ? activity.vitesse_kmh.toFixed(1) : '--') : (activity.allure_min_per_km ?? '--');

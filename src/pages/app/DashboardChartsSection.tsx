@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { SectionTitle } from '@/components/ui/SectionTitle';
+import { CHART_SPORT_COLORS } from '@/services/utils/constants';
 import type { ChartDataset } from '@/services/api';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend, Filler);
@@ -220,7 +221,7 @@ export function DashboardChartsSection({
                   datasets: dailyHoursData.datasets?.length > 0
                     ? dailyHoursData.datasets.map((ds: ChartDataset) => ({
                         ...ds,
-                        backgroundColor: ({ Run: '#3DB2E0', Trail: '#1E6A8F', Bike: '#7B6BC8', Swim: '#8B92A0', WeightTraining: '#9ca3af', Hike: '#5A5F6C' } as Record<string, string>)[ds.label] || '#3DB2E0',
+                        backgroundColor: CHART_SPORT_COLORS[ds.label] || '#3DB2E0',
                         borderColor: 'transparent',
                         borderRadius: 3,
                       }))
