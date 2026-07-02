@@ -6,9 +6,18 @@ import {
   getMonthBoundaries,
   activitiesApi,
   explorationApi,
+  apiClient,
 } from '@/services/api';
 import { cache } from '@/services/cache';
 import type { Activity, LastActivity, StreakData, KPIData, ExplorationStats, ActivityExplorationRate } from '@/types';
+import type { JobSyncStatus } from './useSyncStatus';
+
+const SYNC_POLL_INTERVAL_MS = 2000;
+const SYNC_POLL_MAX_ATTEMPTS = 15; // ~30s avant d'abandonner le polling
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 const CACHE_KEY = 'dashboard:main';
 const CACHE_TTL = 5 * 60 * 1000; // 5 min
@@ -47,6 +56,7 @@ interface UseDashboardReturn extends DashboardSnapshot {
   isRefetching: boolean;
   error: string | null;
   isSyncing: boolean;
+  syncError: string | null;
   syncData: () => Promise<void>;
 }
 
@@ -127,6 +137,7 @@ export function useDashboard(): UseDashboardReturn {
   const [isRefetching, setIsRefetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Prevent stale closures from overwriting fresh data after unmount
   const isMounted = useRef(true);
@@ -200,13 +211,34 @@ export function useDashboard(): UseDashboardReturn {
 
   const syncData = useCallback(async () => {
     setIsSyncing(true);
+    setSyncError(null);
     try {
       await activitiesApi.triggerSync();
+
+      // triggerSync ne fait qu'enfiler un job — on poll /sync/status jusqu'à ce
+      // qu'il ne soit plus actif, pour savoir si le job a réellement réussi.
+      let finalStatus: JobSyncStatus | null = null;
+      for (let attempt = 0; attempt < SYNC_POLL_MAX_ATTEMPTS; attempt++) {
+        await sleep(SYNC_POLL_INTERVAL_MS);
+        const { data } = await apiClient.get<JobSyncStatus>('/sync/status');
+        if (!data.is_syncing) {
+          finalStatus = data;
+          break;
+        }
+      }
+
+      if (finalStatus?.has_error) {
+        setSyncError(finalStatus.last_error || 'La synchronisation a échoué.');
+      } else if (!finalStatus) {
+        setSyncError('La synchronisation prend plus de temps que prévu — réessayez plus tard.');
+      }
+
       // syncAll() dispatch 'activities-updated' qui déclenche le refresh des graphiques
       // On force aussi le refresh des données du dashboard
       await fetchDashboardData(true);
     } catch (err) {
       console.error('Error syncing data:', err);
+      if (isMounted.current) setSyncError('Erreur lors du déclenchement de la synchronisation.');
     } finally {
       if (isMounted.current) setIsSyncing(false);
     }
@@ -225,6 +257,7 @@ export function useDashboard(): UseDashboardReturn {
     isRefetching,
     error,
     isSyncing,
+    syncError,
     syncData,
   };
 }

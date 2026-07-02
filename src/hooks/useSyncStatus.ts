@@ -7,6 +7,7 @@ export interface JobSyncStatus {
   current_job: { type: string; status: string; progress: number } | null;
   last_completed: { type: string; finished_at: string } | null;
   has_error: boolean;
+  last_error?: string | null;
 }
 
 const POLL_INTERVAL = 5000;

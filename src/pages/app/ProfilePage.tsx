@@ -16,8 +16,16 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EventModal } from '@/components/ui/EventModal';
 import { useAuth } from '@/context';
 import type { TrainingEvent, TrailAxisScores, TrailReferenceProfile, TrailProfileHistory } from '@/types';
-import { activitiesApi } from '@/services/api';
+import { activitiesApi, apiClient } from '@/services/api';
 import { formatRelativeTime, formatMembershipDuration } from '@/services/utils/formatters';
+import type { JobSyncStatus } from '@/hooks/useSyncStatus';
+
+const SYNC_POLL_INTERVAL_MS = 2000;
+const SYNC_POLL_MAX_ATTEMPTS = 15; // ~30s avant d'abandonner le polling
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -528,19 +536,40 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const handleSync = async () => {
     setIsSyncing(true);
     setSyncDone(false);
+    setSyncError(null);
     try {
       await activitiesApi.triggerSync();
-      // Le job est en queue — useSyncStatus prend le relais via polling
-      // On notifie juste le dashboard pour qu'il rafraîchisse quand le job finit
+
+      // triggerSync ne fait qu'enfiler un job — on poll /sync/status jusqu'à ce
+      // qu'il ne soit plus actif, pour savoir si le job a réellement réussi.
+      let finalStatus: JobSyncStatus | null = null;
+      for (let attempt = 0; attempt < SYNC_POLL_MAX_ATTEMPTS; attempt++) {
+        await sleep(SYNC_POLL_INTERVAL_MS);
+        const { data } = await apiClient.get<JobSyncStatus>('/sync/status');
+        if (!data.is_syncing) {
+          finalStatus = data;
+          break;
+        }
+      }
+
       window.dispatchEvent(new CustomEvent('activities-updated', { detail: { source: 'sync-trigger' } }));
-      setSyncDone(true);
-      setTimeout(() => setSyncDone(false), 3000);
+
+      if (finalStatus?.has_error) {
+        setSyncError(finalStatus.last_error || 'La synchronisation a échoué.');
+      } else if (!finalStatus) {
+        setSyncError('La synchronisation prend plus de temps que prévu — réessayez plus tard.');
+      } else {
+        setSyncDone(true);
+        setTimeout(() => setSyncDone(false), 3000);
+      }
     } catch (e) {
       console.error('Sync error', e);
+      setSyncError('Erreur lors du déclenchement de la synchronisation.');
     } finally {
       setIsSyncing(false);
     }
@@ -774,14 +803,22 @@ export function ProfilePage() {
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed text-moss ${syncDone ? 'bg-moss/[0.13] border border-moss/25' : 'bg-moss/[0.08] border border-moss/20'}`}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                  syncError ? 'text-amber bg-amber/[0.08] border border-amber/25' : 'text-moss'
+                } ${!syncError && syncDone ? 'bg-moss/[0.13] border border-moss/25' : !syncError ? 'bg-moss/[0.08] border border-moss/20' : ''}`}
+                title={syncError ?? undefined}
               >
-                {syncDone ? (
+                {syncError ? (
+                  <>Échec de la synchronisation</>
+                ) : syncDone ? (
                   <><CheckIcon /> Synchronisé !</>
                 ) : (
                   <><SyncIcon spinning={isSyncing} /> {isSyncing ? 'Synchronisation...' : 'Synchroniser maintenant'}</>
                 )}
               </button>
+              {syncError && (
+                <p className="hw-text-caption text-amber/70 mt-1.5 text-center">{syncError}</p>
+              )}
 
               {/* Compteurs activités / features */}
               {(profile.activities_count !== undefined || profile.features_count !== undefined) && (

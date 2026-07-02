@@ -44,7 +44,7 @@ function getDaysUntil(dateStr: string): number {
 }
 
 export function DashboardPage() {
-  const { lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncData } = useDashboard();
+  const { lastActivity, lastActivityExploration, recentActivities, weeklySummary, monthlySummary, explorationStats, isLoading, error, isSyncing, syncError, syncData } = useDashboard();
   const { nextEvent, createEvent } = useEvents();
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const { isDemo, canSync } = usePermissions();
@@ -300,14 +300,19 @@ export function DashboardPage() {
               <button
                 onClick={syncData}
                 disabled={isSyncing || !canSync}
-                className={`flex items-center px-1.5 py-0.5 rounded bg-steel/30 border border-steel/50 transition-all ${isSyncing || !canSync ? 'cursor-not-allowed' : 'cursor-pointer'} ${!canSync ? 'opacity-40' : ''}`}
-                style={{ color: isSyncing ? '#3DB2E0' : 'rgba(242,242,242,0.4)' }}
-                title={canSync ? 'Synchroniser mes données' : 'Indisponible en mode démo'}
+                className={`flex items-center px-1.5 py-0.5 rounded bg-steel/30 border transition-all ${syncError ? 'border-amber/60' : 'border-steel/50'} ${isSyncing || !canSync ? 'cursor-not-allowed' : 'cursor-pointer'} ${!canSync ? 'opacity-40' : ''}`}
+                style={{ color: isSyncing ? '#3DB2E0' : syncError ? '#E8832A' : 'rgba(242,242,242,0.4)' }}
+                title={!canSync ? 'Indisponible en mode démo' : syncError || 'Synchroniser mes données'}
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isSyncing ? 'animate-spin' : ''}>
                   <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
                 </svg>
               </button>
+              {syncError && (
+                <span className="hw-text-caption text-amber/80" title={syncError}>
+                  Échec de synchronisation
+                </span>
+              )}
             </div>
             <Link to="/activities" className="hw-link">Voir tout →</Link>
           </div>
