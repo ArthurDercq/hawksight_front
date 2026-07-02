@@ -1,0 +1,17 @@
+# Frontend HawkSight — image de DEV (serveur Vite, hot-reload)
+# Le code est monté en volume depuis compose.yaml.
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Cache des dépendances
+COPY package*.json ./
+RUN npm install
+
+# Copie du code (écrasée par le volume monté en dev)
+COPY . .
+
+EXPOSE 5173
+
+# --host 0.0.0.0 : rendre le serveur Vite accessible depuis l'hôte
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
