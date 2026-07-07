@@ -11,11 +11,11 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { useProfile, useKPI, useEvents, useTrailProfile } from '@/hooks';
+import { useProfile, useEvents, useTrailProfile } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
 import { EventModal } from '@/components/ui/EventModal';
 import { useAuth } from '@/context';
-import type { TrainingEvent, TrailAxisScores, TrailReferenceProfile, TrailProfileHistory } from '@/types';
+import type { TrainingEvent, TrailAxisScores, TrailProfileHistory } from '@/types';
 import { activitiesApi, apiClient } from '@/services/api';
 import { formatRelativeTime, formatMembershipDuration } from '@/services/utils/formatters';
 import type { JobSyncStatus } from '@/hooks/useSyncStatus';
@@ -30,13 +30,6 @@ function sleep(ms: number) {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-const UserIcon = () => (
-  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
 
 
 
@@ -66,28 +59,12 @@ const StravaIcon = () => (
   </svg>
 );
 
-const HeartIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-  </svg>
-);
-
 const IdIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="5" width="20" height="14" rx="2" />
     <line x1="2" y1="10" x2="22" y2="10" />
   </svg>
 );
-
-// ─── Sport tags config ─────────────────────────────────────────────────────────
-
-const SPORT_TAGS: Record<string, { label: string; color: string; emoji: string }> = {
-  total_km_run:   { label: 'Course',  color: '#E8832A', emoji: '🏃' },
-  total_km_trail: { label: 'Trail',   color: '#C96A1A', emoji: '🏔️' },
-  total_km_bike:  { label: 'Vélo',    color: '#3DB2E0', emoji: '🚵' },
-  total_km_swim:  { label: 'Natation',color: '#6DAA75', emoji: '🏊' },
-};
-
 
 // ─── Trail Score History Chart ────────────────────────────────────────────────
 
@@ -304,45 +281,76 @@ function RadarChart({ scores, referenceScores, color = TRAIL_COLOR }: {
   );
 }
 
-function TrailProfileCard() {
-  const { profile, history, references, isLoading, isComputing, error, compute } = useTrailProfile();
-  const [selectedRef, setSelectedRef] = useState<TrailReferenceProfile | null>(null);
+interface ScoreDialProps {
+  score: number | null;
+  size?: number;
+  isComputing?: boolean;
+}
 
+/** Cadran mécanique gradué — remplace l'avatar dans la hero card. */
+function ScoreDial({ score, size = 160, isComputing = false }: ScoreDialProps) {
+  const pct = Math.max(0, Math.min(100, score ?? 0));
+  const R_TRACK = 37;
+  const CIRC = 2 * Math.PI * R_TRACK;
+  const dashOffset = CIRC * (1 - pct / 100);
+
+  const TICK_COUNT = 40;
+  const litTicks = Math.round((TICK_COUNT * pct) / 100);
+  const ticks = Array.from({ length: TICK_COUNT }, (_, i) => {
+    const angle = (i / TICK_COUNT) * 360;
+    const rad = (angle * Math.PI) / 180;
+    const cx = 40, cy = 40, rOuter = 34.5, rInner = 31;
+    const x1 = cx + rInner * Math.cos(rad);
+    const y1 = cy + rInner * Math.sin(rad);
+    const x2 = cx + rOuter * Math.cos(rad);
+    const y2 = cy + rOuter * Math.sin(rad);
+    return { x1, y1, x2, y2, lit: i < litTicks };
+  });
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 80 80" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <defs>
+          <linearGradient id="scoreDialGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#C96A1A" />
+            <stop offset="100%" stopColor="#E8832A" />
+          </linearGradient>
+        </defs>
+        <circle cx="40" cy="40" r="28" fill="#0D0E12" stroke="rgba(201,106,26,0.25)" strokeWidth="1" />
+        {ticks.map((t, i) => (
+          <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2}
+            stroke={t.lit ? '#E8832A' : 'rgba(139,149,161,0.35)'} strokeWidth="1.4" />
+        ))}
+        <circle cx="40" cy="40" r={R_TRACK} fill="none" stroke="rgba(58,63,71,0.25)" strokeWidth="1.6" />
+        <circle cx="40" cy="40" r={R_TRACK} fill="none" stroke="url(#scoreDialGrad)" strokeWidth="1.6"
+          strokeDasharray={CIRC} strokeDashoffset={dashOffset}
+          style={{ transition: 'stroke-dashoffset 700ms ease' }} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-mono font-bold text-4xl leading-none text-mist tabular-nums">
+          {isComputing ? '—' : (score ?? '—')}
+        </span>
+        <span className="hw-text-label text-steel mt-1" style={{ fontSize: '11px' }}>/100</span>
+      </div>
+    </div>
+  );
+}
+
+interface TrailProfileCardProps {
+  profile: ReturnType<typeof useTrailProfile>['profile'];
+  history: ReturnType<typeof useTrailProfile>['history'];
+  isLoading: boolean;
+  error: string | null;
+}
+
+function TrailProfileCard({ profile, history, isLoading, error }: TrailProfileCardProps) {
   const color = TRAIL_COLOR;
-  const score100 = profile ? Math.round(profile.trail_score_final) : null;
 
   return (
     <div className="hw-card-dark p-6">
       <div className="absolute top-0 right-0 w-48 h-48 bg-[#C96A1A]/5 rounded-full blur-3xl" />
 
       <div className="relative">
-        {/* Header */}
-        <div className="flex items-start gap-3 pb-4 border-b border-steel/30 mb-6">
-          <div className="p-2 border rounded" style={{ backgroundColor: '#C96A1A10', borderColor: '#C96A1A30' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-heading text-mist">Profil Traileur</h3>
-            <p className="text-muted font-body text-xs mt-1">Analyse de tes compétences trail</p>
-          </div>
-          <button
-            onClick={compute}
-            disabled={isComputing}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hw-text-caption border transition-all disabled:opacity-50"
-            style={{ color: color, borderColor: `${color}40`, backgroundColor: `${color}10` }}
-            title="Recalculer le profil"
-          >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round" className={isComputing ? 'animate-spin' : ''}>
-              <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            {isComputing ? 'Calcul...' : 'Recalculer'}
-          </button>
-        </div>
-
         {/* Error */}
         {error && !isLoading && (
           <div className="mb-4 px-3 py-2 rounded-lg bg-steel/5 border border-steel/20 flex items-center gap-2">
@@ -360,123 +368,34 @@ function TrailProfileCard() {
           </div>
         ) : !profile ? (
           <div className="text-center py-10">
-            <p className="text-muted text-sm font-mono mb-4">Aucun profil calculé</p>
-            <button
-              onClick={compute}
-              disabled={isComputing}
-              className="px-4 py-2 rounded-lg text-sm font-mono border transition-all disabled:opacity-50"
-              style={{ color: color, borderColor: `${color}40`, backgroundColor: `${color}10` }}
-            >
-              {isComputing ? 'Calcul en cours...' : 'Calculer mon profil'}
-            </button>
+            <p className="text-muted text-sm font-mono">Aucun profil calculé</p>
           </div>
         ) : (
           <>
-            {/* Score global card */}
-            <div className="mb-6 rounded-lg p-4 flex items-center gap-5 relative overflow-hidden"
-              style={{ backgroundColor: `${color}08`, border: `1px solid ${color}25` }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-transparent" />
-              {/* Gros score */}
-              <div className="relative flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-full border-2"
-                style={{ borderColor: `${color}50`, backgroundColor: `${color}10` }}>
-                <span className="font-mono font-bold text-3xl leading-none" style={{ color }}>
-                  {score100}
-                </span>
-                <span className="hw-text-label text-muted mt-0.5">/100</span>
-              </div>
-              {/* Infos droite */}
-              <div className="relative flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="hw-text-label text-muted">Profil dominant</span>
-                </div>
-                <div className="font-heading text-xl font-semibold" style={{ color }}>
-                  {profile.dominant_profile}
-                </div>
-                {/* Barre de score */}
-                <div className="mt-2 h-1.5 bg-steel/20 rounded-full overflow-hidden w-full">
-                  <div className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${score100}%`, background: `linear-gradient(to right, ${color}, #E8832A)` }} />
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="hw-text-caption">0</span>
-                  {profile.data_freshness_factor < 0.7 && (
-                    <span className="hw-text-caption text-yellow-500/60">données anciennes</span>
-                  )}
-                  <span className="hw-text-caption">100</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Reference selector */}
-            {references.length > 0 && (
-              <div className="mb-4 flex flex-wrap items-center gap-1.5">
-                <span className="hw-text-label text-muted mr-1">Comparer à</span>
-                <button
-                  onClick={() => setSelectedRef(null)}
-                  className={`px-2 py-0.5 rounded hw-text-caption border transition-all ${!selectedRef ? 'text-mist border-steel/50' : 'text-muted border-steel/20 hover:border-steel/30'}`}
-                >
-                  Personne
-                </button>
-                {references.map(ref => (
-                  <button
-                    key={ref.slug}
-                    onClick={() => setSelectedRef(selectedRef?.slug === ref.slug ? null : ref)}
-                    className={`px-2 py-0.5 rounded hw-text-caption border transition-all ${selectedRef?.slug === ref.slug ? 'text-glacier border-glacier/50 bg-glacier/10' : 'text-muted border-steel/20 hover:border-glacier/30 hover:text-glacier/70'}`}
-                  >
-                    {ref.name.split(' ')[0]}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* Radar + bars */}
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <div className="flex-shrink-0">
                 <RadarChart
                   scores={profile.axis_scores}
-                  referenceScores={selectedRef?.axis_scores ?? null}
                   color={color}
                 />
-                {selectedRef && (
-                  <div className="flex items-center justify-center gap-3 mt-1">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-px" style={{ background: color }} />
-                      <span className="hw-text-caption">Toi</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-px border-t border-dashed border-glacier" />
-                      <span className="hw-text-caption">{selectedRef.name.split(' ')[0]}</span>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="flex-1 w-full space-y-3">
                 {TRAIL_AXES.filter(ax => profile.axis_scores[ax.key] != null).map((ax) => {
                   const score = profile.axis_scores[ax.key] ?? 0;
-                  const refScore = selectedRef?.axis_scores[ax.key];
                   return (
                     <div key={ax.key}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="hw-text-label text-mist tracking-wide">
                           {ax.label}
                         </span>
-                        <div className="flex items-center gap-2">
-                          {refScore != null && (
-                            <span className="hw-text-caption text-glacier">
-                              {Math.round(refScore)}
-                            </span>
-                          )}
-                          <span className="hw-text-data font-semibold" style={{ color }}>
-                            {Math.round(score)}
-                          </span>
-                        </div>
+                        <span className="hw-text-data font-semibold" style={{ color }}>
+                          {Math.round(score)}
+                        </span>
                       </div>
                       <div className="h-1.5 bg-steel/20 rounded-full overflow-hidden relative">
-                        {refScore != null && (
-                          <div className="absolute h-full rounded-full opacity-40"
-                            style={{ width: `${refScore}%`, background: '#3DB2E0' }} />
-                        )}
                         <div className="absolute h-full rounded-full transition-all duration-700"
                           style={{ width: `${score}%`, background: `linear-gradient(to right, ${color}, #E8832A)` }} />
                       </div>
@@ -528,7 +447,13 @@ function DetailRow({ label, value }: DetailRowProps) {
 
 export function ProfilePage() {
   const { profile, isLoading, error } = useProfile();
-  const { kpis } = useKPI();
+  const {
+    profile: trailProfile,
+    history: trailHistory,
+    isLoading: isTrailLoading,
+    isComputing: isTrailComputing,
+    error: trailError,
+  } = useTrailProfile();
   const { events, upcomingEvents, pastEvents, createEvent, updateEvent, deleteEvent, markCompleted } = useEvents();
   const [editingEvent, setEditingEvent] = useState<TrainingEvent | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -602,11 +527,6 @@ export function ProfilePage() {
 
   const fullName = profile.username || 'Utilisateur';
 
-  // Active sports from KPIs
-  const activeSports = kpis
-    ? Object.entries(SPORT_TAGS).filter(([key]) => (kpis[key as keyof typeof kpis] as number ?? 0) > 0)
-    : [];
-
   return (
     <div className="max-w-7xl mx-auto">
 
@@ -624,15 +544,11 @@ export function ProfilePage() {
             <div className="absolute top-4 left-4 w-32 h-32 bg-amber/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative flex items-start gap-6">
-              {/* Avatar */}
-              <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 rounded-full bg-amber/20 blur-xl" />
-                <div className="relative w-20 h-20 rounded-full bg-steel/20 border-2 border-steel/40 flex items-center justify-center text-steel">
-                  <UserIcon />
-                </div>
-                {/* Status dot */}
-                <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-charcoal ${profile.is_active ? 'bg-moss animate-pulse' : 'bg-red-400'}`} />
-              </div>
+              {/* Score dial */}
+              <ScoreDial
+                score={trailProfile ? Math.round(trailProfile.trail_score_final) : null}
+                isComputing={isTrailComputing}
+              />
 
               {/* Identity */}
               <div className="flex-1 min-w-0">
@@ -649,20 +565,21 @@ export function ProfilePage() {
                   </p>
                 )}
 
-                {/* Sport tags */}
-                {activeSports.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {activeSports.map(([key, tag]) => (
-                      <span
-                        key={key}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md hw-text-label border"
-                        style={{ backgroundColor: `${tag.color}12`, borderColor: `${tag.color}30`, color: tag.color }}
-                      >
-                        {tag.emoji} {tag.label}
+                <div className="space-y-1.5">
+                  {trailProfile && (
+                    <div className="flex items-center gap-2">
+                      <span className="hw-text-label text-muted">Profil Trail dominant</span>
+                      <span className="font-heading text-sm font-semibold" style={{ color: TRAIL_COLOR }}>
+                        {trailProfile.dominant_profile}
                       </span>
-                    ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <span className="hw-text-label text-muted">Profil Exploration dominant</span>
+                    <span className="hw-text-caption text-steel italic">Bientôt disponible</span>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* HAWKSIGHT monogram + logout top right */}
@@ -689,7 +606,12 @@ export function ProfilePage() {
           </div>
 
           {/* Trail Profile radar */}
-          <TrailProfileCard />
+          <TrailProfileCard
+            profile={trailProfile}
+            history={trailHistory}
+            isLoading={isTrailLoading}
+            error={trailError}
+          />
 
           {/* Account details */}
           <div className="hw-card-dark p-6">
@@ -842,23 +764,6 @@ export function ProfilePage() {
             </div>
           </div>
 
-          {/* FC Max card */}
-          <div className="hw-card-dark p-5">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#E8832A]/5 rounded-full blur-3xl pointer-events-none" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-steel/30">
-                <div className="p-1.5 rounded-lg bg-amber/10 border border-amber/30 text-amber">
-                  <HeartIcon />
-                </div>
-                <div>
-                  <h3 className="font-heading font-semibold text-mist text-sm">FC Max personnelle</h3>
-                  <p className="hw-text-label text-steel mt-0.5">Utilisée pour les zones cardiaques</p>
-                </div>
-              </div>
-              <FCMaxInput />
-            </div>
-          </div>
-
           {/* Strava connection card */}
           <div className="hw-card-dark p-5">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#FC4C02]/5 rounded-full blur-3xl pointer-events-none" />
@@ -969,59 +874,3 @@ function EventRow({ event, past, onDelete, onComplete, onEdit }: EventRowProps) 
   );
 }
 
-// ─── FC Max sub-component ─────────────────────────────────────────────────────
-
-const FC_MAX_KEY = 'hawksight:fc_max';
-
-function FCMaxInput() {
-  const [value, setValue] = useState<string>(() => {
-    return localStorage.getItem(FC_MAX_KEY) ?? '';
-  });
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    const parsed = parseInt(value);
-    if (!isNaN(parsed) && parsed > 0 && parsed <= 250) {
-      localStorage.setItem(FC_MAX_KEY, String(parsed));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSave();
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min={100}
-          max={250}
-          value={value}
-          onChange={e => { setValue(e.target.value); setSaved(false); }}
-          onKeyDown={handleKeyDown}
-          placeholder="ex: 185"
-          className="flex-1 px-3 py-2 bg-charcoal/60 border border-steel/40 rounded-lg text-mist font-mono text-sm focus:border-amber focus:outline-none transition-colors placeholder:text-mist/20"
-        />
-        <span className="text-muted font-mono text-sm">BPM</span>
-      </div>
-
-      <button
-        onClick={handleSave}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
-        style={saved
-          ? { backgroundColor: '#E8832A20', border: '1px solid #E8832A40', color: '#E8832A' }
-          : { backgroundColor: '#E8832A10', border: '1px solid #E8832A25', color: '#E8832A' }
-        }
-      >
-        {saved ? <><CheckIcon /> Sauvegardé</> : 'Enregistrer'}
-      </button>
-
-      <p className="hw-text-caption leading-relaxed">
-        Valeur stockée localement sur votre appareil. Utilisée pour calculer vos zones cardiaques (Z1–Z5).
-      </p>
-    </div>
-  );
-}
