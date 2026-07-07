@@ -99,53 +99,56 @@ export function ExplorationMap({ data, className = '', coreThreshold = 10, showC
           'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 3, 0.4, 8, 1.0, 12, 1.4],
           'heatmap-color': [
             'interpolate', ['linear'], ['heatmap-density'],
-            0,   'rgba(8,9,16,0)',
-            0.2, 'rgba(61,178,224,0.15)',
-            0.5, 'rgba(61,178,224,0.35)',
-            0.7, 'rgba(232,131,42,0.4)',
-            1,   'rgba(232,131,42,0.65)',
+            0,   'rgba(11,30,51,0)',
+            0.2, '#0B1E33',
+            0.4, '#1F4E79',
+            0.6, '#2EA6D6',
+            0.8, '#60D5FF',
+            1,   '#B3ECFF',
           ],
           'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 3, 18, 8, 32, 12, 48],
           'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.75, 10, 0.55, 14, 0.25],
         }
       });
 
-      // ── Glow layer ────────────────────────────────────────────────────
+      // ── Glow layer — visible seulement en zoomant ────────────────────
       map.addLayer({
         id: LAYER_GLOW,
         type: 'fill',
         source: SOURCE_ID,
+        minzoom: 7,
         paint: {
           'fill-color': [
             'interpolate', ['linear'],
             ['ln', ['+', ['get', 'activity_count'], 1]],
-            0, 'rgba(61,178,224,0.03)',
-            2, 'rgba(61,178,224,0.06)',
-            4, 'rgba(232,131,42,0.06)',
+            0, 'rgba(46,166,214,0.03)',
+            2, 'rgba(46,166,214,0.06)',
+            4, 'rgba(46,166,214,0.1)',
           ],
-          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.4, 8, 0.7, 12, 1],
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0, 8, 0.7, 12, 1],
         }
       });
 
-      // ── Main fill — amber/glacier palette ────────────────────────────
+      // ── Main fill — glacier monochrome, apparaît au fur et à mesure du zoom ──
       map.addLayer({
         id: LAYER_FILL,
         type: 'fill',
         source: SOURCE_ID,
+        minzoom: 7,
         paint: {
           'fill-color': [
             'interpolate', ['linear'],
             ['ln', ['+', ['get', 'activity_count'], 1]],
-            0,   '#0D2A38',   // 1 passage — glacier très sombre
-            0.7, '#1A5C80',   // 2-3 passages
-            1.4, '#3DB2E0',   // ~4 passages — glacier plein
-            2.1, '#C96A1A',   // ~7 passages — amber chaud
-            3.0, '#E8832A',   // 20+ passages — amber vif
+            0, '#1B2A41',
+            1, '#1F4E79',
+            2, '#2EA6D6',
+            3, '#60D5FF',
+            4, '#B3ECFF',
           ],
           'fill-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            3, 0.12,
-            7, 0.35,
+            7, 0,
+            8, 0.35,
             10, 0.55,
             13, 0.7,
           ],
@@ -154,15 +157,16 @@ export function ExplorationMap({ data, className = '', coreThreshold = 10, showC
         }
       });
 
-      // ── Core zones highlight (amber pulsant via opacity animée) ──────
+      // ── Core zones highlight (glacier pulsant via opacity animée) ────
       map.addLayer({
         id: LAYER_CORE,
         type: 'fill',
         source: SOURCE_ID,
+        minzoom: 7,
         filter: ['>=', ['get', 'activity_count'], coreThreshold],
         paint: {
-          'fill-color': '#E8832A',
-          'fill-opacity': 0.18,
+          'fill-color': '#2EA6D6',
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0, 8, 0.18],
         }
       });
 
@@ -171,11 +175,12 @@ export function ExplorationMap({ data, className = '', coreThreshold = 10, showC
         id: LAYER_OUTLINE,
         type: 'line',
         source: SOURCE_ID,
+        minzoom: 7,
         filter: ['>=', ['get', 'activity_count'], coreThreshold],
         paint: {
-          'line-color': '#E8832A',
+          'line-color': '#2EA6D6',
           'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.4, 10, 0.9, 13, 1.4],
-          'line-opacity': 0.5,
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0, 8, 0.5],
         }
       });
 
@@ -259,7 +264,7 @@ export function ExplorationMap({ data, className = '', coreThreshold = 10, showC
           <div className="bg-charcoal/95 border border-steel/30 rounded-lg p-3 shadow-card min-w-[170px]">
             <div className="flex items-center justify-between mb-2 pb-2 border-b border-steel/20">
               <span className="hw-text-label text-steel/85">Zone</span>
-              <span className="font-mono text-sm font-bold tabular-nums" style={{ color: tooltip.count >= 10 ? '#E8832A' : '#3DB2E0' }}>
+              <span className="font-mono text-sm font-bold tabular-nums" style={{ color: '#2EA6D6' }}>
                 {tooltip.count} passage{tooltip.count > 1 ? 's' : ''}
               </span>
             </div>
