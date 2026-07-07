@@ -1,7 +1,6 @@
 import { useRef, useMemo, useState, useCallback } from "react";
 import type { Activity, ActivityStream } from "@/types";
 import { sportColor, isBikeType } from '@/services/utils/constants';
-import { computeYTicks } from '@/services/utils/chartHelpers';
 import { formatPaceSeconds } from '@/services/utils/formatters';
 
 interface PaceProfileChartProps {
@@ -46,10 +45,9 @@ export function PaceProfileChart({ activity, streams }: PaceProfileChartProps) {
       const diff = Math.abs(p.distance - targetDist);
       if (diff < minDiff) { minDiff = diff; closest = p; }
     }
-    const value = isBike ? closest.speedKmh : closest.paceSeconds;
     const x = MARGIN.left + (closest.distance / totalDist) * CHART_W;
-    setHover({ x, dist: closest.distance, value });
-  }, [paceProfile, isBike]);
+    setHover({ x, dist: closest.distance, value: closest.speedKmh });
+  }, [paceProfile]);
 
   if (!paceProfile || paceProfile.length < 2) {
     return (
@@ -60,32 +58,39 @@ export function PaceProfileChart({ activity, streams }: PaceProfileChartProps) {
     );
   }
 
-  const values = isBike ? paceProfile.map(p => p.speedKmh) : paceProfile.map(p => p.paceSeconds);
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
-  const range = maxValue - minValue || 1;
+  // Échelle toujours basée sur la vitesse (km/h), min fixé à 0 — même logique
+  // que le graphique "Allure moyenne par semaine" du dashboard (DashboardChartsSection).
+  // Une allure (min/km) n'est pas linéaire par rapport à la vitesse : zoomer sur le
+  // min/max d'allure de l'activité (ancien comportement) déformait l'échelle.
+  const speedValues = paceProfile.map(p => p.speedKmh);
+  const maxSpeed = Math.ceil(Math.max(...speedValues)) || 12;
   const totalDistance = paceProfile[paceProfile.length - 1].distance;
 
   const avgPace = activity.speed_minutes_per_km_hms || "--";
   const avgSpeed = activity.average_speed?.toFixed(1) || "--";
 
-  const yTicks = computeYTicks(minValue, maxValue, 4);
+  const yTicks = [maxSpeed / 2, maxSpeed];
   const xTickCount = Math.min(5, Math.floor(totalDistance) + 1);
   const xTickStep = totalDistance / Math.max(xTickCount - 1, 1);
   const xTicks = Array.from({ length: xTickCount }, (_, i) => parseFloat((i * xTickStep).toFixed(1)));
 
   const toX = (dist: number) => MARGIN.left + (dist / totalDistance) * CHART_W;
-  const toY = (val: number) => {
-    const normalized = isBike ? (val - minValue) / range : (maxValue - val) / range;
+  const toY = (speedKmh: number) => {
+    const normalized = Math.max(0, Math.min(1, speedKmh / maxSpeed));
     return MARGIN.top + CHART_H - normalized * CHART_H;
   };
+  const speedToPaceLabel = (kmh: number) => {
+    if (kmh <= 0) return '--';
+    const paceSecPerKm = 3600 / kmh;
+    return formatPaceSeconds(paceSecPerKm);
+  };
 
-  const pathData = paceProfile.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.distance).toFixed(1)} ${toY(isBike ? p.speedKmh : p.paceSeconds).toFixed(1)}`).join(" ");
+  const pathData = paceProfile.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.distance).toFixed(1)} ${toY(p.speedKmh).toFixed(1)}`).join(" ");
   const lastX = toX(paceProfile[paceProfile.length - 1].distance);
   const areaData = pathData + ` L ${lastX.toFixed(1)} ${(MARGIN.top + CHART_H).toFixed(1)} L ${MARGIN.left} ${(MARGIN.top + CHART_H).toFixed(1)} Z`;
 
   const hoverY = hover ? toY(hover.value) : null;
-  const hoverLabel = hover ? (isBike ? `${hover.value.toFixed(1)} km/h` : `${formatPaceSeconds(hover.value)} /km`) : null;
+  const hoverLabel = hover ? (isBike ? `${hover.value.toFixed(1)} km/h` : `${speedToPaceLabel(hover.value)} /km`) : null;
 
   return (
     <div>
@@ -118,17 +123,14 @@ export function PaceProfileChart({ activity, streams }: PaceProfileChartProps) {
           </clipPath>
         </defs>
 
-        {yTicks.map((tick, i) => {
+        {yTicks.map((tick) => {
           const y = toY(tick);
-          const isEdge = isBike ? i === 0 : i === yTicks.length - 1;
           return (
             <g key={tick}>
               <line x1={MARGIN.left} y1={y} x2={MARGIN.left + CHART_W} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-              {!isEdge && (
-                <text x={MARGIN.left - 4} y={y} textAnchor="end" dominantBaseline="middle" fill="#3A3F47" fontSize="8" fontFamily="'JetBrains Mono', monospace">
-                  {isBike ? `${tick.toFixed(0)}` : formatPaceSeconds(tick)}
-                </text>
-              )}
+              <text x={MARGIN.left - 4} y={y} textAnchor="end" dominantBaseline="middle" fill="#3A3F47" fontSize="8" fontFamily="'JetBrains Mono', monospace">
+                {isBike ? `${tick.toFixed(0)}` : speedToPaceLabel(tick)}
+              </text>
             </g>
           );
         })}
