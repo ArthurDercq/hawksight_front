@@ -70,6 +70,7 @@ export interface Activity {
   average_cadence?: number;
   speed_minutes_per_km_hms?: string;
   average_speed?: number;
+  average_watts?: number;
   has_heartrate?: boolean;
   race?: { id: string; name: string; type: string } | null;
   trail_stats?: TrailStats | null;

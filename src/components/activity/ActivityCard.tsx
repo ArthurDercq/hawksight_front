@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Activity } from '@/types';
 import { sportBarColor, SPORT_COLORS, isBikeType } from '@/services/utils/constants';
+import { formatNumber } from '@/services/utils/formatters';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -13,6 +14,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
   const barColor = sportBarColor(activity.sport_type);
   const isBike = isBikeType(activity.sport_type);
   const isWeightTraining = activity.sport_type === 'WeightTraining';
+  const showPower = isBike && !!activity.average_watts;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -50,7 +52,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2.5 mb-3">
+      <div className={`grid ${showPower ? 'grid-cols-5' : 'grid-cols-4'} gap-2.5 mb-3`}>
         {!isWeightTraining && (
           <div>
             <p className="hw-text-label text-mist/30 mb-0.5">Distance</p>
@@ -70,7 +72,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
           <div>
             <p className="hw-text-label text-mist/30 mb-0.5">D+</p>
             <p className="text-sm font-bold font-mono tabular-nums text-glacier">
-              {Math.round(activity.total_elevation_gain)}
+              {formatNumber(activity.total_elevation_gain)}
               <span className="hw-text-label text-glacier/50 ml-0.5">m</span>
             </p>
           </div>
@@ -81,6 +83,15 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             <p className="text-sm font-bold font-mono tabular-nums text-moss">
               {isBike ? `${activity.average_speed?.toFixed(1) || '--'}` : activity.speed_minutes_per_km_hms}
               <span className="hw-text-label text-moss/50 ml-0.5">{isBike ? 'km/h' : '/km'}</span>
+            </p>
+          </div>
+        )}
+        {showPower && (
+          <div>
+            <p className="hw-text-label text-mist/30 mb-0.5">Puissance</p>
+            <p className="text-sm font-bold font-mono tabular-nums text-glacier">
+              {Math.round(activity.average_watts!)}
+              <span className="hw-text-label text-glacier/50 ml-0.5">W</span>
             </p>
           </div>
         )}
