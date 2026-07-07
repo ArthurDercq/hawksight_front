@@ -24,6 +24,7 @@ export interface UserProfile {
   country?: string;
   activities_count?: number;
   features_count?: number;
+  max_hr?: number | null;
 }
 
 export interface StravaSyncStatus {

@@ -5,9 +5,9 @@ import { sportColor } from '@/services/utils/constants';
 interface HRZonesChartProps {
   activity: Activity;
   streams: ActivityStream[];
+  maxHr?: number | null;
 }
 
-const FC_MAX_KEY = 'hawksight:fc_max';
 const DEFAULT_FC_MAX = 190;
 
 const ZONE_DEFS = [
@@ -29,14 +29,10 @@ const formatTime = (seconds: number) => {
   return `${m}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;
 };
 
-export function HRZonesChart({ activity, streams }: HRZonesChartProps) {
+export function HRZonesChart({ activity, streams, maxHr }: HRZonesChartProps) {
   const color = sportColor(activity.sport_type);
 
-  const fcMax = useMemo(() => {
-    const stored = localStorage.getItem(FC_MAX_KEY);
-    const parsed = stored ? parseInt(stored) : NaN;
-    return !isNaN(parsed) && parsed > 0 ? parsed : DEFAULT_FC_MAX;
-  }, []);
+  const fcMax = maxHr && maxHr > 0 ? maxHr : DEFAULT_FC_MAX;
 
   const HR_ZONES = useMemo(() => getHRZones(fcMax), [fcMax]);
 
