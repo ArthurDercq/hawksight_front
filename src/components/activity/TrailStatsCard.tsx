@@ -60,17 +60,10 @@ export function TrailStatsCard({ trailStats: t, sportColor }: Props) {
       />
 
       {/* Header */}
-      <div className="flex items-center gap-3 pb-3.5 border-b border-steel/25">
-        <div className="p-2 rounded-lg shrink-0" style={{ background: `${sportColor}1A`, border: `1px solid ${sportColor}4D`, color: sportColor }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 3L4 15l8-4 8 4-4-12" /><line x1="12" y1="11" x2="12" y2="21" />
-          </svg>
-        </div>
-        <div>
-          <div className="text-sm font-semibold text-mist">Analyse Trail</div>
-          <div className="hw-text-caption text-steel mt-0.5">
-            GAP {t.avg_gap_pace_formatted} · {t.avg_gap_kmh.toFixed(1)} km/h
-          </div>
+      <div className="pb-3.5 border-b border-steel/25">
+        <div className="text-sm font-semibold text-mist">Analyse Trail</div>
+        <div className="hw-text-caption text-steel mt-0.5">
+          GAP {t.avg_gap_pace_formatted} · {t.avg_gap_kmh.toFixed(1)} km/h
         </div>
       </div>
 
