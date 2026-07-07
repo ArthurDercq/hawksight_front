@@ -2,8 +2,10 @@ import { useParams, Link } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react';
 import { useActivityDetail } from '@/hooks';
 import { useActivities } from '@/hooks';
+import { useProfile } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
 import { ActivityPoster, ActivityModal, TrailStatsCard } from '@/components/activity';
+import type { ActivityMapHandle } from '@/components/maps/ActivityMap';
 import {
   HRZonesChart,
   PaceProfileChart,
@@ -107,7 +109,9 @@ export function ActivityDetailPage() {
   const activityId = id ? parseInt(id, 10) : null;
   const { activity, streams, explorationRate, trailStats, race, records, isLoading, error, refetch } = useActivityDetail(activityId);
   const { updateActivity } = useActivities();
+  const { profile } = useProfile();
   const posterRef = useRef<HTMLDivElement>(null);
+  const mapHandleRef = useRef<ActivityMapHandle>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [events, setEvents] = useState<TrainingEvent[]>([]);
   const [showEventPicker, setShowEventPicker] = useState(false);
@@ -119,6 +123,21 @@ export function ActivityDetailPage() {
 
   const handleExportPNG = async () => {
     if (!posterRef.current || !activity) return;
+
+    // html2canvas ne sait pas lire un canvas WebGL (Mapbox GL) — on le remplace
+    // temporairement par un <img> de son état actuel juste le temps de la capture.
+    const mapDataUrl = mapHandleRef.current?.getCanvasDataURL();
+    const mapCanvasEl = posterRef.current.querySelector('canvas.mapboxgl-canvas') as HTMLCanvasElement | null;
+    let snapshotImg: HTMLImageElement | null = null;
+
+    if (mapDataUrl && mapCanvasEl) {
+      snapshotImg = document.createElement('img');
+      snapshotImg.src = mapDataUrl;
+      snapshotImg.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover;';
+      mapCanvasEl.style.visibility = 'hidden';
+      mapCanvasEl.parentElement?.appendChild(snapshotImg);
+    }
+
     try {
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(posterRef.current, { backgroundColor: '#0B0C10', scale: 3 });
@@ -132,7 +151,12 @@ export function ActivityDetailPage() {
           URL.revokeObjectURL(url);
         }
       });
-    } catch (err) { console.error('Error exporting PNG:', err); }
+    } catch (err) {
+      console.error('Error exporting PNG:', err);
+    } finally {
+      snapshotImg?.remove();
+      if (mapCanvasEl) mapCanvasEl.style.visibility = '';
+    }
   };
 
   const handleLinkEvent = async (eventId: string) => {
@@ -267,6 +291,7 @@ export function ActivityDetailPage() {
             activity={activity}
             streams={streams}
             posterRef={posterRef}
+            mapHandleRef={mapHandleRef}
             explorationRate={explorationRate}
             onExportPNG={handleExportPNG}
             race={linkedEvent}
@@ -279,7 +304,7 @@ export function ActivityDetailPage() {
                 <ExplorationCard explorationRate={explorationRate} sportColor={activitySportColor} />
               )}
               <div className={chartCard}>
-                <HRZonesChart activity={activity} streams={streams} />
+                <HRZonesChart activity={activity} streams={streams} maxHr={profile?.max_hr} />
               </div>
             </div>
           )}
@@ -332,7 +357,7 @@ export function ActivityDetailPage() {
           <div className={chartCard}>
             <span className="hw-br hw-br-tl hw-br-glacier" />
             <span className="hw-br hw-br-br hw-br-glacier-dim" />
-            <HRZonesChart activity={activity} streams={streams} />
+            <HRZonesChart activity={activity} streams={streams} maxHr={profile?.max_hr} />
           </div>
           {trail && explorationRate && (
             <ExplorationCard explorationRate={explorationRate} sportColor={activitySportColor} />

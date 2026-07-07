@@ -1,9 +1,10 @@
-import { useMemo, useState, RefObject } from "react";
+import { useMemo, useRef, RefObject, Ref } from "react";
 import type { Activity, ActivityStream, ActivityExplorationRate } from "@/types";
-import { buildStaticMapUrl } from "@/services/mapbox/staticMap";
+import { ActivityMap, type ActivityMapHandle } from "@/components/maps/ActivityMap";
+import { ENV } from "@/config/env";
 import { sportColor, isBikeType } from "@/services/utils/constants";
 import { projectCoordsToSVG, createSmoothPath } from "@/services/utils/chartHelpers";
-import { formatDurationCompact } from "@/services/utils/formatters";
+import { formatDurationCompact, formatNumber } from "@/services/utils/formatters";
 
 const DownloadIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -18,6 +19,7 @@ interface ActivityPosterProps {
   activity: Activity;
   streams: ActivityStream[];
   posterRef?: RefObject<HTMLDivElement>;
+  mapHandleRef?: Ref<ActivityMapHandle>;
   explorationRate?: ActivityExplorationRate | null;
   onExportPNG?: () => void;
 }
@@ -38,9 +40,10 @@ function PstatUnit({ children }: { children: React.ReactNode }) {
   return <span className="font-mono text-[11px] text-mist/40 ml-0.5">{children}</span>;
 }
 
-export function ActivityPoster({ activity, streams, posterRef, explorationRate, onExportPNG }: ActivityPosterProps) {
+export function ActivityPoster({ activity, streams, posterRef, mapHandleRef, explorationRate, onExportPNG }: ActivityPosterProps) {
   const color = sportColor(activity.sport_type);
-  const [mapImageError, setMapImageError] = useState(false);
+  const internalMapHandleRef = useRef<ActivityMapHandle>(null);
+  const resolvedMapHandleRef = mapHandleRef ?? internalMapHandleRef;
 
   const gpsCoords = useMemo(() =>
     streams.filter(s => s.lat != null && s.lon != null).map(s => ({ lat: s.lat!, lon: s.lon! })),
@@ -50,18 +53,7 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
   const { points } = useMemo(() => projectCoordsToSVG(gpsCoords), [gpsCoords]);
   const path = useMemo(() => createSmoothPath(points), [points]);
 
-  const mapboxUrl = useMemo(() => {
-    if (gpsCoords.length < 2) return null;
-    return buildStaticMapUrl({
-      coordinates: gpsCoords.map(c => [c.lat, c.lon] as [number, number]),
-      color,
-      width: 800,
-      height: 500,
-      strokeWidth: 1.5,
-    });
-  }, [gpsCoords, color]);
-
-  const useMapbox = mapboxUrl && !mapImageError;
+  const useMapbox = !!ENV.MAPBOX_ACCESS_TOKEN && gpsCoords.length >= 2;
   const hasGPSData = points.length > 0;
 
   const distance = activity.distance_km || activity.distance || 0;
@@ -90,11 +82,11 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
         <div className="absolute inset-0 pointer-events-none z-[1]" style={{ background: 'linear-gradient(to bottom, transparent 60%, #060c18 100%)' }} />
 
         {useMapbox ? (
-          <img
-            src={mapboxUrl}
-            alt="Trace GPS"
-            className="w-full h-full object-cover block"
-            onError={() => setMapImageError(true)}
+          <ActivityMap
+            ref={resolvedMapHandleRef}
+            streams={streams}
+            color={color}
+            className="w-full h-full"
           />
         ) : hasGPSData ? (
           <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -135,7 +127,7 @@ export function ActivityPoster({ activity, streams, posterRef, explorationRate, 
           </div>
           <div>
             <PstatLabel>D+</PstatLabel>
-            <PstatValue color="#3DB2E0">{Math.round(elevation)}<PstatUnit>m</PstatUnit></PstatValue>
+            <PstatValue color="#3DB2E0">{formatNumber(elevation)}<PstatUnit>m</PstatUnit></PstatValue>
           </div>
           <div>
             <PstatLabel>{paceLabel}</PstatLabel>
