@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { dashboardApi, type ChartData } from '@/services/api';
 import { explorationApi, type ExplorationRateItem } from '@/services/api/exploration';
 import { cache } from '@/services/cache';
+import { formatNumber } from '@/services/utils/formatters';
 
 const CHART_TTL = 5 * 60 * 1000; // 5 min
 
@@ -248,7 +249,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
     const distances = weekData.map(d => d.distance || 0);
     const elevations = weekData.map(d => d.total_elevation_gain || 0);
     setWeeklyDistanceAverage(`${(distances.reduce((s, d) => s + d, 0) / (distances.length || 1)).toFixed(1)} km/sem`);
-    setWeeklyElevationAverage(`${Math.round(elevations.reduce((s, e) => s + e, 0) / (elevations.length || 1))} m D+/sem`);
+    setWeeklyElevationAverage(`${formatNumber(elevations.reduce((s, e) => s + e, 0) / (elevations.length || 1))} m D+/sem`);
     setWeeklyDistanceData({ labels, datasets: [{ label: 'Distance', data: distances }, { label: 'D+', data: elevations }] });
   }, [globalOffset]);
 
@@ -280,7 +281,7 @@ export function useDashboardCharts(): UseDashboardChartsReturn {
     });
     const newCells = weekData.map(d => d.new_cells);
     const avg = newCells.reduce((s, v) => s + v, 0) / (newCells.length || 1);
-    setConqueteAverage(`${Math.round(avg)} territoires/sem`);
+    setConqueteAverage(`${formatNumber(avg)} territoires/sem`);
     setConqueteData({ labels, datasets: [{ label: 'Nouveaux territoires', data: newCells }] });
   }, [globalOffset]);
 

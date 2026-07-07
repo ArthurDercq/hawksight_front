@@ -461,7 +461,15 @@ sportColor('Trail')      // '#E8832A'
 sportBarColor('Trail')   // '#C96A1A'
 SPORT_META['Trail'].bg   // 'rgba(232,131,42,0.12)'
 
-import { formatDateLong, formatDateShort, formatPaceSeconds, formatDurationCompact } from '@/services/utils/formatters';
+import { formatDateLong, formatDateShort, formatPaceSeconds, formatDurationCompact, formatNumber } from '@/services/utils/formatters';
+```
+
+**Convention nombres** : tout nombre potentiellement ≥ 1000 affiché à l'écran (D+, distances/surfaces, compteurs KPI/territoires) doit passer par `formatNumber(n, decimals?)` — jamais `toLocaleString`, `Intl.NumberFormat` ou une implémentation locale. Il garantit un espace ASCII normal comme séparateur de milliers (`Intl.NumberFormat('fr-FR')` seul renvoie une espace fine insécable selon l'environnement) et gère `null`/`undefined` (→ `"—"`).
+
+```ts
+formatNumber(12345)      // "12 345"
+formatNumber(3.14159, 1) // "3,1"
+formatNumber(null)       // "—"
 
 import { computeYTicks, projectCoordsToSVG, createSmoothPath } from '@/services/utils/chartHelpers';
 

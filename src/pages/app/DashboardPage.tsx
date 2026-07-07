@@ -10,6 +10,7 @@ import { DashboardMap } from '@/components/maps';
 import { trailApi, kpiApi } from '@/services/api';
 import type { TrailProfile, TrailRecord } from '@/types';
 import { sportBarColor, isBikeType } from '@/services/utils/constants';
+import { formatNumber } from '@/services/utils/formatters';
 
 const DashboardChartsSection = lazy(() =>
   import('./DashboardChartsSection').then(m => ({ default: m.DashboardChartsSection }))
@@ -256,13 +257,13 @@ export function DashboardPage() {
               <div className="flex gap-[18px] mb-3.5">
                 {nextEvent.distance_km && (
                   <div>
-                    <p className="font-mono text-2xl font-bold text-glacier tabular-nums leading-none">{nextEvent.distance_km}</p>
+                    <p className="font-mono text-2xl font-bold text-glacier tabular-nums leading-none">{formatNumber(nextEvent.distance_km)}</p>
                     <p className="hw-text-label mt-0.5">km</p>
                   </div>
                 )}
                 {nextEvent.elevation_m && (
                   <div>
-                    <p className="font-mono text-2xl font-bold text-glacier tabular-nums leading-none">{nextEvent.elevation_m.toLocaleString('fr-FR')}</p>
+                    <p className="font-mono text-2xl font-bold text-glacier tabular-nums leading-none">{formatNumber(nextEvent.elevation_m)}</p>
                     <p className="hw-text-label mt-0.5">m D+</p>
                   </div>
                 )}
@@ -325,7 +326,7 @@ export function DashboardPage() {
                 <div className="min-w-0 flex-1">
                   <p className="hw-text-label text-amber/70 tracking-[2px] mb-0.5">
                     Dernière activité · {lastActivity.type}
-                    {lastActivity.denivele_m ? ` · +${lastActivity.denivele_m}m D+` : ''}
+                    {lastActivity.denivele_m ? ` · +${formatNumber(lastActivity.denivele_m)}m D+` : ''}
                   </p>
                   <p className="hw-text-value font-semibold text-mist truncate">{lastActivity.name}</p>
                   <p className="hw-text-caption">{formatActivityDate(lastActivity.date)}</p>
@@ -502,9 +503,4 @@ function formatTime(seconds: number): string {
     return `${hours}h${minutes > 0 ? minutes.toString().padStart(2, '0') : ''}`;
   }
   return `${minutes} min`;
-}
-
-const _numFmt = new Intl.NumberFormat('fr-FR');
-function formatNumber(n: number): string {
-  return _numFmt.format(Math.round(n));
 }

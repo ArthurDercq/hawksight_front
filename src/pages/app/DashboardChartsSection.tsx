@@ -15,6 +15,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { CHART_SPORT_COLORS } from '@/services/utils/constants';
+import { formatNumber } from '@/services/utils/formatters';
 import type { ChartDataset } from '@/services/api';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend, Filler);
@@ -258,7 +259,7 @@ export function DashboardChartsSection({
                     borderColor: '#3DB2E0',
                     backgroundColor: 'rgba(61,178,224,0.08)',
                     fill: true,
-                    tension: 0.4,
+                    tension: 0,
                     pointRadius: 3,
                     pointBackgroundColor: '#3DB2E0',
                   })),
@@ -303,7 +304,7 @@ export function DashboardChartsSection({
                   scales: {
                     x: { grid: { display: false }, ticks: { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } } },
                     y: { position: 'left' as const, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' }, callback: (v: number | string) => `${Number(v).toFixed(0)}` } },
-                    y1: { position: 'right' as const, grid: { display: false }, ticks: { color: 'rgba(196,86,26,0.5)', font: { size: 10, family: 'JetBrains Mono' }, callback: (v: number | string) => `${Number(v).toFixed(0)}m` } },
+                    y1: { position: 'right' as const, grid: { display: false }, ticks: { color: 'rgba(196,86,26,0.5)', font: { size: 10, family: 'JetBrains Mono' }, callback: (v: number | string) => `${formatNumber(Number(v))}m` } },
                   },
                   plugins: {
                     legend: { display: false },
@@ -323,7 +324,7 @@ export function DashboardChartsSection({
                         title: (items) => items[0]?.label ?? '',
                         label: (ctx) => {
                           if (ctx.datasetIndex === 0) return `  Distance : ${Number(ctx.raw).toFixed(1)} km`;
-                          if (ctx.datasetIndex === 1) return `  D+        : ${Math.round(Number(ctx.raw))} m`;
+                          if (ctx.datasetIndex === 1) return `  D+        : ${formatNumber(Number(ctx.raw))} m`;
                           return '';
                         },
                         labelColor: (ctx) => ({

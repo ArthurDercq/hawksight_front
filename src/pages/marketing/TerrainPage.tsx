@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuth } from '@/context';
+import { formatNumber } from '@/services/utils/formatters';
 
 const ArrowRightIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -159,7 +160,7 @@ function AnimatedCounter({ target, suffix = '', decimals = 0 }: { target: number
     return () => obs.disconnect();
   }, [target]);
 
-  const display = decimals > 0 ? value.toFixed(decimals) : Math.floor(value).toLocaleString('fr-FR');
+  const display = formatNumber(value, decimals);
   return <span ref={ref}>{display}{suffix}</span>;
 }
 

@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { ENV } from '@/config/env';
 import { explorationApi } from '@/services/api';
 import type { ExplorationGeoJSON, ExplorationStats } from '@/types';
+import { formatNumber } from '@/services/utils/formatters';
 
 const SOURCE_ID = 'dash-cells';
 const LAYER_FILL = 'dash-fill';
@@ -186,11 +187,11 @@ export function DashboardMap({ className = '', style, explorationStats }: Dashbo
         {explorationStats ? (
           <>
             <div>
-              <p className="hw-stat-value-lg">{explorationStats.total_cells}</p>
+              <p className="hw-stat-value-lg">{formatNumber(explorationStats.total_cells)}</p>
               <p className="hw-text-label mt-px">territoires</p>
             </div>
             <div>
-              <p className="hw-stat-value-lg">{Math.round(explorationStats.surface_km2)} km²</p>
+              <p className="hw-stat-value-lg">{formatNumber(explorationStats.surface_km2)} km²</p>
               <p className="hw-text-label mt-px">surface</p>
             </div>
             <div>

@@ -113,8 +113,16 @@ export function formatDurationCompact(seconds: number): string {
 const _numberFmt = new Intl.NumberFormat('fr-FR');
 
 /**
- * Formate un nombre avec séparateur de milliers — ex: 12 345
+ * Formate un nombre avec séparateur de milliers — ex: "12 345".
+ * Utilise toujours un espace ASCII normal (Intl renvoie une espace fine
+ * insécable selon l'environnement) — convention imposée dans toute l'app.
+ * `decimals` permet d'afficher des décimales (ex: formatNumber(3.14, 1) → "3,1").
+ * `n` peut être null/undefined — renvoie "—" dans ce cas.
  */
-export function formatNumber(n: number): string {
-  return _numberFmt.format(Math.round(n));
+export function formatNumber(n: number | null | undefined, decimals = 0): string {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—';
+  const rounded = decimals > 0 ? parseFloat(n.toFixed(decimals)) : Math.round(n);
+  return _numberFmt
+    .format(rounded)
+    .replace(/[  ]/g, ' ');
 }

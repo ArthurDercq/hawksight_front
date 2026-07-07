@@ -5,6 +5,7 @@ import { kpiApi } from '@/services/api';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import type { TrailRecord } from '@/types';
 import { sportBarColor } from '@/services/utils/constants';
+import { formatNumber } from '@/services/utils/formatters';
 
 const ActivityGridPosters = lazy(() =>
   import('@/components/activity/ActivityGridPosters').then(m => ({ default: m.ActivityGridPosters }))
@@ -116,11 +117,6 @@ const TRAIL_RECORD_CONFIG: { key: string; label: string; group: string }[] = [
   { key: 'best_dplus_ratio',   label: 'Meilleur ratio D+/km',group: 'Stats' },
   { key: 'best_week_dplus',    label: 'Meilleure semaine D+',group: 'Stats' },
 ];
-
-const formatNumber = (num: number): string => {
-  const rounded = Math.ceil(num);
-  return new Intl.NumberFormat('fr-FR').format(rounded).replace(/\s/g, '.');
-};
 
 export function KPIPage() {
   const { kpis, records, selectedYear, setSelectedYear, isLoading, error, refetch } = useKPI();

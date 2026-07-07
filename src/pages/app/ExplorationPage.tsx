@@ -5,6 +5,7 @@ import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Spinner } from '@/components/ui/Spinner';
 import { explorationApi, type ExplorationRateItem } from '@/services/api/exploration';
 import type { ExplorationStats, SportFilter, TerritoryLargest } from '@/types';
+import { formatNumber } from '@/services/utils/formatters';
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const GlobeIcon = () => (
@@ -30,8 +31,7 @@ const HOTSPOT_PERIODS = [
   { value: '1y', label: '1 an' }, { value: 'all', label: 'Tout' },
 ];
 
-const fmt = (n: number | undefined | null, d = 0) =>
-  n == null ? '—' : new Intl.NumberFormat('fr-FR').format(d > 0 ? parseFloat(n.toFixed(d)) : Math.round(n));
+const fmt = (n: number | undefined | null, d = 0) => formatNumber(n, d);
 
 const fmtPct = (v: number | undefined | null) => v == null ? '—' : `${v.toFixed(1)} %`;
 

@@ -11,6 +11,7 @@ import { RunWalkScatter } from './RunWalkScatter';
 import { VAMComparisonChart } from './VAMComparisonChart';
 import { DecouplingChart } from './DecouplingChart';
 import { ForceProfileHeatmap } from './ForceProfileHeatmap';
+import { formatNumber } from '@/services/utils/formatters';
 
 // Icons
 const ChartBarIcon = ({ color }: { color: string }) => (
@@ -149,7 +150,7 @@ export function TrailAnalysisDashboard({ data, color = '#E8832A' }: TrailAnalysi
                 <MountainIcon color="#6B7280" />
                 <div>
                   <div className="text-mist font-mono text-lg">
-                    {Math.round(data.elevation_gain)}m
+                    {formatNumber(data.elevation_gain)}m
                   </div>
                   <div className="text-mist/40 font-body text-xs">D+</div>
                 </div>

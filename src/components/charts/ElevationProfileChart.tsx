@@ -2,6 +2,7 @@ import { useRef, useMemo, useState, useCallback } from "react";
 import type { ActivityStream, SportType } from "@/types";
 import { sportColor } from '@/services/utils/constants';
 import { computeYTicks } from '@/services/utils/chartHelpers';
+import { formatNumber } from '@/services/utils/formatters';
 
 interface ElevationProfileChartProps {
   streams: ActivityStream[];
@@ -76,8 +77,8 @@ export function ElevationProfileChart({ streams, sportType, totalElevationGain }
   const pathData = elevationData.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.distance).toFixed(1)} ${toY(p.altitude).toFixed(1)}`).join(" ");
   const areaData = pathData + ` L ${toX(totalDistance).toFixed(1)} ${(MARGIN.top + CHART_H).toFixed(1)} L ${MARGIN.left} ${(MARGIN.top + CHART_H).toFixed(1)} Z`;
 
-  const dPlus = totalElevationGain ? Math.round(totalElevationGain) : '--';
-  const altMax = Math.round(maxAlt);
+  const dPlus = totalElevationGain ? formatNumber(totalElevationGain) : '--';
+  const altMax = formatNumber(maxAlt);
 
   return (
     <div>
