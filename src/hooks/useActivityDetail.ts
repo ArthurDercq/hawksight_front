@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { activitiesApi, explorationApi } from '@/services/api';
 import { cache } from '@/services/cache';
-import type { Activity, ActivityStream, ActivityExplorationRate, TrailStats, ActivityRecord, ActivityDetail } from '@/types';
+import type { Activity, ActivityStream, ActivityExplorationRate, TrailStats, SurfaceClassification, ActivityRecord, ActivityDetail } from '@/types';
 
 const detailCacheKey = (id: number) => `activity-detail-${id}`;
 
@@ -15,6 +15,7 @@ interface UseActivityDetailReturn {
   streams: ActivityStream[];
   explorationRate: ActivityExplorationRate | null;
   trailStats: TrailStats | null;
+  surfaceClassification: SurfaceClassification | null;
   race: { id: string; name: string; type: string } | null;
   records: ActivityRecord[];
   isLoading: boolean;
@@ -27,6 +28,7 @@ function applyDetail(
   setActivity: (v: Activity | null) => void,
   setStreams: (v: ActivityStream[]) => void,
   setTrailStats: (v: TrailStats | null) => void,
+  setSurfaceClassification: (v: SurfaceClassification | null) => void,
   setRace: (v: { id: string; name: string; type: string } | null) => void,
   setRecords: (v: ActivityRecord[]) => void,
   setExplorationRate: (v: ActivityExplorationRate | null) => void,
@@ -35,6 +37,7 @@ function applyDetail(
   setActivity(detail.activity);
   setStreams(detail.streams || []);
   setTrailStats(detail.trail_stats ?? null);
+  setSurfaceClassification(detail.surface_classification ?? null);
   setRace(detail.race ?? null);
   setRecords(detail.records ?? []);
   setExplorationRate(explorationRate);
@@ -56,6 +59,10 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
   const [trailStats, setTrailStats] = useState<TrailStats | null>(() => {
     if (!activityId) return null;
     return cache.get<CachedDetail>(detailCacheKey(activityId))?.detail.trail_stats ?? null;
+  });
+  const [surfaceClassification, setSurfaceClassification] = useState<SurfaceClassification | null>(() => {
+    if (!activityId) return null;
+    return cache.get<CachedDetail>(detailCacheKey(activityId))?.detail.surface_classification ?? null;
   });
   const [race, setRace] = useState<{ id: string; name: string; type: string } | null>(() => {
     if (!activityId) return null;
@@ -89,10 +96,10 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
           return { detail, explorationRate: expRate };
         },
         {
-          onBackground: (fresh) => applyDetail(fresh, setActivity, setStreams, setTrailStats, setRace, setRecords, setExplorationRate),
+          onBackground: (fresh) => applyDetail(fresh, setActivity, setStreams, setTrailStats, setSurfaceClassification, setRace, setRecords, setExplorationRate),
         }
       );
-      applyDetail(data, setActivity, setStreams, setTrailStats, setRace, setRecords, setExplorationRate);
+      applyDetail(data, setActivity, setStreams, setTrailStats, setSurfaceClassification, setRace, setRecords, setExplorationRate);
     } catch (err) {
       console.error('Error fetching activity detail:', err);
       setError('Erreur lors du chargement des détails de l\'activité');
@@ -110,6 +117,7 @@ export function useActivityDetail(activityId: number | null): UseActivityDetailR
     streams,
     explorationRate,
     trailStats,
+    surfaceClassification,
     race,
     records,
     isLoading,

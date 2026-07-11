@@ -55,6 +55,13 @@ export interface TrailStats {
   };
 }
 
+export interface SurfaceClassification {
+  trail_km: number;
+  road_km: number;
+  unknown_km: number;
+  trail_ratio: number;
+}
+
 export interface Activity {
   id: number;
   name: string;
@@ -74,6 +81,7 @@ export interface Activity {
   has_heartrate?: boolean;
   race?: { id: string; name: string; type: string } | null;
   trail_stats?: TrailStats | null;
+  surface_classification?: SurfaceClassification | null;
 }
 
 export interface ActivityStream {
@@ -114,6 +122,7 @@ export interface ActivityDetail {
   activity: Activity;
   streams: ActivityStream[];
   trail_stats?: TrailStats | null;
+  surface_classification?: SurfaceClassification | null;
   race?: { id: string; name: string; type: string } | null;
   records: ActivityRecord[];
 }

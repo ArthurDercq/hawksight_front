@@ -4,7 +4,7 @@ import { useActivityDetail } from '@/hooks';
 import { useActivities } from '@/hooks';
 import { useProfile } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
-import { ActivityPoster, ActivityModal, TrailStatsCard } from '@/components/activity';
+import { ActivityPoster, ActivityModal, TrailStatsCard, SurfaceBreakdownCard } from '@/components/activity';
 import type { ActivityMapHandle } from '@/components/maps/ActivityMap';
 import {
   HRZonesChart,
@@ -107,7 +107,7 @@ function BackLink() {
 export function ActivityDetailPage() {
   const { id } = useParams();
   const activityId = id ? parseInt(id, 10) : null;
-  const { activity, streams, explorationRate, trailStats, race, records, isLoading, error, refetch } = useActivityDetail(activityId);
+  const { activity, streams, explorationRate, trailStats, surfaceClassification, race, records, isLoading, error, refetch } = useActivityDetail(activityId);
   const { updateActivity } = useActivities();
   const { profile } = useProfile();
   const posterRef = useRef<HTMLDivElement>(null);
@@ -297,11 +297,19 @@ export function ActivityDetailPage() {
             race={linkedEvent}
           />
           {trail && trailStats ? (
-            <TrailStatsCard trailStats={trailStats} sportColor={activitySportColor} />
+            <div className="flex flex-col gap-4">
+              <TrailStatsCard trailStats={trailStats} sportColor={activitySportColor} />
+              {surfaceClassification && (
+                <SurfaceBreakdownCard surfaceClassification={surfaceClassification} sportColor={activitySportColor} />
+              )}
+            </div>
           ) : (
             <div className="flex flex-col gap-4">
               {explorationRate && (
                 <ExplorationCard explorationRate={explorationRate} sportColor={activitySportColor} />
+              )}
+              {surfaceClassification && (
+                <SurfaceBreakdownCard surfaceClassification={surfaceClassification} sportColor={activitySportColor} />
               )}
               <div className={chartCard}>
                 <HRZonesChart activity={activity} streams={streams} maxHr={profile?.max_hr} />
