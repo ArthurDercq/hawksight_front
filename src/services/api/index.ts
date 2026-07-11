@@ -8,3 +8,5 @@ export type { ChartData, ChartDataset } from './dashboard';
 export { explorationApi } from './exploration';
 export { eventsApi } from './events';
 export { trailApi } from './trail';
+export { importsApi } from './imports';
+export type { StravaExportDiffResult, StravaExportRunResult } from './imports';

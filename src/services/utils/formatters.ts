@@ -124,5 +124,5 @@ export function formatNumber(n: number | null | undefined, decimals = 0): string
   const rounded = decimals > 0 ? parseFloat(n.toFixed(decimals)) : Math.round(n);
   return _numberFmt
     .format(rounded)
-    .replace(/[  ]/g, ' ');
+    .replace(/[\u202f\xa0]/g, ' ');
 }

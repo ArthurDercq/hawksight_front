@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useActivities, usePermissions } from '@/hooks';
-import { ActivityCard, ActivityModal } from '@/components/activity';
+import { ActivityCard, ActivityModal, ImportActivitiesModal } from '@/components/activity';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { DemoBanner } from '@/components/ui/DemoBanner';
 import type { Activity, ActivityFormData } from '@/types';
@@ -11,6 +11,12 @@ const ITEMS_PER_PAGE = 10;
 const PlusIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+const UploadIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
   </svg>
 );
 const TrashIcon = () => (
@@ -57,6 +63,7 @@ export function ActivitiesPage() {
   const { isDemo, canWrite, canDelete } = usePermissions();
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Activity | null>(null);
   const [searchName, setSearchName] = useState('');
@@ -113,9 +120,14 @@ export function ActivitiesPage() {
           <SectionTitle icon={<ActivityIcon />} title="Mes activités" subtitle={hasData ? `${activities.length} activités au total` : undefined} />
         </div>
         {canWrite && (
-          <button onClick={handleCreate} className="hw-btn-amber">
-            <PlusIcon /> Nouvelle activité
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowImportModal(true)} className="hw-btn-amber">
+              <UploadIcon /> Importer des activités
+            </button>
+            <button onClick={handleCreate} className="hw-btn-amber">
+              <PlusIcon /> Nouvelle activité
+            </button>
+          </div>
         )}
       </div>
 
@@ -235,6 +247,10 @@ export function ActivitiesPage() {
           onClose={() => { setShowModal(false); setEditingActivity(null); }}
           onSave={handleSave}
         />
+      )}
+
+      {showImportModal && (
+        <ImportActivitiesModal onClose={() => setShowImportModal(false)} />
       )}
 
       {/* Delete confirmation modal — hors du conditionnel pour rester accessible */}
