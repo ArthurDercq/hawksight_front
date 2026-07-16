@@ -61,11 +61,9 @@ export const activitiesApi = {
     });
   },
 
-  async deleteActivity(id: number, deleteStreams: boolean = true): Promise<void> {
+  async deleteActivity(id: number): Promise<void> {
     return mutate(async () => {
-      await apiClient.delete(`/activities/activities/${id}`, {
-        params: { delete_streams: deleteStreams },
-      });
+      await apiClient.delete(`/activities/activities/${id}`);
     });
   },
 
