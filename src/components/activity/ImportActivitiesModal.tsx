@@ -18,7 +18,14 @@ const FolderIcon = ({ color = '#E8832A' }: { color?: string }) => (
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
   </svg>
 );
+const FileIcon = ({ color = '#3DB2E0' }: { color?: string }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+  </svg>
+);
 
+type Mode = 'export' | 'fit';
 type Step = 'pick' | 'diffing' | 'confirm' | 'uploading' | 'running' | 'done' | 'error';
 
 interface ImportActivitiesModalProps {
@@ -30,16 +37,20 @@ interface ImportActivitiesModalProps {
 type FileWithRelativePath = File & { webkitRelativePath?: string };
 
 export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
+  const [mode, setMode] = useState<Mode>('export');
   const [step, setStep] = useState<Step>('pick');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [newCount, setNewCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fitInputRef = useRef<HTMLInputElement>(null);
 
   const csvFileRef = useRef<File | null>(null);
   const allFilesRef = useRef<FileWithRelativePath[]>([]);
+  const fitFilesRef = useRef<File[]>([]);
 
   const { status } = useSyncStatus();
-  const isImportJob = status?.current_job?.type === 'import_strava_export';
+  const jobType = mode === 'fit' ? 'import_fit' : 'import_strava_export';
+  const isImportJob = status?.current_job?.type === jobType;
   const importProgress = isImportJob ? status?.current_job?.progress ?? 0 : 0;
   // Le backend expose une progression en % (0-100) — on la reconvertit ici
   // en compte brut x/newCount, plus lisible pour un import de quelques
@@ -73,6 +84,43 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
     } catch (err) {
       console.error('Erreur diff import Strava:', err);
       setErrorMessage("Impossible d'analyser le fichier activities.csv.");
+      setStep('error');
+    }
+  }, []);
+
+  const handleFitFilesSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = Array.from(e.target.files ?? []);
+    if (fileList.length === 0) return;
+
+    const invalid = fileList.filter((f) => !/\.fit(\.gz)?$/i.test(f.name));
+    if (invalid.length > 0) {
+      setErrorMessage(`Fichier(s) non supporté(s) : ${invalid.map((f) => f.name).join(', ')} — seuls les .fit/.fit.gz sont acceptés.`);
+      setStep('error');
+      return;
+    }
+
+    fitFilesRef.current = fileList;
+    setNewCount(fileList.length);
+    setErrorMessage(null);
+    setStep('confirm');
+  }, []);
+
+  const handleConfirmFitImport = useCallback(async () => {
+    const files = fitFilesRef.current;
+    if (files.length === 0) return;
+
+    setStep('running');
+    try {
+      const result = await importsApi.importFitFiles(files);
+      setNewCount(result.files_count);
+      if (!result.job_id) {
+        setStep('done');
+        window.dispatchEvent(new Event('activities-updated'));
+      }
+      // Sinon on reste en 'running' — le useSyncStatus polling détecte la fin ci-dessous.
+    } catch (err) {
+      console.error('Erreur import .fit:', err);
+      setErrorMessage("Échec de l'import — réessayez.");
       setStep('error');
     }
   }, []);
@@ -127,10 +175,17 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
   const reset = () => {
     csvFileRef.current = null;
     allFilesRef.current = [];
+    fitFilesRef.current = [];
     setStep('pick');
     setErrorMessage(null);
     setNewCount(0);
     if (inputRef.current) inputRef.current.value = '';
+    if (fitInputRef.current) fitInputRef.current.value = '';
+  };
+
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    reset();
   };
 
   // Import en cours : on empêche de fermer la modal (clic hors zone, Escape)
@@ -170,32 +225,80 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
 
         {step === 'pick' && (
           <div className="space-y-4">
-            <p className="hw-text-caption text-mist/60 leading-relaxed">
-              Sélectionnez le dossier d'export Strava complet (contenant <span className="text-mist/80">activities.csv</span> et le sous-dossier <span className="text-mist/80">activities/</span>).
-              Récupérable depuis Strava : Réglages → Mon compte → Télécharger ou supprimer votre compte → Exportation groupée.
-            </p>
-            <div
-              onClick={() => inputRef.current?.click()}
-              className="relative bg-charcoal border-2 border-dashed border-steel/50 rounded-lg p-8 cursor-pointer hover:border-steel hover:bg-steel/5 transition-all"
-            >
-              <div className="flex flex-col items-center gap-3">
-                <div className="p-3 bg-amber/10 border border-amber/30 rounded-lg">
-                  <FolderIcon />
-                </div>
-                <p className="hw-text-data text-mist">Cliquez pour sélectionner le dossier d'export</p>
-              </div>
-              <input
-                ref={inputRef}
-                type="file"
-                // webkitdirectory n'est pas dans les types React/DOM standards
-                {...{ webkitdirectory: 'true', directory: 'true' }}
-                onChange={handleFolderSelect}
-                className="hidden"
-              />
+            <div className="hw-btn-group">
+              <button
+                onClick={() => switchMode('export')}
+                className={`hw-btn-group-item flex-1 ${mode === 'export' ? 'bg-amber/10 text-amber' : ''}`}
+              >
+                Export Strava
+              </button>
+              <div className="hw-btn-group-divider" />
+              <button
+                onClick={() => switchMode('fit')}
+                className={`hw-btn-group-item flex-1 ${mode === 'fit' ? 'bg-amber/10 text-amber' : ''}`}
+              >
+                Fichiers .fit
+              </button>
             </div>
-            <p className="hw-text-caption text-steel/70 leading-relaxed">
-              Seules les activités absentes de votre compte HawkSight seront importées — les activités déjà synchronisées ne sont jamais retraitées.
-            </p>
+
+            {mode === 'export' ? (
+              <>
+                <p className="hw-text-caption text-mist/60 leading-relaxed">
+                  Sélectionnez le dossier d'export Strava complet (contenant <span className="text-mist/80">activities.csv</span> et le sous-dossier <span className="text-mist/80">activities/</span>).
+                  Récupérable depuis Strava : Réglages → Mon compte → Télécharger ou supprimer votre compte → Exportation groupée.
+                </p>
+                <div
+                  onClick={() => inputRef.current?.click()}
+                  className="relative bg-charcoal border-2 border-dashed border-steel/50 rounded-lg p-8 cursor-pointer hover:border-steel hover:bg-steel/5 transition-all"
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="p-3 bg-amber/10 border border-amber/30 rounded-lg">
+                      <FolderIcon />
+                    </div>
+                    <p className="hw-text-data text-mist">Cliquez pour sélectionner le dossier d'export</p>
+                  </div>
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    // webkitdirectory n'est pas dans les types React/DOM standards
+                    {...{ webkitdirectory: 'true', directory: 'true' }}
+                    onChange={handleFolderSelect}
+                    className="hidden"
+                  />
+                </div>
+                <p className="hw-text-caption text-steel/70 leading-relaxed">
+                  Seules les activités absentes de votre compte HawkSight seront importées — les activités déjà synchronisées ne sont jamais retraitées.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="hw-text-caption text-mist/60 leading-relaxed">
+                  Sélectionnez un ou plusieurs fichiers <span className="text-mist/80">.fit</span> (ou <span className="text-mist/80">.fit.gz</span>) exportés depuis votre montre ou une autre source — sans passer par l'export Strava.
+                </p>
+                <div
+                  onClick={() => fitInputRef.current?.click()}
+                  className="relative bg-charcoal border-2 border-dashed border-steel/50 rounded-lg p-8 cursor-pointer hover:border-steel hover:bg-steel/5 transition-all"
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="p-3 bg-glacier/10 border border-glacier/30 rounded-lg">
+                      <FileIcon />
+                    </div>
+                    <p className="hw-text-data text-mist">Cliquez pour sélectionner un ou plusieurs fichiers .fit</p>
+                  </div>
+                  <input
+                    ref={fitInputRef}
+                    type="file"
+                    accept=".fit,.fit.gz"
+                    multiple
+                    onChange={handleFitFilesSelect}
+                    className="hidden"
+                  />
+                </div>
+                <p className="hw-text-caption text-steel/70 leading-relaxed">
+                  Une activité déjà présente (même date ± 5 min et distance similaire) sera automatiquement ignorée.
+                </p>
+              </>
+            )}
           </div>
         )}
 
@@ -206,7 +309,7 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
           </div>
         )}
 
-        {step === 'confirm' && (
+        {step === 'confirm' && mode === 'export' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 px-3 py-2 bg-amber/10 border border-amber/30 rounded-lg">
               <span className="hw-text-data text-amber font-semibold">{newCount}</span>
@@ -219,6 +322,19 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
             <div className="flex gap-2 justify-end">
               <button onClick={reset} className="hw-btn-ghost">Annuler</button>
               <button onClick={handleConfirmImport} className="hw-btn-amber">Importer</button>
+            </div>
+          </div>
+        )}
+
+        {step === 'confirm' && mode === 'fit' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 px-3 py-2 bg-glacier/10 border border-glacier/30 rounded-lg">
+              <span className="hw-text-data text-glacier font-semibold">{newCount}</span>
+              <span className="hw-text-caption text-mist/60">fichier{newCount > 1 ? 's' : ''} .fit sélectionné{newCount > 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={reset} className="hw-btn-ghost">Annuler</button>
+              <button onClick={handleConfirmFitImport} className="hw-btn-amber">Importer</button>
             </div>
           </div>
         )}
@@ -238,7 +354,7 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
                   />
                 </div>
                 <span className="hw-text-caption text-mist/50 font-mono">
-                  {isImportJob ? `${processedCount} / ${newCount}` : `0 / ${newCount}`} activités traitées
+                  {isImportJob ? `${processedCount} / ${newCount}` : `0 / ${newCount}`} {mode === 'fit' ? 'fichiers traités' : 'activités traitées'}
                 </span>
               </div>
             )}
@@ -254,7 +370,11 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
               <CheckIcon />
             </div>
             <p className="hw-text-data text-mist">
-              {newCount > 0 ? `${newCount} activité${newCount > 1 ? 's' : ''} importée${newCount > 1 ? 's' : ''}` : 'Aucune nouvelle activité à importer'}
+              {newCount > 0
+                ? mode === 'fit'
+                  ? `${newCount} fichier${newCount > 1 ? 's' : ''} traité${newCount > 1 ? 's' : ''}`
+                  : `${newCount} activité${newCount > 1 ? 's' : ''} importée${newCount > 1 ? 's' : ''}`
+                : 'Aucune nouvelle activité à importer'}
             </p>
             <button onClick={onClose} className="hw-btn-amber mt-2">Fermer</button>
           </div>

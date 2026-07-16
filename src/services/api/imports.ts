@@ -13,6 +13,11 @@ export interface StravaExportRunResult {
   job_id?: number;
 }
 
+export interface FitImportRunResult {
+  files_count: number;
+  job_id?: number;
+}
+
 export const importsApi = {
   /**
    * Calcule les activités du CSV absentes de la base — rapide, ne touche
@@ -47,6 +52,28 @@ export const importsApi = {
 
     const response = await apiClient.post<StravaExportRunResult>(
       '/imports/strava-export/run',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000,
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * Importe des fichiers .fit isolés (pas d'export Strava) — pipeline
+   * complet identique à un import CSV ou un sync live : activites (id
+   * synthétique), activity_features, records, H3, analyse EF. Dédoublonnage
+   * par (start_time ±5 min, distance ±2%) côté backend, pas par Activity ID
+   * Strava (inexistant pour cette voie).
+   */
+  async importFitFiles(files: File[]): Promise<FitImportRunResult> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files', f, f.name));
+
+    const response = await apiClient.post<FitImportRunResult>(
+      '/imports/fit',
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
