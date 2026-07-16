@@ -61,31 +61,55 @@ const TrophyIcon = () => (
 );
 
 function RecordsCard({ records }: { records: ActivityRecord[] }) {
+  const recordCount = records.filter(r => r.rank !== null && r.rank <= 3).length;
+
   return (
     <div className="hw-card-dark-lg mb-8">
-      <div className="flex items-center gap-3 pb-3 border-b border-steel/25 mb-4">
-        <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 shrink-0">
-          <TrophyIcon />
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-steel/25 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 shrink-0">
+            <TrophyIcon />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-mist">Mon activité en chiffres</div>
+            <div className="hw-text-caption text-steel mt-0.5">
+              {recordCount > 0
+                ? `${recordCount} record${recordCount > 1 ? 's' : ''} personnel${recordCount > 1 ? 's' : ''} sur cette activité`
+                : 'Statistiques de cette activité par catégorie'}
+            </div>
+          </div>
         </div>
-        <div>
-          <div className="text-sm font-semibold text-mist">Records personnels</div>
-          <div className="hw-text-caption text-steel mt-0.5">{records.length} record{records.length > 1 ? 's' : ''} détenu{records.length > 1 ? 's' : ''} sur cette activité</div>
-        </div>
+        <Link to="/kpi" className="hw-text-caption text-steel hover:text-mist transition-colors whitespace-nowrap">
+          Voir tous mes records →
+        </Link>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-        {records.map(r => (
-          <div key={r.id} className="bg-steel/10 border border-steel/20 rounded-lg px-3 py-2.5">
-            <div className="hw-text-label text-steel mb-1">
-              {RECORD_LABELS[r.distance_key] ?? r.distance_key}
+        {records.map(r => {
+          const isRecord = r.rank !== null && r.rank <= 3;
+          return (
+            <div
+              key={r.id}
+              className={`rounded-lg px-3 py-2.5 border ${isRecord ? 'bg-amber-500/10 border-amber-500/30' : 'bg-steel/10 border-steel/20'}`}
+            >
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <span className="hw-text-label text-steel">
+                  {RECORD_LABELS[r.distance_key] ?? r.distance_key}
+                </span>
+                {isRecord && (
+                  <span className="hw-text-label text-amber-400 whitespace-nowrap">Record</span>
+                )}
+              </div>
+              <div className={`text-base font-bold font-mono tabular-nums ${isRecord ? 'text-amber-400' : 'text-mist'}`}>
+                {r.time_formatted ?? r.value_formatted ?? r.value}
+              </div>
+              {r.vap_formatted ? (
+                <div className="hw-text-caption text-steel mt-0.5">{r.vap_formatted}</div>
+              ) : r.pace_formatted && (
+                <div className="hw-text-caption text-steel mt-0.5">{r.pace_formatted} /km</div>
+              )}
             </div>
-            <div className="text-base font-bold font-mono tabular-nums text-amber-400">
-              {r.time_formatted ?? r.value_formatted ?? r.value}
-            </div>
-            {r.pace_formatted && (
-              <div className="hw-text-caption text-steel mt-0.5">{r.pace_formatted} /km</div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

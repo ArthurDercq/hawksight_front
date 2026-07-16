@@ -113,8 +113,16 @@ export interface ActivityRecord {
   start_km: number | null;
   end_km: number | null;
   is_excluded: boolean;
+  /** Position dans le classement de sa catégorie (1 = meilleur), calculée
+   * sur l'ensemble des activités de l'utilisateur — pas seulement celle-ci.
+   * null si non calculé par l'endpoint, ou si la ligne est exclue (ne compte
+   * plus dans le classement). rank <= 3 = record personnel actif. */
+  rank: number | null;
   time_formatted?: string;
   pace_formatted?: string | null;
+  /** Vitesse ascensionnelle moyenne (m/h) — uniquement pour kv_1000m
+   * (temps sur un D+ fixe, une allure /km n'aurait pas de sens ici). */
+  vap_formatted?: string | null;
   value_formatted?: string;
 }
 

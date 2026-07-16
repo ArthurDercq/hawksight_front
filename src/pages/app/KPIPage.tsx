@@ -169,16 +169,15 @@ export function KPIPage() {
   const recordsMap = records?.records || {};
   const trailRecordsMap = records?.trailRecords || {};
   const [recordsMode, setRecordsMode] = useState<'run' | 'trail'>('trail');
-  const [excludedOverrides, setExcludedOverrides] = useState<Record<string, boolean>>({});
 
-  const handleToggleExclude = useCallback(async (id: string, excluded: boolean) => {
-    setExcludedOverrides(prev => ({ ...prev, [id]: excluded }));
-    try {
-      await kpiApi.excludeRecord(id, excluded);
-      refetch();
-    } catch {
-      setExcludedOverrides(prev => ({ ...prev, [id]: !excluded }));
-    }
+  // Le backend (get_records_from_db) exclut déjà is_excluded=true du
+  // classement top-3 avant de renvoyer les candidats — la base est la seule
+  // source de vérité, plus besoin d'un état local pour piocher un fallback
+  // côté client (l'ancien pattern ne pouvait de toute façon piocher que
+  // parmi les 3 candidats déjà reçus, jamais un vrai 4e).
+  const handleToggleExclude = useCallback(async (id: string) => {
+    await kpiApi.excludeRecord(id, true);
+    refetch();
   }, [refetch]);
 
   const hasData = kpis !== null;
@@ -401,7 +400,7 @@ export function KPIPage() {
                           {groupItems.map(({ key, label }) => {
                             const raw = trailRecordsMap[key];
                             const candidates = Array.isArray(raw) ? raw : (raw ? [raw as unknown as TrailRecord] : []);
-                            const record = candidates.find(r => !(excludedOverrides[r.id] ?? r.is_excluded)) ?? null;
+                            const record = candidates[0] ?? null;
                             const rawFormatted = record?.time_formatted ?? record?.value_formatted ?? (record ? `${Math.round(record.value)}` : null);
                             const displayValue = rawFormatted ? rawFormatted.replace(/[a-zA-Z/]+$/, '').trim() : '—';
                             const unit = record?.metric_type === 'time' ? '' :
@@ -416,7 +415,7 @@ export function KPIPage() {
                                 activityId={record?.activity_id}
                                 color={color}
                                 recordId={record?.id}
-                                onExclude={record ? () => handleToggleExclude(record.id, true) : undefined}
+                                onExclude={record ? () => handleToggleExclude(record.id) : undefined}
                               />
                             );
                           })}
