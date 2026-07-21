@@ -2,13 +2,14 @@
  * Analysis Components - Export barrel file
  */
 
-export { AidStationChart } from './AidStationChart';
-export { RunWalkScatter } from './RunWalkScatter';
 export { VAMComparisonChart } from './VAMComparisonChart';
-export { EfficiencyDriftChart } from './EfficiencyDriftChart';
-export { DecouplingChart } from './DecouplingChart';
-export { ForceProfileHeatmap } from './ForceProfileHeatmap';
-export { TrailAnalysisDashboard } from './TrailAnalysisDashboard';
 export { EfCurveChart } from './EfCurveChart';
 export { CriticalMomentCard } from './CriticalMomentCard';
 export { climbsToVAMData } from './climbsToVAMData';
+export { VerdictCard } from './VerdictCard';
+export { MuscularSignalsChart } from './MuscularSignalsChart';
+export { PacingRuleChart } from './PacingRuleChart';
+export { PrepRuleChart } from './PrepRuleChart';
+export { FitnessCurveChart } from './FitnessCurveChart';
+export { GapSignatureChart } from './GapSignatureChart';
+export { PhysioBudgetScatter } from './PhysioBudgetScatter';
