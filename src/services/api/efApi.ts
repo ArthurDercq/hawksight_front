@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { EfAnalysis } from '@/types/ef';
+import type { EfAnalysis, UserBaseline } from '@/types/ef';
 
 export const efApi = {
   /**
@@ -10,6 +10,16 @@ export const efApi = {
    */
   async getActivityEfAnalysis(activityId: number): Promise<EfAnalysis> {
     const response = await apiClient.get<EfAnalysis>(`/activities/${activityId}/ef-analysis`);
+    return response.data;
+  },
+
+  /**
+   * Socle personnel EF (gap_curve, régression, règles, historique des
+   * baselines, sorties longues) — alimente PerformancePage. 404 si aucun
+   * recompute_user_baseline n'a encore eu lieu pour l'utilisateur.
+   */
+  async getMyEfBaseline(): Promise<UserBaseline> {
+    const response = await apiClient.get<UserBaseline>('/me/ef-baseline');
     return response.data;
   },
 };

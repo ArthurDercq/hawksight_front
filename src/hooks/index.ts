@@ -4,6 +4,7 @@ export { usePermissions } from './usePermissions';
 export { useActivities } from './useActivities';
 export { useActivityDetail } from './useActivityDetail';
 export { useEfAnalysis } from './useEfAnalysis';
+export { useEfBaseline } from './useEfBaseline';
 export { useCalendar, generateCalendarWeeks, getActivitiesForDate, getEventsForDate } from './useCalendar';
 export type { CalendarDay, CalendarWeek } from './useCalendar';
 export { useKPI } from './useKPI';

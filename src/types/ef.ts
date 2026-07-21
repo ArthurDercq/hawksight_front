@@ -74,3 +74,76 @@ export interface EfAnalysis {
   pacing_rule: PacingRuleCitation | null;
   flags: string[];
 }
+
+// --- /me/ef-baseline — socle personnel (PerformancePage) -------------------
+
+export interface GapCurve {
+  gmids: number[];
+  rvals: number[];
+  v_flat: number;
+  n_outings: number;
+}
+
+export interface RegressionResult {
+  coef: number[];
+  uses_fitness: boolean;
+  n: number;
+  r2_in: number;
+  r2_loo: number;
+}
+
+export interface RuleBucket {
+  pct_collapse: number | null;
+  n: number;
+}
+
+export interface RulesResult {
+  pacing: Record<string, RuleBucket>; // clés : "<-12%" | "-12%/-5%" | ">=-5%"
+  preparation: {
+    above_threshold: RuleBucket;
+    below_threshold: RuleBucket;
+    threshold: number;
+  };
+  budget: {
+    by_duration: Record<string, RuleBucket>; // clés : "<4h" | "4-6h" | ">6h"
+    temp_vs_breakpoint_corr: number | null;
+  };
+}
+
+export interface BaselineHistoryPoint {
+  date: string;
+  baseline: number;
+}
+
+// Sortie longue déjà analysée — service.py::build_outings_payload
+export interface Outing {
+  activity_id: number;
+  sport_type: string;
+  date: string;
+  duration_h: number;
+  avg_temp_c: number | null;
+  cruise_pct: number | null;
+  breakpoint_min: number | null;
+  collapse: boolean;
+  d42_ratio: number | null;
+  baseline: number | null;
+}
+
+export interface UserBaseline {
+  user_id: number;
+  model_version: string | null;
+  computed_at: string | null;
+
+  gap_curve: GapCurve | null;
+  v_flat: number | null;
+  hr_band: [number, number] | null;
+  regression: RegressionResult | null;
+  rules: RulesResult | null;
+  cruise_distribution: Record<string, number> | null;
+  fitness_180d: number | null;
+  n_outings: number | null;
+
+  baseline_history: BaselineHistoryPoint[];
+  outings: Outing[];
+  flags: string[];
+}

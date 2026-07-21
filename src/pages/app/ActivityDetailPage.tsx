@@ -6,7 +6,7 @@ import { useProfile } from '@/hooks';
 import { useEfAnalysis } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
 import { ActivityPoster, ActivityModal, TrailStatsCard, SurfaceBreakdownCard } from '@/components/activity';
-import { EfCurveChart, CriticalMomentCard, VAMComparisonChart, climbsToVAMData } from '@/components/analysis';
+import { EfCurveChart, CriticalMomentCard, VAMComparisonChart, climbsToVAMData, VerdictCard, MuscularSignalsChart } from '@/components/analysis';
 import type { ActivityMapHandle } from '@/components/maps/ActivityMap';
 import {
   HRZonesChart,
@@ -363,15 +363,27 @@ export function ActivityDetailPage() {
         </div>
       )}
 
-      {/* ── Row Analyse EF : courbe EF + moment critique ── */}
+      {/* ── Row Analyse EF : verdict + courbe EF ── */}
       {hasStreams && efAnalysis && efAnalysis.ef_series.length > 0 && (
-        <div className={`grid gap-4 ${efAnalysis.ef_signals.critical_window ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          <EfCurveChart efSeries={efAnalysis.ef_series} streams={streams} color={activitySportColor} />
-          {efAnalysis.ef_signals.critical_window && (
-            <CriticalMomentCard criticalWindow={efAnalysis.ef_signals.critical_window} />
-          )}
+        <div className="grid grid-cols-2 gap-4">
+          <VerdictCard efAnalysis={efAnalysis} />
+          <EfCurveChart
+            efSeries={efAnalysis.ef_series}
+            streams={streams}
+            efSignals={efAnalysis.ef_signals}
+            efBaseline={efAnalysis.ef_baseline}
+            color={activitySportColor}
+          />
         </div>
       )}
+
+      {/* ── Row Moment critique (§14.1) ── */}
+      {efAnalysis?.ef_signals.critical_window && (
+        <CriticalMomentCard criticalWindow={efAnalysis.ef_signals.critical_window} />
+      )}
+
+      {/* ── Row Signaux musculaires (§5) ── */}
+      {efAnalysis && <MuscularSignalsChart efSignals={efAnalysis.ef_signals} />}
 
       {/* ── Row Montées nommées (§14.2) ── */}
       {efAnalysis && efAnalysis.ef_signals.climbs.length > 0 && (
