@@ -3,8 +3,10 @@ import { useRef, useState, useEffect } from 'react';
 import { useActivityDetail } from '@/hooks';
 import { useActivities } from '@/hooks';
 import { useProfile } from '@/hooks';
+import { useEfAnalysis } from '@/hooks';
 import { Spinner } from '@/components/ui/Spinner';
 import { ActivityPoster, ActivityModal, TrailStatsCard, SurfaceBreakdownCard } from '@/components/activity';
+import { EfCurveChart, CriticalMomentCard, VAMComparisonChart, climbsToVAMData } from '@/components/analysis';
 import type { ActivityMapHandle } from '@/components/maps/ActivityMap';
 import {
   HRZonesChart,
@@ -132,6 +134,7 @@ export function ActivityDetailPage() {
   const { id } = useParams();
   const activityId = id ? parseInt(id, 10) : null;
   const { activity, streams, explorationRate, trailStats, surfaceClassification, race, records, isLoading, error, refetch } = useActivityDetail(activityId);
+  const { efAnalysis } = useEfAnalysis(activityId);
   const { updateActivity } = useActivities();
   const { profile } = useProfile();
   const posterRef = useRef<HTMLDivElement>(null);
@@ -358,6 +361,21 @@ export function ActivityDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Row Analyse EF : courbe EF + moment critique ── */}
+      {hasStreams && efAnalysis && efAnalysis.ef_series.length > 0 && (
+        <div className={`grid gap-4 ${efAnalysis.ef_signals.critical_window ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <EfCurveChart efSeries={efAnalysis.ef_series} streams={streams} color={activitySportColor} />
+          {efAnalysis.ef_signals.critical_window && (
+            <CriticalMomentCard criticalWindow={efAnalysis.ef_signals.critical_window} />
+          )}
+        </div>
+      )}
+
+      {/* ── Row Montées nommées (§14.2) ── */}
+      {efAnalysis && efAnalysis.ef_signals.climbs.length > 0 && (
+        <VAMComparisonChart data={climbsToVAMData(efAnalysis.ef_signals.climbs)} color={activitySportColor} />
       )}
 
       {/* ── Row 2 : Elevation + Pace ── */}

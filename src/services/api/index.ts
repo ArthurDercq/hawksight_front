@@ -10,3 +10,4 @@ export { eventsApi } from './events';
 export { trailApi } from './trail';
 export { importsApi } from './imports';
 export type { StravaExportDiffResult, StravaExportRunResult } from './imports';
+export { efApi } from './efApi';

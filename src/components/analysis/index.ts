@@ -9,3 +9,6 @@ export { EfficiencyDriftChart } from './EfficiencyDriftChart';
 export { DecouplingChart } from './DecouplingChart';
 export { ForceProfileHeatmap } from './ForceProfileHeatmap';
 export { TrailAnalysisDashboard } from './TrailAnalysisDashboard';
+export { EfCurveChart } from './EfCurveChart';
+export { CriticalMomentCard } from './CriticalMomentCard';
+export { climbsToVAMData } from './climbsToVAMData';
