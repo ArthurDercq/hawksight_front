@@ -341,9 +341,11 @@ interface TrailProfileCardProps {
   history: ReturnType<typeof useTrailProfile>['history'];
   isLoading: boolean;
   error: string | null;
+  isComputing: boolean;
+  compute: () => Promise<void>;
 }
 
-function TrailProfileCard({ profile, history, isLoading, error }: TrailProfileCardProps) {
+function TrailProfileCard({ profile, history, isLoading, error, isComputing, compute }: TrailProfileCardProps) {
   const color = TRAIL_COLOR;
 
   return (
@@ -368,7 +370,15 @@ function TrailProfileCard({ profile, history, isLoading, error }: TrailProfileCa
           </div>
         ) : !profile ? (
           <div className="text-center py-10">
-            <p className="text-muted text-sm font-mono">Aucun profil calculé</p>
+            <p className="text-muted text-sm font-mono mb-4">Aucun profil calculé</p>
+            <button
+              onClick={compute}
+              disabled={isComputing}
+              className="px-4 py-2 rounded-lg text-sm font-mono border transition-all disabled:opacity-50"
+              style={{ color, borderColor: `${color}40`, backgroundColor: `${color}10` }}
+            >
+              {isComputing ? 'Calcul en cours...' : 'Calculer mon profil'}
+            </button>
           </div>
         ) : (
           <>
@@ -414,11 +424,27 @@ function TrailProfileCard({ profile, history, isLoading, error }: TrailProfileCa
               <span className="hw-text-caption text-muted/40">
                 v{profile.model_version} · calculé {profile.computed_at ? new Date(profile.computed_at).toLocaleDateString('fr-FR') : '—'}
               </span>
-              {profile.imbalance_penalty > 0.05 && (
-                <span className="hw-text-caption text-yellow-500/50">
-                  pénalité déséquilibre −{Math.round(profile.imbalance_penalty)}pts
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                {profile.imbalance_penalty > 0.05 && (
+                  <span className="hw-text-caption text-yellow-500/50">
+                    pénalité déséquilibre −{Math.round(profile.imbalance_penalty)}pts
+                  </span>
+                )}
+                <button
+                  onClick={compute}
+                  disabled={isComputing}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hw-text-caption border transition-all disabled:opacity-50"
+                  style={{ color, borderColor: `${color}40`, backgroundColor: `${color}10` }}
+                  title="Recalculer le profil"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" className={isComputing ? 'animate-spin' : ''}>
+                    <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                  {isComputing ? 'Calcul...' : 'Recalculer'}
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -453,6 +479,7 @@ export function ProfilePage() {
     isLoading: isTrailLoading,
     isComputing: isTrailComputing,
     error: trailError,
+    compute: computeTrailProfile,
   } = useTrailProfile();
   const { events, upcomingEvents, pastEvents, createEvent, updateEvent, deleteEvent, markCompleted } = useEvents();
   const [editingEvent, setEditingEvent] = useState<TrainingEvent | null>(null);
@@ -611,6 +638,8 @@ export function ProfilePage() {
             history={trailHistory}
             isLoading={isTrailLoading}
             error={trailError}
+            isComputing={isTrailComputing}
+            compute={computeTrailProfile}
           />
 
           {/* Account details */}
