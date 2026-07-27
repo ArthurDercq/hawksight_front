@@ -2,42 +2,41 @@
  * EfCurveChart — courbe EF complète : silhouette d'altitude, baseline, seuil
  * d'effondrement -12%, zones ravito, annotations micro-arrêts.
  *
- * Pattern SVG réutilisé de EfficiencyDriftChart.tsx (silhouette d'altitude en
- * aplat gris derrière une courbe) — pas de lib de charting pour ce type de
- * composant dans ce repo.
+ * SVG maison suivant le gabarit PaceProfileChart (viewBox/marges/hover) —
+ * cf. hawksight-charts skill, Partie A.6. Le plus riche des 3 composants
+ * SVG maison : plusieurs couches superposées (silhouette, zones, seuils,
+ * annotations) qu'un chart Chart.js standard ne gère pas nativement.
  */
-import { useRef, useMemo } from 'react';
+import { useId, useMemo, useRef, useState, useCallback } from 'react';
 import type { EfSeriesPoint, EfSignals } from '@/types/ef';
 import type { ActivityStream } from '@/types';
 
-const ActivityIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-  </svg>
-);
+const SVG_W = 440;
+const SVG_H = 180;
+const MARGIN = { top: 8, right: 16, bottom: 22, left: 32 };
+const CHART_W = SVG_W - MARGIN.left - MARGIN.right;
+const CHART_H = SVG_H - MARGIN.top - MARGIN.bottom;
+const COLOR = '#3DB2E0';
 
-interface EfCurveChartProps {
-  efSeries: EfSeriesPoint[];
-  streams: ActivityStream[];
-  efSignals: EfSignals;
-  efBaseline: number | null;
-  color?: string;
-}
-
-const CHART_X0 = 40;
-const CHART_X1 = 360;
-const CHART_Y0 = 20;
-const CHART_Y1 = 200;
 // Axe jumeau compressé ~1.5x l'amplitude (méthodo §14.3) — l'altitude reste
 // visuellement basse en fond, ne domine pas la lecture de la courbe EF.
 const ALTITUDE_AMPLITUDE_COMPRESSION = 1.5;
 // -12% : seuil d'effondrement (méthodo §4) — la vraie bascule, pas les
 // -5/-8% qui détectent seulement la dérive cardiaque universelle de l'ultra.
 const COLLAPSE_THRESHOLD_RATIO = 0.88;
-const MIN_STOP_RECT_WIDTH_PX = 2;
+const MIN_STOP_RECT_WIDTH_PX = 1.5;
 
-export function EfCurveChart({ efSeries, streams, efSignals, efBaseline, color = '#3DB2E0' }: EfCurveChartProps) {
-  const chartRef = useRef<HTMLDivElement>(null);
+interface EfCurveChartProps {
+  efSeries: EfSeriesPoint[];
+  streams: ActivityStream[];
+  efSignals: EfSignals;
+  efBaseline: number | null;
+}
+
+export function EfCurveChart({ efSeries, streams, efSignals, efBaseline }: EfCurveChartProps) {
+  const uid = useId();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [hover, setHover] = useState<{ x: number; y: number; minute: number; ef: number } | null>(null);
 
   const chart = useMemo(() => {
     if (efSeries.length === 0) return null;
@@ -47,23 +46,17 @@ export function EfCurveChart({ efSeries, streams, efSignals, efBaseline, color =
     const maxM = Math.max(...minutes) || 1;
     let minEf = Math.min(...efVals) * 0.9;
     let maxEf = Math.max(...efVals) * 1.1;
-    // Élargir l'échelle pour toujours inclure baseline/seuil -12% s'ils
-    // existent — sinon ces lignes de référence pourraient sortir du cadre
-    // sur une sortie où l'EF réel est resté loin de la baseline attendue.
     if (efBaseline != null) {
       minEf = Math.min(minEf, efBaseline * COLLAPSE_THRESHOLD_RATIO * 0.95);
       maxEf = Math.max(maxEf, efBaseline * 1.05);
     }
     const efRange = maxEf - minEf || 1;
-    const xOf = (min: number) => CHART_X0 + (min / maxM) * (CHART_X1 - CHART_X0);
-    const yOf = (ef: number) => CHART_Y0 + ((maxEf - ef) / efRange) * (CHART_Y1 - CHART_Y0);
+    const toX = (min: number) => MARGIN.left + (min / maxM) * CHART_W;
+    const toY = (ef: number) => MARGIN.top + CHART_H - ((ef - minEf) / efRange) * CHART_H;
 
-    let efPath = '';
-    efSeries.forEach((point, i) => {
-      const x = xOf(point.m);
-      const y = yOf(point.ef_roll);
-      efPath += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
-    });
+    const efPath = efSeries.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p.m).toFixed(1)} ${toY(p.ef_roll).toFixed(1)}`).join(' ');
+    const lastX = toX(efSeries[efSeries.length - 1].m);
+    const areaPath = `${efPath} L ${lastX.toFixed(1)} ${(MARGIN.top + CHART_H).toFixed(1)} L ${MARGIN.left} ${(MARGIN.top + CHART_H).toFixed(1)} Z`;
 
     // Silhouette d'altitude — dérivée des streams (altitude par time_s),
     // reprojetée sur le même axe X (minutes) que la courbe EF.
@@ -75,141 +68,187 @@ export function EfCurveChart({ efSeries, streams, efSignals, efBaseline, color =
       const maxAlt = Math.max(...alts);
       const altRange = (maxAlt - minAlt) * ALTITUDE_AMPLITUDE_COMPRESSION || 1;
       const maxTimeS = Math.max(...altStreams.map((s) => s.time_s)) || 1;
-
       altStreams.forEach((s, i) => {
-        const x = CHART_X0 + (s.time_s / maxTimeS) * (CHART_X1 - CHART_X0);
-        const y = CHART_Y1 - (((s.altitude as number) - minAlt) / altRange) * (CHART_Y1 - CHART_Y0);
-        altitudePath += i === 0 ? `M ${CHART_X0} ${CHART_Y1} L ${x} ${y}` : ` L ${x} ${y}`;
+        const x = MARGIN.left + (s.time_s / maxTimeS) * CHART_W;
+        const y = MARGIN.top + CHART_H - (((s.altitude as number) - minAlt) / altRange) * CHART_H;
+        altitudePath += i === 0 ? `M ${MARGIN.left} ${MARGIN.top + CHART_H} L ${x} ${y}` : ` L ${x} ${y}`;
       });
-      altitudePath += ` L ${CHART_X1} ${CHART_Y1} Z`;
+      altitudePath += ` L ${lastX} ${MARGIN.top + CHART_H} Z`;
     }
 
-    const baselineY = efBaseline != null ? yOf(efBaseline) : null;
-    const thresholdY = efBaseline != null ? yOf(efBaseline * COLLAPSE_THRESHOLD_RATIO) : null;
+    const baselineY = efBaseline != null ? toY(efBaseline) : null;
+    const thresholdY = efBaseline != null ? toY(efBaseline * COLLAPSE_THRESHOLD_RATIO) : null;
 
-    // Zones ravito (arrêts exclus de l'analyse) — secondes -> minutes -> X.
     const stopRects = efSignals.stops.map((s) => {
-      const x0 = xOf(s.start_s / 60);
-      const x1 = xOf(s.end_s / 60);
+      const x0 = toX(s.start_s / 60);
+      const x1 = toX(s.end_s / 60);
       return { x0, width: Math.max(MIN_STOP_RECT_WIDTH_PX, x1 - x0) };
     });
 
-    // Annotations micro-arrêts — marqueurs ponctuels sur l'axe X.
-    const microstopXs = efSignals.microstop_times_s.map((t) => xOf(t / 60));
+    const microstopXs = efSignals.microstop_times_s.map((t) => toX(t / 60));
 
-    return { efPath, altitudePath, maxMinute: maxM, baselineY, thresholdY, stopRects, microstopXs };
+    return { efSeries, efPath, areaPath, altitudePath, maxMinute: maxM, baselineY, thresholdY, stopRects, microstopXs, toX, toY };
   }, [efSeries, streams, efSignals, efBaseline]);
 
-  if (!chart) {
-    return (
-      <div className="hw-card-dark-lg">
-        <div className="flex items-center gap-3 pb-3 border-b border-steel/25 mb-3.5">
-          <div className="p-2 bg-glacier/10 border border-glacier/30 rounded-lg text-glacier shrink-0">
-            <ActivityIcon color={color} />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-mist">Courbe d'efficacité (EF)</div>
-            <div className="hw-text-caption text-steel mt-0.5">Pas encore d'analyse disponible</div>
-          </div>
-        </div>
-        <div className="flex items-center justify-center h-40 hw-text-caption text-steel">
-          Données insuffisantes pour cette activité
-        </div>
-      </div>
-    );
-  }
-
-  const { efPath, altitudePath, maxMinute, baselineY, thresholdY, stopRects, microstopXs } = chart;
+  const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (!svgRef.current || !chart) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const svgX = ((e.clientX - rect.left) / rect.width) * SVG_W;
+    const chartX = svgX - MARGIN.left;
+    if (chartX < 0 || chartX > CHART_W) { setHover(null); return; }
+    const targetMinute = (chartX / CHART_W) * chart.maxMinute;
+    let closest = chart.efSeries[0];
+    let minDiff = Math.abs(chart.efSeries[0].m - targetMinute);
+    for (const p of chart.efSeries) {
+      const diff = Math.abs(p.m - targetMinute);
+      if (diff < minDiff) { minDiff = diff; closest = p; }
+    }
+    setHover({ x: chart.toX(closest.m), y: chart.toY(closest.ef_roll), minute: closest.m, ef: closest.ef_roll });
+  }, [chart]);
 
   return (
-    <div ref={chartRef} className="hw-card-dark-lg">
-      <div className="flex items-center gap-3 pb-3 border-b border-steel/25 mb-3.5">
-        <div className="p-2 bg-glacier/10 border border-glacier/30 rounded-lg text-glacier shrink-0">
-          <ActivityIcon color={color} />
-        </div>
+    <div className="hw-chart-card">
+      <span className="hw-br hw-br-tl hw-br-glacier" />
+      <span className="hw-br hw-br-br hw-br-glacier-dim" />
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="text-sm font-semibold text-mist">Courbe d'efficacité (EF)</div>
-          <div className="hw-text-caption text-steel mt-0.5">GAP personnel / FC — lissage 11 min</div>
+          <h3 className="hw-chart-title">Courbe d'efficacité (EF)</h3>
+          <p className="hw-chart-subtitle">GAP personnel / FC — lissage 11 min</p>
         </div>
       </div>
 
-      <div className="relative border border-steel/20 rounded overflow-hidden bg-charcoal-light">
-        <svg viewBox="0 0 400 220" className="w-full h-auto">
-          {/* Silhouette d'altitude en fond */}
-          {altitudePath && <path d={altitudePath} fill="#3A3F47" opacity="0.2" />}
+      {!chart ? (
+        <div className="hw-chart-empty">Données insuffisantes pour cette activité</div>
+      ) : (
+        <>
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+            style={{ width: '100%', height: 'auto' }}
+            preserveAspectRatio="xMidYMid meet"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setHover(null)}
+          >
+            <defs>
+              <linearGradient id={`efGrad-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor={COLOR} stopOpacity="0.25" />
+                <stop offset="100%" stopColor={COLOR} stopOpacity="0.03" />
+              </linearGradient>
+              <filter id={`efGlow-${uid}`}>
+                <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
+                <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+              <clipPath id={`efClip-${uid}`}>
+                <rect x={MARGIN.left} y={MARGIN.top} width={CHART_W} height={CHART_H} />
+              </clipPath>
+            </defs>
 
-          {/* Zones ravito */}
-          {stopRects.map((r, i) => (
-            <rect key={i} x={r.x0} y={CHART_Y0} width={r.width} height={CHART_Y1 - CHART_Y0} fill="#3DB2E0" opacity="0.08" />
-          ))}
+            {/* Silhouette d'altitude en fond */}
+            {chart.altitudePath && <path d={chart.altitudePath} fill="#3A3F47" opacity="0.25" clipPath={`url(#efClip-${uid})`} />}
 
-          {/* Grid horizontal */}
-          {[0, 25, 50, 75, 100].map((pct) => (
-            <line
-              key={pct}
-              x1={CHART_X0} y1={CHART_Y0 + (pct / 100) * (CHART_Y1 - CHART_Y0)}
-              x2={CHART_X1} y2={CHART_Y0 + (pct / 100) * (CHART_Y1 - CHART_Y0)}
-              stroke="#9CA3AF" strokeWidth="0.5" opacity="0.15"
-            />
-          ))}
+            {/* Zones ravito */}
+            {chart.stopRects.map((r, i) => (
+              <rect key={i} x={r.x0} y={MARGIN.top} width={r.width} height={CHART_H} fill={COLOR} opacity="0.08" />
+            ))}
 
-          {/* Seuil effondrement -12% */}
-          {thresholdY != null && (
-            <>
-              <rect x={CHART_X0} y={thresholdY} width={CHART_X1 - CHART_X0} height={CHART_Y1 - thresholdY} fill="#c0392b" opacity="0.05" />
-              <line x1={CHART_X0} y1={thresholdY} x2={CHART_X1} y2={thresholdY} stroke="#c0392b" strokeWidth="1" strokeDasharray="4,3" opacity="0.6" />
-            </>
-          )}
+            {/* Grille horizontale */}
+            {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
+              <line
+                key={pct}
+                x1={MARGIN.left} y1={MARGIN.top + pct * CHART_H}
+                x2={MARGIN.left + CHART_W} y2={MARGIN.top + pct * CHART_H}
+                stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+              />
+            ))}
 
-          {/* Baseline */}
-          {baselineY != null && (
-            <line x1={CHART_X0} y1={baselineY} x2={CHART_X1} y2={baselineY} stroke="#9CA3AF" strokeWidth="1" strokeDasharray="4,3" opacity="0.5" />
-          )}
+            {/* Seuil effondrement -12% */}
+            {chart.thresholdY != null && (
+              <>
+                <rect x={MARGIN.left} y={chart.thresholdY} width={CHART_W} height={MARGIN.top + CHART_H - chart.thresholdY} fill="#E84242" opacity="0.05" />
+                <line x1={MARGIN.left} y1={chart.thresholdY} x2={MARGIN.left + CHART_W} y2={chart.thresholdY} stroke="#E84242" strokeWidth="1" strokeDasharray="4,3" opacity="0.6" />
+              </>
+            )}
 
-          {/* Courbe EF */}
-          <path d={efPath} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Baseline */}
+            {chart.baselineY != null && (
+              <line x1={MARGIN.left} y1={chart.baselineY} x2={MARGIN.left + CHART_W} y2={chart.baselineY} stroke="#8B95A1" strokeWidth="1" strokeDasharray="4,3" opacity="0.5" />
+            )}
 
-          {/* Annotations micro-arrêts (au-dessus de tout) */}
-          {microstopXs.map((x, i) => (
-            <line key={i} x1={x} y1={CHART_Y1 - 6} x2={x} y2={CHART_Y1} stroke="#E8832A" strokeWidth="2" strokeLinecap="round" />
-          ))}
+            <line x1={MARGIN.left} y1={MARGIN.top + CHART_H} x2={MARGIN.left + CHART_W} y2={MARGIN.top + CHART_H} stroke="rgba(58,63,71,0.4)" strokeWidth="0.5" />
 
-          {/* Axe X */}
-          <text x={CHART_X0} y="212" textAnchor="start" className="font-mono text-[9px]" fill="#6B7280">0 min</text>
-          <text x="200" y="212" textAnchor="middle" className="font-mono text-[9px]" fill="#6B7280">{Math.round(maxMinute / 2)} min</text>
-          <text x={CHART_X1} y="212" textAnchor="end" className="font-mono text-[9px]" fill="#6B7280">{Math.round(maxMinute)} min</text>
-        </svg>
+            {[0, chart.maxMinute / 2, chart.maxMinute].map((m) => {
+              const x = chart.toX(m);
+              return (
+                <g key={m}>
+                  <line x1={x} y1={MARGIN.top + CHART_H} x2={x} y2={MARGIN.top + CHART_H + 3} stroke="rgba(58,63,71,0.6)" strokeWidth="0.8" />
+                  <text x={x} y={MARGIN.top + CHART_H + 12} textAnchor={m === 0 ? 'start' : m === chart.maxMinute ? 'end' : 'middle'} fill="#3A3F47" fontSize="8" fontFamily="'JetBrains Mono', monospace">
+                    {Math.round(m)} min
+                  </text>
+                </g>
+              );
+            })}
 
-        <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 opacity-20" style={{ borderColor: color }} />
-        <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 opacity-20" style={{ borderColor: color }} />
-      </div>
+            <g clipPath={`url(#efClip-${uid})`}>
+              <path d={chart.areaPath} fill={`url(#efGrad-${uid})`} />
+              <path d={chart.efPath} fill="none" stroke={COLOR} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" filter={`url(#efGlow-${uid})`} />
+            </g>
 
-      <div className="flex items-center justify-center gap-4 mt-3 flex-wrap">
-        {baselineY != null && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-0.5 bg-mist/40" style={{ borderTop: '1px dashed' }} />
-            <span className="text-mist/40 font-body text-xs">Baseline</span>
+            {/* Annotations micro-arrêts (au-dessus de tout) */}
+            {chart.microstopXs.map((x, i) => (
+              <line key={i} x1={x} y1={MARGIN.top + CHART_H - 5} x2={x} y2={MARGIN.top + CHART_H} stroke="#E8832A" strokeWidth="2" strokeLinecap="round" />
+            ))}
+
+            <line x1={MARGIN.left} y1={MARGIN.top} x2={MARGIN.left} y2={MARGIN.top + CHART_H} stroke="rgba(58,63,71,0.4)" strokeWidth="0.5" />
+
+            {hover && (
+              <g>
+                <line x1={hover.x} y1={MARGIN.top} x2={hover.x} y2={MARGIN.top + CHART_H} stroke="#F2F2F2" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.3" />
+                <circle cx={hover.x} cy={hover.y} r="3.5" fill={COLOR} opacity="0.9" />
+                <circle cx={hover.x} cy={hover.y} r="1.5" fill="#F2F2F2" />
+                {(() => {
+                  const isRight = hover.x > SVG_W * 0.65;
+                  const bx = isRight ? hover.x - 80 : hover.x + 6;
+                  const by = Math.max(MARGIN.top + 2, Math.min(hover.y - 22, MARGIN.top + CHART_H - 24));
+                  return (
+                    <g>
+                      <rect x={bx} y={by} width="72" height="20" rx="3" fill="#0B0C10" stroke={COLOR} strokeWidth="0.8" opacity="0.95" />
+                      <text x={bx + 36} y={by + 8} textAnchor="middle" fill={COLOR} fontSize="8" fontFamily="'JetBrains Mono', monospace">EF {hover.ef.toFixed(2)}</text>
+                      <text x={bx + 36} y={by + 16} textAnchor="middle" fill="#3A3F47" fontSize="7" fontFamily="'JetBrains Mono', monospace">{Math.round(hover.minute)} min</text>
+                    </g>
+                  );
+                })()}
+              </g>
+            )}
+          </svg>
+
+          <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-steel/20 flex-wrap">
+            {chart.baselineY != null && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5" style={{ background: '#8B95A1' }} />
+                <span className="hw-chart-subtitle">Baseline</span>
+              </div>
+            )}
+            {chart.thresholdY != null && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5 bg-[#E84242]" />
+                <span className="hw-chart-subtitle">Seuil effondrement (-12%)</span>
+              </div>
+            )}
+            {chart.stopRects.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 bg-glacier/20 border border-glacier/40" />
+                <span className="hw-chart-subtitle">Ravito</span>
+              </div>
+            )}
+            {chart.microstopXs.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-0.5 h-3 bg-amber" />
+                <span className="hw-chart-subtitle">Micro-arrêt</span>
+              </div>
+            )}
           </div>
-        )}
-        {thresholdY != null && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-0.5 bg-[#c0392b]" />
-            <span className="text-mist/40 font-body text-xs">Seuil effondrement (-12%)</span>
-          </div>
-        )}
-        {stopRects.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-glacier/20 border border-glacier/40" />
-            <span className="text-mist/40 font-body text-xs">Ravito</span>
-          </div>
-        )}
-        {microstopXs.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-0.5 h-3 bg-amber" />
-            <span className="text-mist/40 font-body text-xs">Micro-arrêt</span>
-          </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

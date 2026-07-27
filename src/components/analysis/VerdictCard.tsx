@@ -9,17 +9,11 @@
 import { InfoTooltip } from '@/components/ui';
 import type { EfAnalysis } from '@/types/ef';
 
-const GaugeIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2a10 10 0 1 0 10 10" /><path d="M12 12 18 8" /><path d="M12 2v2" />
-  </svg>
-);
-
 const VERDICT_LABELS: Record<string, { label: string; description: string; color: string }> = {
   cardio: {
     label: 'Cardio',
     description: 'La vitesse chute, la fréquence cardiaque reste haute — dérive cardiaque visible sur la courbe EF.',
-    color: '#c0392b',
+    color: '#E84242',
   },
   muscular: {
     label: 'Musculaire',
@@ -42,7 +36,7 @@ function cruiseColor(cruisePct: number | null): string {
   if (cruisePct == null) return '#9CA3AF';
   if (cruisePct >= -5) return '#6DAA75';
   if (cruisePct >= -12) return '#E8832A';
-  return '#c0392b';
+  return '#E84242';
 }
 
 interface VerdictCardProps {
@@ -56,16 +50,13 @@ export function VerdictCard({ efAnalysis }: VerdictCardProps) {
     : null;
 
   return (
-    <div className="hw-card-dark-lg">
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-steel/25 mb-3.5">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-glacier/10 border border-glacier/30 rounded-lg text-glacier shrink-0">
-            <GaugeIcon color="#3DB2E0" />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-mist">Verdict</div>
-            <div className="hw-text-caption text-steel mt-0.5">Analyse de la bascule</div>
-          </div>
+    <div className="hw-chart-card">
+      <span className="hw-br hw-br-tl hw-br-glacier" />
+      <span className="hw-br hw-br-br hw-br-glacier-dim" />
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="hw-chart-title">Verdict</h3>
+          <p className="hw-chart-subtitle">Analyse de la bascule</p>
         </div>
         <InfoTooltip>
           Baseline = médiane EF des 15-75 premières minutes (état frais). Croisière = déficit médian
@@ -84,7 +75,7 @@ export function VerdictCard({ efAnalysis }: VerdictCardProps) {
         </div>
         <div>
           <div className="hw-text-label text-steel mb-0.5">Effondrement</div>
-          <div className="text-xl font-bold font-mono tabular-nums" style={{ color: efAnalysis.breakpoint_min != null ? '#c0392b' : '#6DAA75' }}>
+          <div className="text-xl font-bold font-mono tabular-nums" style={{ color: efAnalysis.breakpoint_min != null ? '#E84242' : '#6DAA75' }}>
             {efAnalysis.breakpoint_min != null ? `${Math.floor(efAnalysis.breakpoint_min / 60)}h${String(efAnalysis.breakpoint_min % 60).padStart(2, '0')}` : 'Aucun'}
           </div>
         </div>
@@ -98,7 +89,7 @@ export function VerdictCard({ efAnalysis }: VerdictCardProps) {
       {formeDelta != null && (
         <div className="flex items-center justify-between mb-3 hw-text-caption text-steel">
           <span>Forme du jour</span>
-          <span className="font-mono" style={{ color: formeDelta >= 0 ? '#6DAA75' : '#c0392b' }}>
+          <span className="font-mono" style={{ color: formeDelta >= 0 ? '#6DAA75' : '#E84242' }}>
             {formeDelta >= 0 ? '+' : ''}{formeDelta.toFixed(1)}% vs attendu
           </span>
         </div>

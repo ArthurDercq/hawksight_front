@@ -64,7 +64,7 @@ const NAV_SECTIONS = [
     label: 'Objectifs',
     items: [
       { path: '/calendar', label: 'Calendrier', icon: <CalendarIcon /> },
-      { path: '/performance', label: 'Trails', icon: <TrailIcon /> },
+      { path: '/performance', label: 'Performance', icon: <TrailIcon /> },
     ],
   },
 ];

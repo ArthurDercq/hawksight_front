@@ -6,7 +6,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/exploration': 'Exploration',
   '/kpi':         'Chiffres clés',
   '/calendar':    'Calendrier',
-  '/performance': 'Trails',
+  '/performance': 'Performance',
   '/profile':     'Profil',
 };
 

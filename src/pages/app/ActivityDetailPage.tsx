@@ -372,7 +372,6 @@ export function ActivityDetailPage() {
             streams={streams}
             efSignals={efAnalysis.ef_signals}
             efBaseline={efAnalysis.ef_baseline}
-            color={activitySportColor}
           />
         </div>
       )}

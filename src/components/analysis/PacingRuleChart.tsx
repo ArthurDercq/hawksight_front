@@ -4,14 +4,18 @@
  * <-12% → élevé. Calibré sur l'historique réel du user.
  */
 import { useMemo } from 'react';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+} from 'chart.js';
 import { InfoTooltip } from '@/components/ui';
 import type { RulesResult } from '@/types/ef';
 
-const ScaleIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3v18M5 9l-3 6a4 4 0 0 0 8 0L7 9M19 9l-3 6a4 4 0 0 0 8 0L21 9M2 9h10M14 9h8" />
-  </svg>
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
 const TRANCHE_ORDER = ['>=-5%', '-12%/-5%', '<-12%'] as const;
 const TRANCHE_LABELS: Record<string, string> = {
@@ -22,9 +26,19 @@ const TRANCHE_LABELS: Record<string, string> = {
 const TRANCHE_COLORS: Record<string, string> = {
   '>=-5%': '#6DAA75',
   '-12%/-5%': '#E8832A',
-  '<-12%': '#c0392b',
+  '<-12%': '#E84242',
 };
 const MIN_RELIABLE_N = 5;
+
+function withReliability(hex: string, n: number): string {
+  if (n >= MIN_RELIABLE_N) return hex;
+  const bigint = parseInt(hex.slice(1), 16);
+  const r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
+  return `rgba(${r},${g},${b},0.4)`;
+}
+
+const axisStyle = { color: 'rgba(242,242,242,0.2)', font: { size: 10, family: 'JetBrains Mono' } };
+const gridStyle = { color: 'rgba(255,255,255,0.03)' };
 
 interface PacingRuleChartProps {
   rules: RulesResult | null;
@@ -39,16 +53,13 @@ export function PacingRuleChart({ rules }: PacingRuleChartProps) {
   }, [rules]);
 
   return (
-    <div className="hw-card-dark-lg">
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-steel/25 mb-3.5">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-glacier/10 border border-glacier/30 rounded-lg text-glacier shrink-0">
-            <ScaleIcon color="#3DB2E0" />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-mist">Règle Pacing</div>
-            <div className="hw-text-caption text-steel mt-0.5">Risque d'effondrement par tranche de croisière</div>
-          </div>
+    <div className="hw-chart-card">
+      <span className="hw-br hw-br-tl hw-br-glacier" />
+      <span className="hw-br hw-br-br hw-br-glacier-dim" />
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="hw-chart-title">Règle Pacing</h3>
+          <p className="hw-chart-subtitle">Risque d'effondrement par tranche de croisière</p>
         </div>
         <InfoTooltip>
           Sur votre historique de sorties longues, quel pourcentage a fini par un effondrement selon la
@@ -58,37 +69,51 @@ export function PacingRuleChart({ rules }: PacingRuleChartProps) {
         </InfoTooltip>
       </div>
 
-      {rows.length === 0 ? (
-        <div className="flex items-center justify-center h-32 hw-text-caption text-steel">
-          Historique insuffisant pour estimer cette règle
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {rows.map((row) => (
-            <div key={row.key}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="hw-text-label text-mist tracking-wide">{TRANCHE_LABELS[row.key]}</span>
-                <span className="hw-text-data font-semibold" style={{ color: TRANCHE_COLORS[row.key] }}>
-                  {row.pct_collapse != null ? `${Math.round(row.pct_collapse)}%` : '—'}
-                </span>
-              </div>
-              <div className="h-2.5 bg-steel/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${row.pct_collapse ?? 0}%`,
-                    background: TRANCHE_COLORS[row.key],
-                    opacity: row.n < MIN_RELIABLE_N ? 0.4 : 1,
-                  }}
-                />
-              </div>
-              <p className="hw-text-caption text-steel/60 mt-0.5">
-                {row.n} sortie{row.n > 1 ? 's' : ''}{row.n < MIN_RELIABLE_N ? ' — échantillon faible' : ''}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="h-[200px]">
+        {rows.length === 0 ? (
+          <div className="hw-chart-empty">Historique insuffisant pour estimer cette règle</div>
+        ) : (
+          <Bar
+            data={{
+              labels: rows.map((r) => TRANCHE_LABELS[r.key]),
+              datasets: [{
+                data: rows.map((r) => r.pct_collapse ?? 0),
+                backgroundColor: rows.map((r) => withReliability(TRANCHE_COLORS[r.key], r.n)),
+                borderRadius: 3,
+                barPercentage: 0.6,
+              }],
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: { grid: { display: false }, ticks: axisStyle },
+                y: { min: 0, max: 100, grid: gridStyle, ticks: { ...axisStyle, stepSize: 25, callback: (v: number | string) => `${v}%` } },
+              },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: '#0B0C10',
+                  borderColor: '#3DB2E0',
+                  borderWidth: 1,
+                  titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                  bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                  padding: 10,
+                  cornerRadius: 4,
+                  callbacks: {
+                    label: (ctx) => {
+                      const row = rows[ctx.dataIndex];
+                      const pct = row.pct_collapse != null ? `${Math.round(row.pct_collapse)}%` : '—';
+                      const warn = row.n < MIN_RELIABLE_N ? ' (échantillon faible)' : '';
+                      return `${pct} sur ${row.n} sortie${row.n > 1 ? 's' : ''}${warn}`;
+                    },
+                  },
+                },
+              },
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

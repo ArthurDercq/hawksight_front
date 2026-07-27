@@ -1,22 +1,21 @@
 /**
  * CriticalMomentCard — zoom sur l'événement critique de la sortie (§14.1 méthodo)
  * ================================================================================
- * FC + GAP superposés (double axe, précédent VAMComparisonChart), rolling_corr
- * en bande séparée en dessous — zone rouge quand rolling_corr < 0 (discordance
- * : la FC monte quand la vitesse chute).
+ * GAP + FC superposés (double axe), rolling_corr en bande séparée en dessous —
+ * zone rouge quand rolling_corr < 0 (discordance : la FC monte quand la
+ * vitesse chute).
  *
  * Ne rend rien si critical_window est null (aucune ancre trouvée — sortie
  * plate/saine, pas d'événement notable) : pattern déjà en place pour
  * surfaceClassification/trailStats optionnels sur ActivityDetailPage.
+ *
+ * SVG maison suivant le gabarit PaceProfileChart (viewBox/marges) — cf.
+ * hawksight-charts skill, Partie A.6. Deux zones de dessin empilées dans un
+ * même SVG plutôt que deux composants distincts : la bande de corrélation
+ * n'a de sens que rattachée au même axe temporel que GAP/FC au-dessus.
  */
-import { useRef, useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import type { CriticalWindow } from '@/types/ef';
-
-const ZoomIcon = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" />
-  </svg>
-);
 
 const ANCHOR_LABELS: Record<CriticalWindow['anchor_type'], string> = {
   collapse: 'Effondrement',
@@ -24,20 +23,24 @@ const ANCHOR_LABELS: Record<CriticalWindow['anchor_type'], string> = {
   hr_peak: 'Pic de fréquence cardiaque',
 };
 
+const SVG_W = 440;
+const SVG_H = 210;
+const MARGIN = { left: 32, right: 16 };
+const CHART_W = SVG_W - MARGIN.left - MARGIN.right;
+// Zone haute : GAP + FC superposés
+const TOP_Y0 = 8;
+const TOP_Y1 = 118;
+// Zone basse : bande rolling_corr
+const CORR_Y0 = 138;
+const CORR_Y1 = 180;
+const AXIS_Y = 196;
+
 interface CriticalMomentCardProps {
   criticalWindow: CriticalWindow | null;
-  color?: string;
 }
 
-const CHART_X0 = 40;
-const CHART_X1 = 360;
-const TOP_Y0 = 15;
-const TOP_Y1 = 130;
-const CORR_Y0 = 145;
-const CORR_Y1 = 200;
-
-export function CriticalMomentCard({ criticalWindow, color = '#c0392b' }: CriticalMomentCardProps) {
-  const chartRef = useRef<HTMLDivElement>(null);
+export function CriticalMomentCard({ criticalWindow }: CriticalMomentCardProps) {
+  const uid = useId();
 
   const chart = useMemo(() => {
     if (!criticalWindow || criticalWindow.series.length === 0) return null;
@@ -56,96 +59,113 @@ export function CriticalMomentCard({ criticalWindow, color = '#c0392b' }: Critic
     const maxHr = Math.max(...hrs) + 5;
     const hrRange = maxHr - minHr || 1;
 
-    const xOf = (t: number) => CHART_X0 + ((t - minT) / timeRange) * (CHART_X1 - CHART_X0);
+    const toX = (t: number) => MARGIN.left + ((t - minT) / timeRange) * CHART_W;
 
     let gapPath = '';
     let hrPath = '';
     series.forEach((p, i) => {
-      const x = xOf(p.t_min);
+      const x = toX(p.t_min);
       const yGap = TOP_Y1 - ((p.gap - minGap) / gapRange) * (TOP_Y1 - TOP_Y0);
       const yHr = TOP_Y1 - ((p.hr - minHr) / hrRange) * (TOP_Y1 - TOP_Y0);
       gapPath += i === 0 ? `M ${x} ${yGap}` : ` L ${x} ${yGap}`;
       hrPath += i === 0 ? `M ${x} ${yHr}` : ` L ${x} ${yHr}`;
     });
 
-    // Bande rolling_corr : segments rouges quand corr < 0
     const corrSegments: { x0: number; x1: number; negative: boolean }[] = [];
     for (let i = 0; i < series.length - 1; i++) {
       const corr = series[i].rolling_corr;
       if (corr == null) continue;
-      corrSegments.push({ x0: xOf(series[i].t_min), x1: xOf(series[i + 1].t_min), negative: corr < 0 });
+      corrSegments.push({ x0: toX(series[i].t_min), x1: toX(series[i + 1].t_min), negative: corr < 0 });
     }
 
     let corrPath = '';
     series.forEach((p) => {
       if (p.rolling_corr == null) return;
-      const x = xOf(p.t_min);
+      const x = toX(p.t_min);
       const y = CORR_Y1 - ((p.rolling_corr + 1) / 2) * (CORR_Y1 - CORR_Y0);
       corrPath += corrPath === '' ? `M ${x} ${y}` : ` L ${x} ${y}`;
     });
 
-    return { gapPath, hrPath, corrPath, corrSegments, anchorX: xOf(criticalWindow.anchor_min) };
+    return { gapPath, hrPath, corrPath, corrSegments, anchorX: toX(criticalWindow.anchor_min), minT, maxT };
   }, [criticalWindow]);
 
   if (!criticalWindow || !chart) return null;
 
   return (
-    <div ref={chartRef} className="hw-card-dark-lg">
-      <div className="flex items-center gap-3 pb-3 border-b border-steel/25 mb-3.5">
-        <div className="p-2 bg-[#c0392b]/10 border border-[#c0392b]/30 rounded-lg text-[#c0392b] shrink-0">
-          <ZoomIcon color={color} />
-        </div>
+    <div className="hw-chart-card">
+      <span className="hw-br hw-br-tl hw-br-red" />
+      <span className="hw-br hw-br-br hw-br-red-dim" />
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="text-sm font-semibold text-mist">Moment critique</div>
-          <div className="hw-text-caption text-steel mt-0.5">
+          <h3 className="hw-chart-title">Moment critique</h3>
+          <p className="hw-chart-subtitle">
             {ANCHOR_LABELS[criticalWindow.anchor_type]} à {Math.round(criticalWindow.anchor_min)} min
-          </div>
+          </p>
         </div>
       </div>
 
-      <div className="relative border border-steel/20 rounded overflow-hidden bg-charcoal-light">
-        <svg viewBox="0 0 400 210" className="w-full h-auto">
-          {/* Ancre */}
-          <line x1={chart.anchorX} y1={TOP_Y0} x2={chart.anchorX} y2={CORR_Y1} stroke={color} strokeWidth="1.5" strokeDasharray="4,3" opacity="0.6" />
+      <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ width: '100%', height: 'auto' }} preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <clipPath id={`cmClip-${uid}`}>
+            <rect x={MARGIN.left} y={TOP_Y0} width={CHART_W} height={TOP_Y1 - TOP_Y0} />
+          </clipPath>
+        </defs>
 
-          {/* GAP */}
-          <path d={chart.gapPath} fill="none" stroke="#3DB2E0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          {/* FC */}
-          <path d={chart.hrPath} fill="none" stroke="#E8832A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Grille zone haute */}
+        {[0, 0.5, 1].map((pct) => (
+          <line
+            key={pct}
+            x1={MARGIN.left} y1={TOP_Y0 + pct * (TOP_Y1 - TOP_Y0)}
+            x2={MARGIN.left + CHART_W} y2={TOP_Y0 + pct * (TOP_Y1 - TOP_Y0)}
+            stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+          />
+        ))}
 
-          {/* Séparateur */}
-          <line x1={CHART_X0} y1="138" x2={CHART_X1} y2="138" stroke="#3A3F47" strokeWidth="1" opacity="0.4" />
-          <text x={CHART_X0} y="150" className="font-mono text-[8px]" fill="#6B7280">rolling_corr (GAP × FC, 5 min)</text>
+        {/* Ancre */}
+        <line x1={chart.anchorX} y1={TOP_Y0} x2={chart.anchorX} y2={CORR_Y1} stroke="#E84242" strokeWidth="1.2" strokeDasharray="4,3" opacity="0.6" />
 
-          {/* Bande rolling_corr : zone rouge quand corr < 0 */}
-          {chart.corrSegments.filter((s) => s.negative).map((s, i) => (
-            <rect key={i} x={s.x0} y={CORR_Y0} width={Math.max(1, s.x1 - s.x0)} height={CORR_Y1 - CORR_Y0} fill="#c0392b" opacity="0.12" />
-          ))}
-          <line x1={CHART_X0} y1={(CORR_Y0 + CORR_Y1) / 2} x2={CHART_X1} y2={(CORR_Y0 + CORR_Y1) / 2} stroke="#9CA3AF" strokeWidth="0.5" opacity="0.3" />
-          <path d={chart.corrPath} fill="none" stroke="#F2F2F2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <g clipPath={`url(#cmClip-${uid})`}>
+          <path d={chart.gapPath} fill="none" stroke="#3DB2E0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={chart.hrPath} fill="none" stroke="#E8832A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
 
-          {/* Axe X */}
-          <text x={CHART_X0} y="205" textAnchor="start" className="font-mono text-[9px]" fill="#6B7280">
-            {Math.round(criticalWindow.series[0].t_min)} min
-          </text>
-          <text x={CHART_X1} y="205" textAnchor="end" className="font-mono text-[9px]" fill="#6B7280">
-            {Math.round(criticalWindow.series[criticalWindow.series.length - 1].t_min)} min
-          </text>
-        </svg>
-      </div>
+        <line x1={MARGIN.left} y1={TOP_Y1} x2={MARGIN.left + CHART_W} y2={TOP_Y1} stroke="rgba(58,63,71,0.4)" strokeWidth="0.5" />
+        <line x1={MARGIN.left} y1={TOP_Y0} x2={MARGIN.left} y2={TOP_Y1} stroke="rgba(58,63,71,0.4)" strokeWidth="0.5" />
 
-      <div className="flex items-center justify-center gap-6 mt-3">
+        {/* Séparateur + label bande corrélation */}
+        <text x={MARGIN.left} y={CORR_Y0 - 6} className="font-mono" fontSize="8" fill="#3A3F47" fontFamily="'JetBrains Mono', monospace">
+          rolling_corr (GAP × FC, 5 min)
+        </text>
+
+        {/* Bande rolling_corr : zone rouge quand corr < 0 */}
+        {chart.corrSegments.filter((s) => s.negative).map((s, i) => (
+          <rect key={i} x={s.x0} y={CORR_Y0} width={Math.max(1, s.x1 - s.x0)} height={CORR_Y1 - CORR_Y0} fill="#E84242" opacity="0.12" />
+        ))}
+        <line x1={MARGIN.left} y1={(CORR_Y0 + CORR_Y1) / 2} x2={MARGIN.left + CHART_W} y2={(CORR_Y0 + CORR_Y1) / 2} stroke="rgba(58,63,71,0.4)" strokeWidth="0.5" />
+        <path d={chart.corrPath} fill="none" stroke="#F2F2F2" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+        <line x1={MARGIN.left} y1={CORR_Y0} x2={MARGIN.left} y2={CORR_Y1} stroke="rgba(58,63,71,0.4)" strokeWidth="0.5" />
+
+        {/* Axe X */}
+        <text x={MARGIN.left} y={AXIS_Y} textAnchor="start" fontSize="8" fill="#3A3F47" fontFamily="'JetBrains Mono', monospace">
+          {Math.round(chart.minT)} min
+        </text>
+        <text x={MARGIN.left + CHART_W} y={AXIS_Y} textAnchor="end" fontSize="8" fill="#3A3F47" fontFamily="'JetBrains Mono', monospace">
+          {Math.round(chart.maxT)} min
+        </text>
+      </svg>
+
+      <div className="flex items-center justify-center gap-6 mt-3 pt-3 border-t border-steel/20">
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-glacier" />
-          <span className="text-mist/40 font-body text-xs">GAP</span>
+          <span className="hw-chart-subtitle">GAP</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-amber" />
-          <span className="text-mist/40 font-body text-xs">FC</span>
+          <span className="hw-chart-subtitle">FC</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-[#c0392b]/20 border border-[#c0392b]/40" />
-          <span className="text-mist/40 font-body text-xs">Discordance (corr &lt; 0)</span>
+          <div className="w-3 h-3 bg-[#E84242]/20 border border-[#E84242]/40" />
+          <span className="hw-chart-subtitle">Discordance (corr &lt; 0)</span>
         </div>
       </div>
     </div>
