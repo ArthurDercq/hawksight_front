@@ -58,6 +58,15 @@ export function useActivities(): UseActivitiesReturn {
     return () => { cancelled.current = true; };
   }, [fetchActivities]);
 
+  useEffect(() => {
+    const onActivitiesUpdated = () => {
+      cache.invalidate(CACHE_KEY);
+      fetchActivities(undefined, true);
+    };
+    window.addEventListener('activities-updated', onActivitiesUpdated);
+    return () => window.removeEventListener('activities-updated', onActivitiesUpdated);
+  }, [fetchActivities]);
+
   const refetch = useCallback(() => {
     fetchActivities();
   }, [fetchActivities]);

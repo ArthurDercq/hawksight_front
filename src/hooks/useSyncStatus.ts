@@ -4,10 +4,11 @@ import type { StravaSyncStatus } from '@/types';
 
 export interface JobSyncStatus {
   is_syncing: boolean;
-  current_job: { type: string; status: string; progress: number } | null;
-  last_completed: { type: string; finished_at: string } | null;
+  current_job: { id: number; type: string; status: string; progress: number } | null;
+  last_completed: { id: number; type: string; finished_at: string } | null;
   has_error: boolean;
   last_error?: string | null;
+  last_failed_job_id?: number | null;
 }
 
 const POLL_INTERVAL = 5000;
@@ -51,5 +52,5 @@ export function useSyncStatus() {
     };
   }, [fetchStatus]);
 
-  return { status: jobStatus, activitiesCount, hasFetched };
+  return { status: jobStatus, activitiesCount, hasFetched, refresh: fetchStatus };
 }

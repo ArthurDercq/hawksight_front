@@ -47,15 +47,13 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
   const csvFileRef = useRef<File | null>(null);
   const allFilesRef = useRef<FileWithRelativePath[]>([]);
   const fitFilesRef = useRef<File[]>([]);
+  // Job précis à surveiller (id renvoyé par l'upload) — pas seulement son
+  // type, pour ne jamais confondre avec un job précédent/concurrent déjà
+  // terminé et éviter de conclure "done" avant que CE job n'ait même démarré.
+  const trackedJobIdRef = useRef<number | null>(null);
+  const seenJobRunningRef = useRef(false);
 
-  const { status } = useSyncStatus();
-  const jobType = mode === 'fit' ? 'import_fit' : 'import_strava_export';
-  const isImportJob = status?.current_job?.type === jobType;
-  const importProgress = isImportJob ? status?.current_job?.progress ?? 0 : 0;
-  // Le backend expose une progression en % (0-100) — on la reconvertit ici
-  // en compte brut x/newCount, plus lisible pour un import de quelques
-  // dizaines d'activités que le pourcentage seul.
-  const processedCount = isImportJob ? Math.min(newCount, Math.round((importProgress / 100) * newCount)) : 0;
+  const { status, refresh } = useSyncStatus();
 
   const handleFolderSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = Array.from(e.target.files ?? []) as FileWithRelativePath[];
@@ -116,14 +114,23 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
       if (!result.job_id) {
         setStep('done');
         window.dispatchEvent(new Event('activities-updated'));
+      } else {
+        // On mémorise CE job précis — le job peut déjà être en 'pending' au
+        // moment de ce poll, ou même 'done' si le fichier est minuscule et le
+        // worker rapide ; dans les deux cas status reflétera ce job_id et
+        // l'effet ci-dessous pourra juger correctement, contrairement à une
+        // simple comparaison par type qui risquait de lire un statut périmé
+        // d'un job précédent déjà terminé.
+        trackedJobIdRef.current = result.job_id;
+        seenJobRunningRef.current = false;
+        refresh();
       }
-      // Sinon on reste en 'running' — le useSyncStatus polling détecte la fin ci-dessous.
     } catch (err) {
       console.error('Erreur import .fit:', err);
       setErrorMessage("Échec de l'import — réessayez.");
       setStep('error');
     }
-  }, []);
+  }, [refresh]);
 
   const handleConfirmImport = useCallback(async () => {
     const csvFile = csvFileRef.current;
@@ -150,20 +157,51 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
       if (!result.job_id) {
         setStep('done');
         window.dispatchEvent(new Event('activities-updated'));
+      } else {
+        trackedJobIdRef.current = result.job_id;
+        seenJobRunningRef.current = false;
+        refresh();
       }
-      // Sinon on reste en 'running' — le useSyncStatus polling détecte la fin ci-dessous.
     } catch (err) {
       console.error('Erreur import Strava:', err);
       setErrorMessage("Échec de l'import — réessayez.");
       setStep('error');
     }
-  }, []);
+  }, [refresh]);
 
-  // Détecte la fin du job d'import via le polling déjà en place (useSyncStatus)
+  // Détecte la fin du job d'import via le polling déjà en place (useSyncStatus).
+  // On ne se fie jamais à un simple `!status.is_syncing` : au moment où `step`
+  // passe à 'running', `status` peut encore contenir le résultat d'un poll
+  // antérieur à l'upload (is_syncing: false) — une lecture périmée qui ferait
+  // conclure "terminé" avant même que le job n'ait démarré. On exige donc
+  // d'avoir vu CE job précis (trackedJobIdRef) au moins une fois en
+  // pending/running avant d'accepter qu'il soit fini.
   useEffect(() => {
-    if (step !== 'running' || !status || status.is_syncing) return;
+    if (step !== 'running' || !status || trackedJobIdRef.current == null) return;
 
-    if (status.has_error) {
+    const trackedId = trackedJobIdRef.current;
+    const isTrackedJobActive = status.current_job?.id === trackedId;
+    const wasTrackedJobLastCompleted = status.last_completed?.id === trackedId;
+    const wasTrackedJobLastFailed = status.has_error && status.last_failed_job_id === trackedId;
+
+    if (isTrackedJobActive) {
+      seenJobRunningRef.current = true;
+      return;
+    }
+
+    // Cas nominal : le job a été vu actif puis a disparu de current_job.
+    // Cas rare (fichier minuscule / worker déjà réveillé) : le tout premier
+    // poll après l'upload arrive alors que le job est déjà 'done'/'failed' —
+    // jamais vu "actif" — mais last_completed/last_failed_job_id pointe déjà
+    // dessus explicitement, une confirmation tout aussi fiable qu'un
+    // aller-retour par current_job.
+    if (!seenJobRunningRef.current && !wasTrackedJobLastCompleted && !wasTrackedJobLastFailed) {
+      // Ni actif, ni confirmé terminé/échoué : ce poll est périmé ou le job
+      // n'a pas encore démarré — on ne conclut rien.
+      return;
+    }
+
+    if (wasTrackedJobLastFailed) {
       setErrorMessage(status.last_error || "L'import a échoué.");
       setStep('error');
     } else {
@@ -176,6 +214,8 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
     csvFileRef.current = null;
     allFilesRef.current = [];
     fitFilesRef.current = [];
+    trackedJobIdRef.current = null;
+    seenJobRunningRef.current = false;
     setStep('pick');
     setErrorMessage(null);
     setNewCount(0);
@@ -187,6 +227,13 @@ export function ImportActivitiesModal({ onClose }: ImportActivitiesModalProps) {
     setMode(next);
     reset();
   };
+
+  const isImportJob = trackedJobIdRef.current != null && status?.current_job?.id === trackedJobIdRef.current;
+  const importProgress = isImportJob ? status?.current_job?.progress ?? 0 : 0;
+  // Le backend expose une progression en % (0-100) — on la reconvertit ici
+  // en compte brut x/newCount, plus lisible pour un import de quelques
+  // dizaines d'activités que le pourcentage seul.
+  const processedCount = isImportJob ? Math.min(newCount, Math.round((importProgress / 100) * newCount)) : 0;
 
   // Import en cours : on empêche de fermer la modal (clic hors zone, Escape)
   // pour que l'utilisateur ne perde jamais le fil de la progression — le
